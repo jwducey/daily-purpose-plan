@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Budget from "./pages/Budget";
 import Review from "./pages/Review";
 import Settings from "./pages/Settings";
+import Calendar from "./pages/Calendar";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/budget" element={<Budget />} />
             <Route path="/review" element={<Review />} />
+            <Route path="/calendar" element={<Calendar />} />
             <Route path="/settings" element={<Settings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
