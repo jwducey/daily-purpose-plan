@@ -1,17 +1,23 @@
 import { Navigation } from '@/components/Navigation';
 import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/hooks/useAuth';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
-import { User, Clock, Trash2 } from 'lucide-react';
+import { User, Clock, Trash2, LogIn, LogOut } from 'lucide-react';
+import { GoogleCalendarSettings } from '@/components/GoogleCalendarSettings';
+import { Link } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Settings() {
-  const { user, setUser } = useUser();
+  const { user: localUser, setUser } = useUser();
+  const { user: authUser, signOut } = useAuth();
+  const { toast } = useToast();
 
-  if (!user) return null;
+  if (!localUser) return null;
 
   const handleReset = () => {
     if (confirm('Are you sure? This will reset all your data.')) {
@@ -21,8 +27,16 @@ export default function Settings() {
     }
   };
 
-  const updateUser = (updates: Partial<typeof user>) => {
-    setUser({ ...user, ...updates });
+  const updateUser = (updates: Partial<typeof localUser>) => {
+    setUser({ ...localUser, ...updates });
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: 'Signed out',
+      description: 'You have been signed out successfully.',
+    });
   };
 
   return (
@@ -41,6 +55,48 @@ export default function Settings() {
               Manage your profile and preferences.
             </p>
           </motion.header>
+
+          {/* Account section */}
+          <motion.div 
+            className="p-6 rounded-2xl bg-card shadow-card space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <LogIn className="w-5 h-5 text-primary" />
+              </div>
+              <h2 className="font-serif text-lg">Account</h2>
+            </div>
+
+            {authUser ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{authUser.email}</p>
+                    <p className="text-sm text-muted-foreground">Signed in</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={handleSignOut}>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign out
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Sign in to sync your data and connect integrations like Google Calendar.
+                </p>
+                <Button asChild size="sm">
+                  <Link to="/auth">
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Sign in
+                  </Link>
+                </Button>
+              </div>
+            )}
+          </motion.div>
 
           {/* Profile section */}
           <motion.div 
@@ -61,7 +117,7 @@ export default function Settings() {
                 <Label htmlFor="name">Name</Label>
                 <Input
                   id="name"
-                  value={user.name}
+                  value={localUser.name}
                   onChange={(e) => updateUser({ name: e.target.value })}
                 />
               </div>
@@ -86,11 +142,11 @@ export default function Settings() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <Label>Expected lifespan</Label>
-                  <span className="font-sans font-semibold">{user.expectedLifespan} years</span>
+                  <span className="font-sans font-semibold">{localUser.expectedLifespan} years</span>
                 </div>
                 <Slider
-                  value={[user.expectedLifespan]}
-                  min={user.age + 1}
+                  value={[localUser.expectedLifespan]}
+                  min={localUser.age + 1}
                   max={120}
                   step={1}
                   onValueChange={(values) => updateUser({ expectedLifespan: values[0] })}
@@ -98,10 +154,13 @@ export default function Settings() {
               </div>
               
               <p className="text-sm text-muted-foreground">
-                With {user.expectedLifespan - user.age} years remaining, make every moment count.
+                With {localUser.expectedLifespan - localUser.age} years remaining, make every moment count.
               </p>
             </div>
           </motion.div>
+
+          {/* Google Calendar section */}
+          <GoogleCalendarSettings />
 
           {/* Danger zone */}
           <motion.div 
