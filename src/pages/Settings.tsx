@@ -1,0 +1,130 @@
+import { Navigation } from '@/components/Navigation';
+import { useUser } from '@/contexts/UserContext';
+import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { Separator } from '@/components/ui/separator';
+import { User, Clock, Trash2 } from 'lucide-react';
+
+export default function Settings() {
+  const { user, setUser } = useUser();
+
+  if (!user) return null;
+
+  const handleReset = () => {
+    if (confirm('Are you sure? This will reset all your data.')) {
+      localStorage.clear();
+      setUser(null);
+      window.location.reload();
+    }
+  };
+
+  const updateUser = (updates: Partial<typeof user>) => {
+    setUser({ ...user, ...updates });
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col md:flex-row bg-background">
+      <Navigation />
+      
+      <main className="flex-1 pb-20 md:pb-0">
+        <div className="max-w-2xl mx-auto p-6 md:p-10 space-y-8">
+          <motion.header 
+            className="space-y-2"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <h1 className="text-2xl md:text-3xl font-serif">Settings</h1>
+            <p className="text-muted-foreground text-sm">
+              Manage your profile and preferences.
+            </p>
+          </motion.header>
+
+          {/* Profile section */}
+          <motion.div 
+            className="p-6 rounded-2xl bg-card shadow-card space-y-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-life-energy/10">
+                <User className="w-5 h-5 text-life-energy" />
+              </div>
+              <h2 className="font-serif text-lg">Profile</h2>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={user.name}
+                  onChange={(e) => updateUser({ name: e.target.value })}
+                />
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Life expectancy section */}
+          <motion.div 
+            className="p-6 rounded-2xl bg-card shadow-card space-y-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-muted">
+                <Clock className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <h2 className="font-serif text-lg">Life Expectancy</h2>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Expected lifespan</Label>
+                  <span className="font-sans font-semibold">{user.expectedLifespan} years</span>
+                </div>
+                <Slider
+                  value={[user.expectedLifespan]}
+                  min={user.age + 1}
+                  max={120}
+                  step={1}
+                  onValueChange={(values) => updateUser({ expectedLifespan: values[0] })}
+                />
+              </div>
+              
+              <p className="text-sm text-muted-foreground">
+                With {user.expectedLifespan - user.age} years remaining, make every moment count.
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Danger zone */}
+          <motion.div 
+            className="p-6 rounded-2xl border border-destructive/20 space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <h2 className="font-serif text-lg text-destructive">Danger Zone</h2>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Reset all data</p>
+                <p className="text-sm text-muted-foreground">This action cannot be undone.</p>
+              </div>
+              <Button variant="destructive" size="sm" onClick={handleReset}>
+                <Trash2 className="w-4 h-4 mr-2" />
+                Reset
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      </main>
+    </div>
+  );
+}

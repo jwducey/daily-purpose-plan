@@ -2,95 +2,127 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Core palette - Deep, contemplative tones */
+    --background: 220 20% 97%;
+    --foreground: 220 25% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 220 25% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 220 25% 10%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Amber - Life energy, urgency, warmth */
+    --primary: 35 92% 50%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Sage - Growth, balance, calm */
+    --secondary: 150 25% 92%;
+    --secondary-foreground: 150 30% 25%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 220 15% 94%;
+    --muted-foreground: 220 10% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent - Soft coral for highlights */
+    --accent: 15 80% 94%;
+    --accent-foreground: 15 60% 35%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 220 15% 90%;
+    --input: 220 15% 90%;
+    --ring: 35 92% 50%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+
+    /* Custom semantic colors */
+    --life-energy: 35 92% 50%;
+    --life-energy-glow: 35 100% 60%;
+    --time-passing: 220 25% 35%;
+    --growth: 150 45% 45%;
+    --warning: 45 93% 47%;
+    --calm: 210 40% 96%;
+    
+    /* Category colors */
+    --category-health: 142 70% 45%;
+    --category-community: 258 65% 55%;
+    --category-impact: 35 92% 50%;
+    --category-wealth: 45 93% 47%;
+    --category-family: 340 75% 55%;
+    --category-legacy: 200 70% 50%;
+    --category-contribution: 280 60% 55%;
+    --category-spiritual: 270 50% 60%;
+    --category-emotional: 320 65% 55%;
+    --category-sleep: 220 45% 55%;
+    --category-work: 210 60% 50%;
+    --category-play: 160 60% 45%;
+
+    /* Gradients */
+    --gradient-life: linear-gradient(135deg, hsl(35 92% 50%), hsl(45 93% 55%));
+    --gradient-time: linear-gradient(180deg, hsl(220 20% 97%), hsl(220 25% 92%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(220 20% 98%));
+
+    /* Shadows */
+    --shadow-soft: 0 4px 20px -4px hsl(220 25% 10% / 0.08);
+    --shadow-glow: 0 0 30px hsl(35 92% 50% / 0.2);
+    --shadow-card: 0 2px 12px -2px hsl(220 25% 10% / 0.06);
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 35 92% 50%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 220 25% 8%;
+    --foreground: 220 15% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 25% 12%;
+    --card-foreground: 220 15% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 25% 12%;
+    --popover-foreground: 220 15% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 35 92% 55%;
+    --primary-foreground: 220 25% 8%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 150 20% 18%;
+    --secondary-foreground: 150 30% 85%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 220 20% 18%;
+    --muted-foreground: 220 15% 60%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 15 50% 18%;
+    --accent-foreground: 15 60% 85%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 220 20% 18%;
+    --input: 220 20% 18%;
+    --ring: 35 92% 55%;
+
+    --shadow-soft: 0 4px 20px -4px hsl(0 0% 0% / 0.3);
+    --shadow-glow: 0 0 40px hsl(35 92% 50% / 0.15);
+    --shadow-card: 0 2px 12px -2px hsl(0 0% 0% / 0.2);
+
+    --sidebar-background: 220 25% 10%;
+    --sidebar-foreground: 220 15% 90%;
+    --sidebar-primary: 35 92% 55%;
+    --sidebar-primary-foreground: 220 25% 8%;
+    --sidebar-accent: 220 20% 15%;
+    --sidebar-accent-foreground: 220 15% 90%;
+    --sidebar-border: 220 20% 15%;
+    --sidebar-ring: 35 92% 55%;
   }
 }
 
@@ -100,6 +132,131 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Instrument Serif', serif;
+  }
+}
+
+@layer components {
+  .font-serif {
+    font-family: 'Instrument Serif', serif;
+  }
+
+  .font-sans {
+    font-family: 'Inter', sans-serif;
+  }
+
+  .gradient-life {
+    background: var(--gradient-life);
+  }
+
+  .gradient-time {
+    background: var(--gradient-time);
+  }
+
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .text-life-energy {
+    color: hsl(var(--life-energy));
+  }
+
+  .bg-life-energy {
+    background-color: hsl(var(--life-energy));
+  }
+
+  .text-growth {
+    color: hsl(var(--growth));
+  }
+
+  .bg-growth {
+    background-color: hsl(var(--growth));
+  }
+
+  /* Countdown animation */
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  @keyframes count-tick {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.02);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .animate-count-tick {
+    animation: count-tick 1s ease-in-out;
+  }
+
+  /* Slider track colors for categories */
+  .slider-health [data-orientation="horizontal"] > span:first-child {
+    background: hsl(var(--category-health));
+  }
+  .slider-community [data-orientation="horizontal"] > span:first-child {
+    background: hsl(var(--category-community));
+  }
+  .slider-impact [data-orientation="horizontal"] > span:first-child {
+    background: hsl(var(--category-impact));
+  }
+  .slider-wealth [data-orientation="horizontal"] > span:first-child {
+    background: hsl(var(--category-wealth));
+  }
+  .slider-family [data-orientation="horizontal"] > span:first-child {
+    background: hsl(var(--category-family));
+  }
+  .slider-legacy [data-orientation="horizontal"] > span:first-child {
+    background: hsl(var(--category-legacy));
+  }
+  .slider-contribution [data-orientation="horizontal"] > span:first-child {
+    background: hsl(var(--category-contribution));
+  }
+  .slider-spiritual [data-orientation="horizontal"] > span:first-child {
+    background: hsl(var(--category-spiritual));
+  }
+  .slider-emotional [data-orientation="horizontal"] > span:first-child {
+    background: hsl(var(--category-emotional));
+  }
+  .slider-sleep [data-orientation="horizontal"] > span:first-child {
+    background: hsl(var(--category-sleep));
+  }
+  .slider-work [data-orientation="horizontal"] > span:first-child {
+    background: hsl(var(--category-work));
+  }
+  .slider-play [data-orientation="horizontal"] > span:first-child {
+    background: hsl(var(--category-play));
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
   }
 }

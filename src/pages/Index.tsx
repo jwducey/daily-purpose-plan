@@ -1,14 +1,25 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useUser } from '@/contexts/UserContext';
+import { Onboarding } from '@/components/Onboarding';
+import Dashboard from './Dashboard';
 
 const Index = () => {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+  const { user, isLoading } = useUser();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse">
+          <div className="w-12 h-12 rounded-xl bg-life-energy/20" />
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  if (!user || !user.onboardingComplete) {
+    return <Onboarding />;
+  }
+
+  return <Dashboard />;
 };
 
 export default Index;
