@@ -9,5 +9,8 @@ verify_jwt = false
 [functions.google-calendar-events]
 verify_jwt = false
 
+[functions.google-calendar-create-event]
+verify_jwt = false
+
 [functions.google-disconnect]
 verify_jwt = false

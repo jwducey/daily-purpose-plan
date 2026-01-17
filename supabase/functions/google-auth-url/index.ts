@@ -50,7 +50,8 @@ serve(async (req) => {
       });
     }
 
-    const scope = encodeURIComponent("https://www.googleapis.com/auth/calendar.readonly");
+    // Include both read and write scopes for full calendar access
+    const scope = encodeURIComponent("https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events");
     const state = claimsData.claims.sub; // Use user ID as state for verification
     
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
