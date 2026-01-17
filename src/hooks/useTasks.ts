@@ -3,6 +3,26 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
+export const LIFE_AREAS = [
+  { value: 'health', label: 'Health', color: 'bg-green-500' },
+  { value: 'wealth', label: 'Wealth', color: 'bg-amber-500' },
+  { value: 'relationships', label: 'Relationships', color: 'bg-pink-500' },
+  { value: 'growth', label: 'Growth', color: 'bg-purple-500' },
+  { value: 'career', label: 'Career', color: 'bg-blue-500' },
+  { value: 'leisure', label: 'Leisure', color: 'bg-cyan-500' },
+] as const;
+
+export type LifeArea = typeof LIFE_AREAS[number]['value'];
+
+export const TIME_ESTIMATES = [
+  { value: 15, label: '15 min' },
+  { value: 30, label: '30 min' },
+  { value: 60, label: '1 hour' },
+  { value: 120, label: '2 hours' },
+  { value: 240, label: '4 hours' },
+  { value: 480, label: 'Full day' },
+] as const;
+
 export interface Task {
   id: string;
   user_id: string;
@@ -15,6 +35,8 @@ export interface Task {
   project: string | null;
   labels: string[] | null;
   sort_order: number;
+  time_estimate_minutes: number | null;
+  life_area: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -26,6 +48,8 @@ export interface CreateTaskInput {
   priority?: number;
   project?: string;
   labels?: string[];
+  time_estimate_minutes?: number;
+  life_area?: string;
 }
 
 export interface UpdateTaskInput {
@@ -37,6 +61,8 @@ export interface UpdateTaskInput {
   project?: string | null;
   labels?: string[];
   sort_order?: number;
+  time_estimate_minutes?: number | null;
+  life_area?: string | null;
 }
 
 export function useTasks() {
@@ -85,6 +111,8 @@ export function useTasks() {
           priority: input.priority || 4,
           project: input.project || null,
           labels: input.labels || null,
+          time_estimate_minutes: input.time_estimate_minutes || null,
+          life_area: input.life_area || null,
         })
         .select()
         .single();
