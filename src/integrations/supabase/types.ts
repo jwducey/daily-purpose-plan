@@ -59,9 +59,11 @@ export type Database = {
           due_date: string | null
           id: string
           labels: string[] | null
+          life_area: string | null
           priority: number | null
           project: string | null
           sort_order: number | null
+          time_estimate_minutes: number | null
           title: string
           updated_at: string
           user_id: string
@@ -74,9 +76,11 @@ export type Database = {
           due_date?: string | null
           id?: string
           labels?: string[] | null
+          life_area?: string | null
           priority?: number | null
           project?: string | null
           sort_order?: number | null
+          time_estimate_minutes?: number | null
           title: string
           updated_at?: string
           user_id: string
@@ -89,9 +93,11 @@ export type Database = {
           due_date?: string | null
           id?: string
           labels?: string[] | null
+          life_area?: string | null
           priority?: number | null
           project?: string | null
           sort_order?: number | null
+          time_estimate_minutes?: number | null
           title?: string
           updated_at?: string
           user_id?: string

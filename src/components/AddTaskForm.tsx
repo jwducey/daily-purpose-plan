@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CreateTaskInput } from '@/hooks/useTasks';
+import { CreateTaskInput, LIFE_AREAS, TIME_ESTIMATES } from '@/hooks/useTasks';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -7,9 +7,10 @@ import {
   Plus, 
   Calendar, 
   Flag, 
-  X,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Clock,
+  Target
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -44,6 +45,8 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<Date | undefined>();
   const [priority, setPriority] = useState(4);
+  const [timeEstimate, setTimeEstimate] = useState<number | undefined>();
+  const [lifeArea, setLifeArea] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
 
@@ -57,6 +60,8 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
         description: description.trim() || undefined,
         due_date: dueDate?.toISOString(),
         priority,
+        time_estimate_minutes: timeEstimate,
+        life_area: lifeArea,
       });
       
       // Reset form
@@ -64,6 +69,8 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
       setDescription('');
       setDueDate(undefined);
       setPriority(4);
+      setTimeEstimate(undefined);
+      setLifeArea(undefined);
       setShowDetails(false);
       setIsExpanded(false);
     } finally {
@@ -80,6 +87,9 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
       setIsExpanded(false);
     }
   };
+
+  const selectedTimeEstimate = TIME_ESTIMATES.find(t => t.value === timeEstimate);
+  const selectedLifeArea = LIFE_AREAS.find(a => a.value === lifeArea);
 
   if (!isExpanded) {
     return (
@@ -157,6 +167,93 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
                   {priorityLabels[p]}
                 </Button>
               ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className={cn(timeEstimate && "text-primary")}
+            >
+              <Clock className="h-4 w-4 mr-1" />
+              {selectedTimeEstimate?.label || 'Time estimate'}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-40 p-2" align="start">
+            <div className="flex flex-col gap-1">
+              {TIME_ESTIMATES.map((t) => (
+                <Button
+                  key={t.value}
+                  size="sm"
+                  variant={timeEstimate === t.value ? "secondary" : "ghost"}
+                  className="justify-start"
+                  onClick={() => setTimeEstimate(t.value)}
+                >
+                  <Clock className="h-4 w-4 mr-2" />
+                  {t.label}
+                </Button>
+              ))}
+              {timeEstimate && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="justify-start text-muted-foreground"
+                  onClick={() => setTimeEstimate(undefined)}
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className={cn(lifeArea && "text-primary")}
+            >
+              {selectedLifeArea ? (
+                <>
+                  <span className={cn("h-3 w-3 rounded-full mr-2", selectedLifeArea.color)} />
+                  {selectedLifeArea.label}
+                </>
+              ) : (
+                <>
+                  <Target className="h-4 w-4 mr-1" />
+                  Life area
+                </>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-44 p-2" align="start">
+            <div className="flex flex-col gap-1">
+              {LIFE_AREAS.map((area) => (
+                <Button
+                  key={area.value}
+                  size="sm"
+                  variant={lifeArea === area.value ? "secondary" : "ghost"}
+                  className="justify-start"
+                  onClick={() => setLifeArea(area.value)}
+                >
+                  <span className={cn("h-3 w-3 rounded-full mr-2", area.color)} />
+                  {area.label}
+                </Button>
+              ))}
+              {lifeArea && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="justify-start text-muted-foreground"
+                  onClick={() => setLifeArea(undefined)}
+                >
+                  Clear
+                </Button>
+              )}
             </div>
           </PopoverContent>
         </Popover>

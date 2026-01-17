@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Task, UpdateTaskInput } from '@/hooks/useTasks';
+import { Task, UpdateTaskInput, LIFE_AREAS, TIME_ESTIMATES } from '@/hooks/useTasks';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,9 @@ import {
   Edit2, 
   Check, 
   X,
-  GripVertical
+  GripVertical,
+  Clock,
+  Target
 } from 'lucide-react';
 import { format, isToday, isTomorrow, isPast, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -75,6 +77,14 @@ export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskIte
     });
   };
 
+  const handleTimeEstimateChange = async (minutes: number | null) => {
+    await onUpdate(task.id, { time_estimate_minutes: minutes });
+  };
+
+  const handleLifeAreaChange = async (area: string | null) => {
+    await onUpdate(task.id, { life_area: area });
+  };
+
   const formatDueDate = (dateStr: string) => {
     const date = parseISO(dateStr);
     if (isToday(date)) return 'Today';
@@ -82,6 +92,14 @@ export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskIte
     return format(date, 'MMM d');
   };
 
+  const formatTimeEstimate = (minutes: number) => {
+    const estimate = TIME_ESTIMATES.find(t => t.value === minutes);
+    if (estimate) return estimate.label;
+    if (minutes < 60) return `${minutes}m`;
+    return `${Math.round(minutes / 60)}h`;
+  };
+
+  const lifeArea = LIFE_AREAS.find(a => a.value === task.life_area);
   const isOverdue = task.due_date && isPast(parseISO(task.due_date)) && !isToday(parseISO(task.due_date)) && !task.completed;
 
   return (
@@ -153,6 +171,20 @@ export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskIte
                   {formatDueDate(task.due_date)}
                 </Badge>
               )}
+
+              {task.time_estimate_minutes && (
+                <Badge variant="outline" className="text-xs">
+                  <Clock className="h-3 w-3 mr-1" />
+                  {formatTimeEstimate(task.time_estimate_minutes)}
+                </Badge>
+              )}
+
+              {lifeArea && (
+                <Badge variant="outline" className="text-xs">
+                  <span className={cn("h-2 w-2 rounded-full mr-1", lifeArea.color)} />
+                  {lifeArea.label}
+                </Badge>
+              )}
               
               {task.project && (
                 <Badge variant="secondary" className="text-xs">
@@ -207,6 +239,78 @@ export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskIte
                   {priorityLabels[p]}
                 </Button>
               ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button size="icon" variant="ghost" className="h-7 w-7">
+              <Clock className={cn("h-4 w-4", task.time_estimate_minutes && "text-primary")} />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-36 p-2" align="end">
+            <div className="flex flex-col gap-1">
+              {TIME_ESTIMATES.map((t) => (
+                <Button
+                  key={t.value}
+                  size="sm"
+                  variant={task.time_estimate_minutes === t.value ? "secondary" : "ghost"}
+                  className="justify-start"
+                  onClick={() => handleTimeEstimateChange(t.value)}
+                >
+                  <Clock className="h-4 w-4 mr-2" />
+                  {t.label}
+                </Button>
+              ))}
+              {task.time_estimate_minutes && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="justify-start text-muted-foreground"
+                  onClick={() => handleTimeEstimateChange(null)}
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button size="icon" variant="ghost" className="h-7 w-7">
+              {lifeArea ? (
+                <span className={cn("h-4 w-4 rounded-full", lifeArea.color)} />
+              ) : (
+                <Target className="h-4 w-4" />
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-40 p-2" align="end">
+            <div className="flex flex-col gap-1">
+              {LIFE_AREAS.map((area) => (
+                <Button
+                  key={area.value}
+                  size="sm"
+                  variant={task.life_area === area.value ? "secondary" : "ghost"}
+                  className="justify-start"
+                  onClick={() => handleLifeAreaChange(area.value)}
+                >
+                  <span className={cn("h-3 w-3 rounded-full mr-2", area.color)} />
+                  {area.label}
+                </Button>
+              ))}
+              {task.life_area && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="justify-start text-muted-foreground"
+                  onClick={() => handleLifeAreaChange(null)}
+                >
+                  Clear
+                </Button>
+              )}
             </div>
           </PopoverContent>
         </Popover>
