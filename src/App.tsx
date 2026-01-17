@@ -9,6 +9,7 @@ import Budget from "./pages/Budget";
 import Review from "./pages/Review";
 import Settings from "./pages/Settings";
 import Calendar from "./pages/Calendar";
+import Tasks from "./pages/Tasks";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -24,6 +25,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/tasks" element={<Tasks />} />
             <Route path="/budget" element={<Budget />} />
             <Route path="/review" element={<Review />} />
             <Route path="/calendar" element={<Calendar />} />

@@ -3,6 +3,7 @@ import { Navigation } from '@/components/Navigation';
 import { CalendarMultiDayView } from '@/components/CalendarMultiDayView';
 import { CalendarMonthView } from '@/components/CalendarMonthView';
 import { MiniCalendar } from '@/components/MiniCalendar';
+import { CreateEventDialog } from '@/components/CreateEventDialog';
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
 import { useAuth } from '@/hooks/useAuth';
 import { motion } from 'framer-motion';
@@ -15,7 +16,8 @@ import {
   ChevronLeft, 
   ChevronRight,
   RefreshCw,
-  Menu
+  Menu,
+  Plus
 } from 'lucide-react';
 import { format, addDays, addWeeks, addMonths, subDays, subWeeks, subMonths, startOfWeek, startOfMonth } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -48,6 +50,9 @@ export default function Calendar() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewType, setViewType] = useState('week');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showCreateEvent, setShowCreateEvent] = useState(false);
+  const [createEventDefaultDate, setCreateEventDefaultDate] = useState<Date | undefined>();
+  const [createEventDefaultTime, setCreateEventDefaultTime] = useState<string | undefined>();
 
   const viewConfig = VIEW_OPTIONS.find(v => v.value === viewType) || VIEW_OPTIONS[3];
   const isMonthView = viewType === 'month';
@@ -114,6 +119,16 @@ export default function Calendar() {
     setViewType('day');
   };
 
+  const handleCreateEvent = (date?: Date, time?: string) => {
+    setCreateEventDefaultDate(date || selectedDate);
+    setCreateEventDefaultTime(time);
+    setShowCreateEvent(true);
+  };
+
+  const handleEventCreated = () => {
+    handleRefresh();
+  };
+
   const getHeaderTitle = () => {
     if (isMonthView) {
       return format(selectedDate, 'MMMM yyyy');
@@ -130,7 +145,11 @@ export default function Calendar() {
 
   const SidebarContent = () => (
     <div className="h-full flex flex-col">
-      <div className="p-4 border-b border-border">
+      <div className="p-4 border-b border-border space-y-2">
+        <Button onClick={() => handleCreateEvent()} className="w-full">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Event
+        </Button>
         <Button onClick={goToToday} variant="outline" className="w-full">
           Today
         </Button>
@@ -266,6 +285,13 @@ export default function Calendar() {
             >
               <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
             </Button>
+            <Button 
+              size="icon" 
+              onClick={() => handleCreateEvent()}
+              className="hidden sm:flex"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
           </div>
         </div>
 
@@ -292,6 +318,14 @@ export default function Calendar() {
             )}
           </div>
         </div>
+
+        <CreateEventDialog
+          open={showCreateEvent}
+          onOpenChange={setShowCreateEvent}
+          onEventCreated={handleEventCreated}
+          defaultDate={createEventDefaultDate}
+          defaultTime={createEventDefaultTime}
+        />
       </main>
     </div>
   );
