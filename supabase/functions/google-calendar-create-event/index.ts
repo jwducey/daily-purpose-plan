@@ -191,6 +191,19 @@ serve(async (req) => {
     if (!calendarResponse.ok) {
       const error = await calendarResponse.text();
       console.error("Google Calendar API error:", error);
+      
+      // Check for scope/permission error
+      if (error.includes('insufficient') || error.includes('PERMISSION_DENIED') || error.includes('scope')) {
+        return new Response(JSON.stringify({ 
+          error: "insufficient_scope",
+          message: "Calendar permissions need to be updated. Please disconnect and reconnect Google Calendar in Settings.",
+          details: error 
+        }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
       return new Response(JSON.stringify({ error: "Failed to create calendar event", details: error }), {
         status: calendarResponse.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

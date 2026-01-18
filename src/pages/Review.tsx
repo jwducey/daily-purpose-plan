@@ -108,7 +108,21 @@ export default function Review() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check if it's a scope/permission error
+        const errorMessage = error.message || String(error);
+        if (errorMessage.includes('insufficient') || errorMessage.includes('scope') || errorMessage.includes('permission')) {
+          toast.error('Calendar permissions need to be updated. Please disconnect and reconnect Google Calendar in Settings.', {
+            duration: 8000,
+            action: {
+              label: 'Go to Settings',
+              onClick: () => window.location.href = '/settings',
+            },
+          });
+          return;
+        }
+        throw error;
+      }
 
       toast.success(`Scheduled "${task.title}" for ${format(startTime, 'EEE h:mm a')}`);
       
