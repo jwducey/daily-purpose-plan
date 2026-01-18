@@ -1,153 +1,297 @@
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Navigation } from '@/components/Navigation';
-import { useUser } from '@/contexts/UserContext';
+import { TaskPoolSidebar } from '@/components/TaskPoolSidebar';
+import { WeeklyPlannerCalendar } from '@/components/WeeklyPlannerCalendar';
+import { useTasks, Task, LIFE_AREAS } from '@/hooks/useTasks';
+import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
+import { useSchedulingSuggestions } from '@/hooks/useSchedulingSuggestions';
+import { useAuth } from '@/hooks/useAuth';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { useState } from 'react';
-import { CheckCircle2, ChevronRight } from 'lucide-react';
-
-const reviewQuestions = [
-  {
-    id: 1,
-    question: 'What went well this week in terms of how you spent your time?',
-    placeholder: 'I was proud of how I prioritized...',
-  },
-  {
-    id: 2,
-    question: 'Where did you spend more time than you intended?',
-    placeholder: 'I noticed I spent extra time on...',
-  },
-  {
-    id: 3,
-    question: 'What areas felt neglected that are important to you?',
-    placeholder: 'I wish I had more time for...',
-  },
-  {
-    id: 4,
-    question: 'What one adjustment will you make next week?',
-    placeholder: 'Next week, I will...',
-  },
-];
+import { Link } from 'react-router-dom';
+import { 
+  LogIn, 
+  Loader2, 
+  Calendar, 
+  ChevronLeft, 
+  ChevronRight,
+  Sparkles,
+  RefreshCw,
+  PanelLeftClose,
+  PanelLeft
+} from 'lucide-react';
+import { format, startOfWeek, addWeeks, subWeeks, setHours, setMinutes, addMinutes } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 export default function Review() {
-  const { categories } = useUser();
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [isComplete, setIsComplete] = useState(false);
+  const { user } = useAuth();
+  const { tasks } = useTasks();
+  const { events, isConnected, isLoading: isCalendarLoading, fetchEvents } = useGoogleCalendar();
+  const { suggestions, isLoading: isSuggestionsLoading, getSuggestions } = useSchedulingSuggestions();
+  
+  const [weekStartDate, setWeekStartDate] = useState(() => startOfWeek(new Date()));
+  const [draggingTask, setDraggingTask] = useState<Task | null>(null);
+  const [isCreatingEvent, setIsCreatingEvent] = useState(false);
+  const [pendingSlot, setPendingSlot] = useState<{ date: Date; hour: number } | null>(null);
+  const [showSidebar, setShowSidebar] = useState(true);
 
-  const handleNext = () => {
-    if (currentQuestion < reviewQuestions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    } else {
-      setIsComplete(true);
+  // Calculate total time of unscheduled tasks
+  const totalTime = useMemo(() => {
+    return tasks
+      .filter(t => !t.completed && t.time_estimate_minutes)
+      .reduce((sum, t) => sum + (t.time_estimate_minutes || 0), 0);
+  }, [tasks]);
+
+  // Get suggested tasks based on AI suggestions
+  const suggestedTasks = useMemo(() => {
+    if (suggestions.length === 0) return [];
+    return suggestions
+      .map(s => tasks.find(t => t.id === s.taskId))
+      .filter((t): t is Task => t !== undefined);
+  }, [suggestions, tasks]);
+
+  // Fetch events when week changes
+  useEffect(() => {
+    if (isConnected) {
+      const timeMin = weekStartDate.toISOString();
+      const timeMax = addWeeks(weekStartDate, 1).toISOString();
+      fetchEvents(timeMin, timeMax);
+    }
+  }, [weekStartDate, isConnected, fetchEvents]);
+
+  // Get AI suggestions when data is ready
+  const handleGetSuggestions = useCallback(async () => {
+    if (!isConnected || tasks.length === 0) return;
+    await getSuggestions(tasks, events, weekStartDate);
+  }, [tasks, events, weekStartDate, isConnected, getSuggestions]);
+
+  const handleDragStart = (e: React.DragEvent, task: Task) => {
+    e.dataTransfer.setData('application/json', JSON.stringify(task));
+    e.dataTransfer.effectAllowed = 'copy';
+    setDraggingTask(task);
+  };
+
+  const handleDragEnd = () => {
+    setDraggingTask(null);
+  };
+
+  const handleDropTask = async (task: Task, date: Date, hour: number) => {
+    if (!isConnected) {
+      toast.error('Connect Google Calendar in Settings first');
+      return;
+    }
+
+    setIsCreatingEvent(true);
+    setPendingSlot({ date, hour });
+
+    try {
+      const startTime = setMinutes(setHours(date, hour), 0);
+      const duration = task.time_estimate_minutes || 60;
+      const endTime = addMinutes(startTime, duration);
+
+      // Get life area for description
+      const lifeArea = LIFE_AREAS.find(a => a.value === task.life_area);
+      const description = [
+        task.description,
+        lifeArea ? `Life Area: ${lifeArea.label}` : null,
+        `Priority: ${{ 1: 'Urgent', 2: 'High', 3: 'Medium', 4: 'Low' }[task.priority] || 'Normal'}`,
+      ].filter(Boolean).join('\n');
+
+      const { data, error } = await supabase.functions.invoke('google-calendar-create-event', {
+        body: {
+          summary: task.title,
+          description,
+          start: startTime.toISOString(),
+          end: endTime.toISOString(),
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success(`Scheduled "${task.title}" for ${format(startTime, 'EEE h:mm a')}`);
+      
+      // Refresh events
+      const timeMin = weekStartDate.toISOString();
+      const timeMax = addWeeks(weekStartDate, 1).toISOString();
+      await fetchEvents(timeMin, timeMax);
+    } catch (error) {
+      console.error('Error creating event:', error);
+      toast.error('Failed to create calendar event');
+    } finally {
+      setIsCreatingEvent(false);
+      setPendingSlot(null);
     }
   };
 
-  const topCategories = [...categories]
-    .sort((a, b) => b.weeklyHoursTarget - a.weeklyHoursTarget)
-    .slice(0, 5);
+  const navigateWeek = (direction: 'prev' | 'next') => {
+    setWeekStartDate(prev => 
+      direction === 'next' ? addWeeks(prev, 1) : subWeeks(prev, 1)
+    );
+  };
+
+  const goToThisWeek = () => {
+    setWeekStartDate(startOfWeek(new Date()));
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col md:flex-row bg-background">
+        <Navigation />
+        <main className="flex-1 pb-20 md:pb-0 flex items-center justify-center p-6">
+          <motion.div 
+            className="text-center space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="p-4 rounded-full bg-muted inline-block">
+              <LogIn className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h2 className="font-serif text-xl">Sign in to plan your week</h2>
+            <p className="text-muted-foreground text-sm max-w-sm">
+              Access your weekly review and schedule your tasks.
+            </p>
+            <Button asChild>
+              <Link to="/auth">Sign in</Link>
+            </Button>
+          </motion.div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!isConnected && !isCalendarLoading) {
+    return (
+      <div className="min-h-screen flex flex-col md:flex-row bg-background">
+        <Navigation />
+        <main className="flex-1 pb-20 md:pb-0 flex items-center justify-center p-6">
+          <motion.div 
+            className="text-center space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="p-4 rounded-full bg-muted inline-block">
+              <Calendar className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h2 className="font-serif text-xl">Connect your calendar</h2>
+            <p className="text-muted-foreground text-sm max-w-sm">
+              Connect Google Calendar to drag and drop tasks into your schedule.
+            </p>
+            <Button asChild>
+              <Link to="/settings">Go to Settings</Link>
+            </Button>
+          </motion.div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background">
       <Navigation />
       
-      <main className="flex-1 pb-20 md:pb-0">
-        <div className="max-w-2xl mx-auto p-6 md:p-10 space-y-8">
-          <motion.header 
-            className="space-y-2"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <h1 className="text-2xl md:text-3xl font-serif">Weekly Review</h1>
-            <p className="text-muted-foreground text-sm">
-              Reflect on your time allocation and plan for improvement.
-            </p>
-          </motion.header>
-
-          {/* Time summary */}
-          <motion.div 
-            className="p-6 rounded-2xl bg-card shadow-card"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <h3 className="font-serif text-lg mb-4">Your Time Allocation</h3>
-            <div className="space-y-3">
-              {topCategories.map((cat, index) => (
-                <div key={cat.id} className="flex items-center gap-4">
-                  <span className="w-6 text-sm text-muted-foreground">#{index + 1}</span>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium">{cat.name}</span>
-                      <span className="text-sm text-muted-foreground">{cat.weeklyHoursTarget}h</span>
-                    </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full bg-category-${cat.color}`}
-                        style={{ width: `${(cat.weeklyHoursTarget / 168) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Review questions */}
-          {!isComplete ? (
-            <motion.div 
-              className="p-6 rounded-2xl bg-card shadow-card"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+      <div className="flex-1 flex flex-col overflow-hidden pb-20 md:pb-0">
+        {/* Header */}
+        <div className="flex items-center justify-between p-3 md:p-4 border-b bg-background flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowSidebar(!showSidebar)}
+              className="hidden md:flex"
             >
-              <div className="flex items-center gap-2 mb-4">
-                {reviewQuestions.map((_, index) => (
-                  <div 
-                    key={index}
-                    className={`h-1 flex-1 rounded-full transition-colors ${
-                      index <= currentQuestion ? 'bg-life-energy' : 'bg-muted'
-                    }`}
-                  />
-                ))}
-              </div>
-              
-              <h3 className="font-serif text-xl mb-4">
-                {reviewQuestions[currentQuestion].question}
-              </h3>
-              
-              <Textarea
-                placeholder={reviewQuestions[currentQuestion].placeholder}
-                value={answers[reviewQuestions[currentQuestion].id] || ''}
-                onChange={(e) => setAnswers({
-                  ...answers,
-                  [reviewQuestions[currentQuestion].id]: e.target.value
-                })}
-                className="min-h-[120px] resize-none"
+              {showSidebar ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeft className="h-5 w-5" />}
+            </Button>
+            
+            <Button variant="outline" size="icon" onClick={() => navigateWeek('prev')}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={() => navigateWeek('next')}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="sm" onClick={goToThisWeek} className="hidden sm:inline-flex">
+              This Week
+            </Button>
+          </div>
+
+          <h1 className="font-serif text-lg md:text-xl">
+            Week of {format(weekStartDate, 'MMM d, yyyy')}
+          </h1>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleGetSuggestions}
+              disabled={isSuggestionsLoading || tasks.length === 0}
+              className="gap-2"
+            >
+              {isSuggestionsLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              <span className="hidden sm:inline">Get Suggestions</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                const timeMin = weekStartDate.toISOString();
+                const timeMax = addWeeks(weekStartDate, 1).toISOString();
+                fetchEvents(timeMin, timeMax);
+              }}
+              disabled={isCalendarLoading}
+            >
+              <RefreshCw className={cn("h-4 w-4", isCalendarLoading && "animate-spin")} />
+            </Button>
+          </div>
+        </div>
+
+        {/* Main content */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Task Pool Sidebar */}
+          {showSidebar && (
+            <motion.div 
+              className="w-80 flex-shrink-0 hidden md:block"
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 320, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+            >
+              <TaskPoolSidebar
+                tasks={tasks}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                suggestedTasks={suggestedTasks}
+                totalTime={totalTime}
               />
-              
-              <div className="flex justify-end mt-4">
-                <Button onClick={handleNext} className="gap-2">
-                  {currentQuestion < reviewQuestions.length - 1 ? 'Next' : 'Complete Review'}
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div 
-              className="p-8 rounded-2xl bg-growth/10 border border-growth/20 text-center"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-            >
-              <CheckCircle2 className="w-12 h-12 text-growth mx-auto mb-4" />
-              <h3 className="font-serif text-2xl mb-2">Review Complete!</h3>
-              <p className="text-muted-foreground">
-                Great job reflecting on your week. Small adjustments lead to big changes over time.
-              </p>
             </motion.div>
           )}
+
+          {/* Calendar */}
+          <div className="flex-1 p-3 md:p-4 overflow-hidden">
+            {isCalendarLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <WeeklyPlannerCalendar
+                events={events}
+                weekStartDate={weekStartDate}
+                onDropTask={handleDropTask}
+                isCreating={isCreatingEvent}
+                pendingSlot={pendingSlot}
+              />
+            )}
+          </div>
         </div>
-      </main>
+
+        {/* Mobile task drawer hint */}
+        <div className="md:hidden fixed bottom-24 left-4 right-4 p-3 bg-card border rounded-lg shadow-lg text-center text-sm text-muted-foreground">
+          <p>Open the Tasks page to add tasks, then return here to schedule them.</p>
+        </div>
+      </div>
     </div>
   );
 }
