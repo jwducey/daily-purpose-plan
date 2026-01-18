@@ -50,8 +50,14 @@ serve(async (req) => {
       });
     }
 
-    // Include both read and write scopes for full calendar access
-    const scope = encodeURIComponent("https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events");
+    // Full access needed for creating/updating events
+    // (calendar.readonly is NOT sufficient for drag-and-drop scheduling)
+    const scope = encodeURIComponent(
+      [
+        "https://www.googleapis.com/auth/calendar",
+        "https://www.googleapis.com/auth/calendar.events",
+      ].join(" ")
+    );
     const state = claimsData.claims.sub; // Use user ID as state for verification
     
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
@@ -60,6 +66,7 @@ serve(async (req) => {
       `&response_type=code` +
       `&scope=${scope}` +
       `&access_type=offline` +
+      `&include_granted_scopes=true` +
       `&prompt=consent` +
       `&state=${state}`;
 
