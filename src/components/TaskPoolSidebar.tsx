@@ -1,0 +1,270 @@
+import { useMemo, useState } from 'react';
+import { Task, LIFE_AREAS } from '@/hooks/useTasks';
+import { DraggableTaskBlock } from './DraggableTaskBlock';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Filter, Clock, Flag, Sparkles, ChevronDown, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+
+interface TaskPoolSidebarProps {
+  tasks: Task[];
+  onDragStart: (e: React.DragEvent, task: Task) => void;
+  onDragEnd: (e: React.DragEvent) => void;
+  suggestedTasks?: Task[];
+  totalTime: number;
+}
+
+type SortBy = 'priority' | 'time' | 'area';
+type GroupBy = 'none' | 'area' | 'priority';
+
+export function TaskPoolSidebar({ 
+  tasks, 
+  onDragStart, 
+  onDragEnd, 
+  suggestedTasks = [],
+  totalTime 
+}: TaskPoolSidebarProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [groupBy, setGroupBy] = useState<GroupBy>('area');
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(LIFE_AREAS.map(a => a.value)));
+
+  const filteredTasks = useMemo(() => {
+    let filtered = tasks.filter(t => !t.completed);
+    
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(t => 
+        t.title.toLowerCase().includes(query) ||
+        t.life_area?.toLowerCase().includes(query)
+      );
+    }
+    
+    return filtered;
+  }, [tasks, searchQuery]);
+
+  const groupedTasks = useMemo(() => {
+    if (groupBy === 'none') {
+      return { 'All Tasks': filteredTasks };
+    }
+    
+    if (groupBy === 'area') {
+      const groups: Record<string, Task[]> = {};
+      LIFE_AREAS.forEach(area => {
+        groups[area.value] = [];
+      });
+      groups['unassigned'] = [];
+      
+      filteredTasks.forEach(task => {
+        const area = task.life_area || 'unassigned';
+        if (groups[area]) {
+          groups[area].push(task);
+        } else {
+          groups['unassigned'].push(task);
+        }
+      });
+      
+      // Remove empty groups
+      return Object.fromEntries(
+        Object.entries(groups).filter(([_, tasks]) => tasks.length > 0)
+      );
+    }
+    
+    if (groupBy === 'priority') {
+      const groups: Record<string, Task[]> = {
+        '1': [],
+        '2': [],
+        '3': [],
+        '4': [],
+      };
+      
+      filteredTasks.forEach(task => {
+        const priority = String(task.priority || 4);
+        groups[priority].push(task);
+      });
+      
+      return Object.fromEntries(
+        Object.entries(groups).filter(([_, tasks]) => tasks.length > 0)
+      );
+    }
+    
+    return { 'All Tasks': filteredTasks };
+  }, [filteredTasks, groupBy]);
+
+  const toggleGroup = (group: string) => {
+    const newExpanded = new Set(expandedGroups);
+    if (newExpanded.has(group)) {
+      newExpanded.delete(group);
+    } else {
+      newExpanded.add(group);
+    }
+    setExpandedGroups(newExpanded);
+  };
+
+  const getGroupLabel = (key: string) => {
+    if (groupBy === 'area') {
+      const area = LIFE_AREAS.find(a => a.value === key);
+      return area?.label || 'Unassigned';
+    }
+    if (groupBy === 'priority') {
+      const labels: Record<string, string> = {
+        '1': '🔴 Urgent',
+        '2': '🟠 High',
+        '3': '🟡 Medium',
+        '4': '🔵 Low',
+      };
+      return labels[key] || key;
+    }
+    return key;
+  };
+
+  const getGroupColor = (key: string) => {
+    if (groupBy === 'area') {
+      const area = LIFE_AREAS.find(a => a.value === key);
+      return area?.color || 'bg-muted';
+    }
+    return 'bg-muted';
+  };
+
+  const formatTotalTime = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours === 0) return `${mins}m`;
+    if (mins === 0) return `${hours}h`;
+    return `${hours}h ${mins}m`;
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-card border-r">
+      {/* Header */}
+      <div className="p-4 border-b space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-serif text-lg">Task Pool</h2>
+          <Badge variant="secondary" className="gap-1">
+            <Clock className="h-3 w-3" />
+            {formatTotalTime(totalTime)}
+          </Badge>
+        </div>
+        
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search tasks..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        
+        {/* Group by buttons */}
+        <div className="flex gap-1">
+          <Button 
+            variant={groupBy === 'area' ? 'secondary' : 'ghost'} 
+            size="sm"
+            onClick={() => setGroupBy('area')}
+            className="flex-1"
+          >
+            By Area
+          </Button>
+          <Button 
+            variant={groupBy === 'priority' ? 'secondary' : 'ghost'} 
+            size="sm"
+            onClick={() => setGroupBy('priority')}
+            className="flex-1"
+          >
+            By Priority
+          </Button>
+          <Button 
+            variant={groupBy === 'none' ? 'secondary' : 'ghost'} 
+            size="sm"
+            onClick={() => setGroupBy('none')}
+            className="flex-1"
+          >
+            All
+          </Button>
+        </div>
+      </div>
+
+      {/* AI Suggestions */}
+      {suggestedTasks.length > 0 && (
+        <div className="p-4 border-b bg-primary/5">
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">AI Suggestions</span>
+          </div>
+          <div className="space-y-2">
+            {suggestedTasks.slice(0, 3).map((task) => (
+              <DraggableTaskBlock
+                key={task.id}
+                task={task}
+                onDragStart={onDragStart}
+                onDragEnd={onDragEnd}
+                compact
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Task list */}
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-4">
+          {Object.entries(groupedTasks).map(([group, groupTasks]) => (
+            <Collapsible 
+              key={group} 
+              open={expandedGroups.has(group)}
+              onOpenChange={() => toggleGroup(group)}
+            >
+              <CollapsibleTrigger className="flex items-center gap-2 w-full py-1 text-sm font-medium hover:text-primary transition-colors">
+                {expandedGroups.has(group) ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+                <span className={cn(
+                  "w-2 h-2 rounded-full",
+                  getGroupColor(group)
+                )} />
+                <span>{getGroupLabel(group)}</span>
+                <Badge variant="outline" className="ml-auto h-5 text-xs">
+                  {groupTasks.length}
+                </Badge>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent>
+                <AnimatePresence mode="popLayout">
+                  <div className="space-y-2 mt-2 pl-4">
+                    {groupTasks.map((task) => (
+                      <DraggableTaskBlock
+                        key={task.id}
+                        task={task}
+                        onDragStart={onDragStart}
+                        onDragEnd={onDragEnd}
+                        compact
+                      />
+                    ))}
+                  </div>
+                </AnimatePresence>
+              </CollapsibleContent>
+            </Collapsible>
+          ))}
+          
+          {filteredTasks.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <p className="text-sm">No tasks to schedule</p>
+              <p className="text-xs mt-1">Add tasks in the Tasks page</p>
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}

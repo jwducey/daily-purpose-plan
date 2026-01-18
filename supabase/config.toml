@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.chief-of-staff]
 verify_jwt = false
+
+[functions.scheduling-suggestions]
+verify_jwt = false
