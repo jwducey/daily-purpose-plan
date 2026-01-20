@@ -40,6 +40,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         ...cat,
         id: `cat_${index}`,
         weeklyHoursActual: 0,
+        googleColorId: cat.googleColorId || '1',
       }));
       setCategories(initialCategories);
     }

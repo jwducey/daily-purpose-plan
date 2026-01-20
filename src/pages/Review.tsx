@@ -6,6 +6,7 @@ import { useTasks, Task, LIFE_AREAS } from '@/hooks/useTasks';
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
 import { useSchedulingSuggestions } from '@/hooks/useSchedulingSuggestions';
 import { useAuth } from '@/hooks/useAuth';
+import { useUser } from '@/contexts/UserContext';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -27,6 +28,7 @@ import { cn } from '@/lib/utils';
 
 export default function Review() {
   const { user } = useAuth();
+  const { categories } = useUser();
   const { tasks, createTask, updateTask, deleteTask } = useTasks();
   const { events, isConnected, isLoading: isCalendarLoading, fetchEvents } = useGoogleCalendar();
   const { suggestions, isLoading: isSuggestionsLoading, getSuggestions } = useSchedulingSuggestions();
@@ -96,13 +98,19 @@ export default function Review() {
       const duration = task.time_estimate_minutes || 60;
       const endTime = addMinutes(startTime, duration);
 
-      // Get life area for description
+      // Get life area for description and color
       const lifeArea = LIFE_AREAS.find(a => a.value === task.life_area);
       const description = [
         task.description,
         lifeArea ? `Life Area: ${lifeArea.label}` : null,
         `Priority: ${{ 1: 'Urgent', 2: 'High', 3: 'Medium', 4: 'Low' }[task.priority] || 'Normal'}`,
       ].filter(Boolean).join('\n');
+      
+      // Get color from matching category
+      const matchingCategory = categories.find(c => 
+        c.name.toLowerCase() === task.life_area?.toLowerCase()
+      );
+      const colorId = matchingCategory?.googleColorId || undefined;
 
       const { data, error } = await supabase.functions.invoke('google-calendar-create-event', {
         body: {
@@ -110,6 +118,7 @@ export default function Review() {
           description,
           start: startTime.toISOString(),
           end: endTime.toISOString(),
+          colorId,
         },
       });
 
