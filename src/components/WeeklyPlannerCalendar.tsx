@@ -5,6 +5,7 @@ import { Task } from '@/hooks/useTasks';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
+import { EditEventDialog } from './EditEventDialog';
 
 interface WeeklyPlannerCalendarProps {
   events: CalendarEvent[];
@@ -12,6 +13,8 @@ interface WeeklyPlannerCalendarProps {
   onDropTask: (task: Task, date: Date, hour: number) => Promise<void>;
   isCreating?: boolean;
   pendingSlot?: { date: Date; hour: number } | null;
+  onEventUpdated?: () => void;
+  onEventDeleted?: () => void;
 }
 
 const HOURS = Array.from({ length: 16 }, (_, i) => i + 6); // 6 AM to 10 PM
@@ -22,9 +25,13 @@ export function WeeklyPlannerCalendar({
   weekStartDate, 
   onDropTask, 
   isCreating,
-  pendingSlot 
+  pendingSlot,
+  onEventUpdated,
+  onEventDeleted
 }: WeeklyPlannerCalendarProps) {
   const [dragOverSlot, setDragOverSlot] = useState<{ dayIndex: number; hour: number } | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const dates = useMemo(() => {
     const start = startOfWeek(weekStartDate);
@@ -77,6 +84,19 @@ export function WeeklyPlannerCalendar({
     } catch (error) {
       console.error('Drop error:', error);
     }
+  };
+
+  const handleEventClick = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setEditDialogOpen(true);
+  };
+
+  const handleEventUpdated = () => {
+    onEventUpdated?.();
+  };
+
+  const handleEventDeleted = () => {
+    onEventDeleted?.();
   };
 
   return (
@@ -173,10 +193,11 @@ export function WeeklyPlannerCalendar({
                     return (
                       <motion.div
                         key={event.id}
-                        className="absolute left-0.5 right-0.5 rounded px-1.5 py-1 bg-muted/80 border border-border text-xs overflow-hidden"
+                        className="absolute left-0.5 right-0.5 rounded px-1.5 py-1 bg-muted/80 border border-border text-xs overflow-hidden cursor-pointer hover:bg-muted transition-colors"
                         style={{ top, height, minHeight: 20 }}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
+                        onClick={() => handleEventClick(event)}
                       >
                         <div className="font-medium truncate text-muted-foreground">
                           {event.summary}
@@ -214,6 +235,14 @@ export function WeeklyPlannerCalendar({
           })}
         </div>
       </div>
+
+      <EditEventDialog
+        event={selectedEvent}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onEventUpdated={handleEventUpdated}
+        onEventDeleted={handleEventDeleted}
+      />
     </div>
   );
 }

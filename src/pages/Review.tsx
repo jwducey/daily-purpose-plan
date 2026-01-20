@@ -311,6 +311,16 @@ export default function Review() {
                 onDropTask={handleDropTask}
                 isCreating={isCreatingEvent}
                 pendingSlot={pendingSlot}
+                onEventUpdated={() => {
+                  const timeMin = weekStartDate.toISOString();
+                  const timeMax = addWeeks(weekStartDate, 1).toISOString();
+                  fetchEvents(timeMin, timeMax);
+                }}
+                onEventDeleted={() => {
+                  const timeMin = weekStartDate.toISOString();
+                  const timeMax = addWeeks(weekStartDate, 1).toISOString();
+                  fetchEvents(timeMin, timeMax);
+                }}
               />
             )}
           </div>
