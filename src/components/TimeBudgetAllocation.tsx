@@ -13,6 +13,9 @@ export function TimeBudgetAllocation() {
   const isOverBudget = remaining < 0;
   const isComplete = remaining === 0;
 
+  // Sort categories by hours allocated (highest first)
+  const sortedCategories = [...categories].sort((a, b) => b.weeklyHoursTarget - a.weeklyHoursTarget);
+
   return (
     <div className="space-y-6">
       {/* Header with total */}
@@ -54,7 +57,7 @@ export function TimeBudgetAllocation() {
 
       {/* Category sliders */}
       <div className="grid gap-6">
-        {categories.map((category, index) => (
+        {sortedCategories.map((category, index) => (
           <motion.div
             key={category.id}
             initial={{ opacity: 0, x: -20 }}
