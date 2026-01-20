@@ -63,7 +63,6 @@ export function TimeBudgetAllocation() {
           >
             <CategorySlider
               category={category}
-              totalAllocated={totalAllocated}
               onValueChange={(value) => updateCategory(category.id, { weeklyHoursTarget: value })}
               onColorChange={(colorId) => updateCategory(category.id, { googleColorId: colorId })}
             />
