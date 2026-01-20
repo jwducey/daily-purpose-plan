@@ -71,6 +71,9 @@ export default {
         growth: "hsl(var(--growth))",
         warning: "hsl(var(--warning))",
         calm: "hsl(var(--calm))",
+        hourglass: {
+          sand: "hsl(var(--hourglass-sand))",
+        },
         category: {
           health: "hsl(var(--category-health))",
           community: "hsl(var(--category-community))",

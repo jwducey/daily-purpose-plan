@@ -47,6 +47,7 @@
     --growth: 150 45% 45%;
     --warning: 45 93% 47%;
     --calm: 210 40% 96%;
+    --hourglass-sand: 210 90% 55%;
     
     /* Category colors */
     --category-health: 142 70% 45%;
@@ -114,6 +115,7 @@
     --shadow-soft: 0 4px 20px -4px hsl(0 0% 0% / 0.3);
     --shadow-glow: 0 0 40px hsl(35 92% 50% / 0.15);
     --shadow-card: 0 2px 12px -2px hsl(0 0% 0% / 0.2);
+    --hourglass-sand: 210 90% 60%;
 
     --sidebar-background: 220 25% 10%;
     --sidebar-foreground: 220 15% 90%;
