@@ -21,10 +21,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { format, parseISO } from 'date-fns';
 import { Loader2, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useUser } from '@/contexts/UserContext';
+import { GOOGLE_CALENDAR_COLORS } from '@/types/user';
 
 interface EditEventDialogProps {
   event: CalendarEvent | null;
@@ -41,8 +50,10 @@ export function EditEventDialog({
   onEventUpdated,
   onEventDeleted 
 }: EditEventDialogProps) {
+  const { categories } = useUser();
   const [summary, setSummary] = useState('');
   const [description, setDescription] = useState('');
+  const [lifeArea, setLifeArea] = useState<string>('');
   const [startDate, setStartDate] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -51,10 +62,21 @@ export function EditEventDialog({
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  const selectedCategory = categories.find(c => c.id === lifeArea);
+  const colorId = selectedCategory?.googleColorId;
+
   useEffect(() => {
     if (event) {
       setSummary(event.summary || '');
       setDescription(event.description || '');
+      
+      // Try to match colorId to a category
+      if (event.colorId) {
+        const matchingCategory = categories.find(c => c.googleColorId === event.colorId);
+        setLifeArea(matchingCategory?.id || '');
+      } else {
+        setLifeArea('');
+      }
       
       if (!event.allDay) {
         const start = parseISO(event.start);
@@ -70,7 +92,7 @@ export function EditEventDialog({
         setEndTime('10:00');
       }
     }
-  }, [event]);
+  }, [event, categories]);
 
   const handleUpdate = async () => {
     if (!event || !summary.trim()) return;
@@ -87,6 +109,7 @@ export function EditEventDialog({
           description: description.trim() || undefined,
           start: startDateTime,
           end: endDateTime,
+          colorId: colorId || undefined,
         },
       });
 
@@ -145,6 +168,38 @@ export function EditEventDialog({
                 onChange={(e) => setSummary(e.target.value)}
                 placeholder="Event title"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="lifeArea">Life Area</Label>
+              <Select value={lifeArea} onValueChange={setLifeArea}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select life area (optional)">
+                    {selectedCategory && (
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: GOOGLE_CALENDAR_COLORS[selectedCategory.googleColorId]?.hex }}
+                        />
+                        {selectedCategory.name}
+                      </div>
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: GOOGLE_CALENDAR_COLORS[category.googleColorId]?.hex }}
+                        />
+                        {category.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

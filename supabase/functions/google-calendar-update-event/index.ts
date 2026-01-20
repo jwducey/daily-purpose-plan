@@ -67,7 +67,7 @@ serve(async (req) => {
     const userId = claimsData.claims.sub;
     console.log("User ID:", userId);
 
-    const { eventId, summary, description, start, end, location } = await req.json();
+    const { eventId, summary, description, start, end, location, colorId } = await req.json();
 
     if (!eventId) {
       return new Response(JSON.stringify({ error: "Missing required field: eventId" }), {
@@ -75,6 +75,8 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    
+    console.log("Updating event:", eventId, "colorId:", colorId);
 
     const adminSupabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -167,8 +169,13 @@ serve(async (req) => {
         timeZone: "UTC",
       };
     }
+    
+    // Add color if provided (Google Calendar colorId: 1-11)
+    if (colorId && colorId >= '1' && colorId <= '11') {
+      eventData.colorId = colorId;
+    }
 
-    console.log("Updating event:", eventId, JSON.stringify(eventData));
+    console.log("Event data:", JSON.stringify(eventData));
 
     const calendarResponse = await fetch(
       `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,

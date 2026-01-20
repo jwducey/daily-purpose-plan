@@ -11,9 +11,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { useUser } from '@/contexts/UserContext';
+import { GOOGLE_CALENDAR_COLORS } from '@/types/user';
 
 interface CreateEventDialogProps {
   open: boolean;
@@ -30,16 +39,21 @@ export function CreateEventDialog({
   defaultDate,
   defaultTime 
 }: CreateEventDialogProps) {
+  const { categories } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [summary, setSummary] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [lifeArea, setLifeArea] = useState<string>('');
   const [date, setDate] = useState(defaultDate ? format(defaultDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'));
   const [startTime, setStartTime] = useState(defaultTime || '09:00');
   const [endTime, setEndTime] = useState(defaultTime ? 
     format(new Date(`2000-01-01T${defaultTime}`).getTime() + 60 * 60 * 1000, 'HH:mm') : 
     '10:00'
   );
+
+  const selectedCategory = categories.find(c => c.id === lifeArea);
+  const colorId = selectedCategory?.googleColorId;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +83,7 @@ export function CreateEventDialog({
           location: location.trim() || undefined,
           start: startDateTime,
           end: endDateTime,
+          colorId: colorId || undefined,
         },
       });
 
@@ -86,6 +101,7 @@ export function CreateEventDialog({
       setSummary('');
       setDescription('');
       setLocation('');
+      setLifeArea('');
       setDate(format(new Date(), 'yyyy-MM-dd'));
       setStartTime('09:00');
       setEndTime('10:00');
@@ -121,6 +137,38 @@ export function CreateEventDialog({
                 onChange={(e) => setSummary(e.target.value)}
                 autoFocus
               />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="lifeArea">Life Area</Label>
+              <Select value={lifeArea} onValueChange={setLifeArea}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select life area (optional)">
+                    {selectedCategory && (
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: GOOGLE_CALENDAR_COLORS[selectedCategory.googleColorId]?.hex }}
+                        />
+                        {selectedCategory.name}
+                      </div>
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: GOOGLE_CALENDAR_COLORS[category.googleColorId]?.hex }}
+                        />
+                        {category.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid gap-2">
