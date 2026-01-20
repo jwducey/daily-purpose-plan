@@ -1,19 +1,25 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { format, parseISO, startOfDay, addDays, isSameDay, differenceInMinutes, setHours, setMinutes, isWithinInterval } from 'date-fns';
 import { CalendarEvent } from '@/hooks/useGoogleCalendar';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { EditEventDialog } from './EditEventDialog';
 
 interface CalendarMultiDayViewProps {
   events: CalendarEvent[];
   startDate: Date;
   numberOfDays: number;
+  onEventUpdated?: () => void;
+  onEventDeleted?: () => void;
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const HOUR_HEIGHT = 48; // pixels per hour
 
-export function CalendarMultiDayView({ events, startDate, numberOfDays }: CalendarMultiDayViewProps) {
+export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventUpdated, onEventDeleted }: CalendarMultiDayViewProps) {
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+
   const dates = useMemo(() => {
     return Array.from({ length: numberOfDays }, (_, i) => addDays(startDate, i));
   }, [startDate, numberOfDays]);
@@ -78,6 +84,19 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays }: Calend
     return event.colorId && colors[event.colorId] ? colors[event.colorId] : 'bg-primary/90';
   };
 
+  const handleEventClick = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setEditDialogOpen(true);
+  };
+
+  const handleEventUpdated = () => {
+    onEventUpdated?.();
+  };
+
+  const handleEventDeleted = () => {
+    onEventDeleted?.();
+  };
+
   const currentTimePosition = useMemo(() => {
     const now = new Date();
     const todayIndex = dates.findIndex(d => isSameDay(d, now));
@@ -137,9 +156,10 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays }: Calend
                 <div
                   key={event.id}
                   className={cn(
-                    "text-xs px-1 py-0.5 rounded truncate text-white",
+                    "text-xs px-1 py-0.5 rounded truncate text-white cursor-pointer hover:opacity-80 transition-opacity",
                     getEventColor(event)
                   )}
+                  onClick={() => handleEventClick(event)}
                 >
                   {event.summary}
                 </div>
@@ -202,6 +222,7 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays }: Calend
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       whileHover={{ scale: 1.02 }}
+                      onClick={() => handleEventClick(event)}
                     >
                       <div className="font-medium truncate">{event.summary}</div>
                       {height > 32 && (
@@ -228,6 +249,14 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays }: Calend
           })}
         </div>
       </div>
+
+      <EditEventDialog
+        event={selectedEvent}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onEventUpdated={handleEventUpdated}
+        onEventDeleted={handleEventDeleted}
+      />
     </div>
   );
 }

@@ -417,6 +417,8 @@ export default function Calendar() {
                 events={events}
                 startDate={viewStartDate}
                 numberOfDays={numberOfDays}
+                onEventUpdated={handleRefresh}
+                onEventDeleted={handleRefresh}
               />
             )}
           </div>
