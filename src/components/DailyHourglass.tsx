@@ -44,7 +44,8 @@ export function DailyHourglass({ elapsedSeconds, totalSeconds }: DailyHourglassP
           <motion.rect
             x="10"
             width="60"
-            className="fill-hourglass-sand"
+            fill="hsl(210 90% 55%)"
+            initial={{ y: topSandY, height: topSandHeight }}
             animate={{ 
               y: topSandY,
               height: topSandHeight 
@@ -58,7 +59,8 @@ export function DailyHourglass({ elapsedSeconds, totalSeconds }: DailyHourglassP
           <motion.rect
             x="10"
             width="60"
-            className="fill-hourglass-sand"
+            fill="hsl(210 90% 55%)"
+            initial={{ y: bottomSandY, height: bottomSandHeight }}
             animate={{ 
               y: bottomSandY,
               height: bottomSandHeight 
@@ -76,9 +78,9 @@ export function DailyHourglass({ elapsedSeconds, totalSeconds }: DailyHourglassP
               y1="56"
               x2="40"
               y2="64"
+              stroke="hsl(210 90% 55%)"
               strokeWidth="3"
               strokeLinecap="round"
-              className="stroke-hourglass-sand"
               animate={{ opacity: [0.6, 1, 0.6] }}
               transition={{ duration: 0.4, repeat: Infinity }}
             />
@@ -87,7 +89,7 @@ export function DailyHourglass({ elapsedSeconds, totalSeconds }: DailyHourglassP
               cx="40"
               cy="60"
               r="1.5"
-              className="fill-hourglass-sand"
+              fill="hsl(210 90% 55%)"
               animate={{ 
                 cy: [58, 64],
                 opacity: [1, 0]
