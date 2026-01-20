@@ -135,13 +135,17 @@ export function useGoogleCalendar() {
     }
   };
 
-  const fetchEvents = async (timeMin?: string, timeMax?: string) => {
+  const fetchEvents = useCallback(async (timeMin?: string, timeMax?: string) => {
     try {
-      const params = new URLSearchParams();
-      if (timeMin) params.set('timeMin', timeMin);
-      if (timeMax) params.set('timeMax', timeMax);
+      // Build query string for time range filtering
+      const queryParams: Record<string, string> = {};
+      if (timeMin) queryParams.timeMin = timeMin;
+      if (timeMax) queryParams.timeMax = timeMax;
       
-      const { data, error } = await supabase.functions.invoke('google-calendar-events', {
+      const queryString = new URLSearchParams(queryParams).toString();
+      const functionPath = queryString ? `google-calendar-events?${queryString}` : 'google-calendar-events';
+      
+      const { data, error } = await supabase.functions.invoke(functionPath, {
         method: 'GET',
       });
 
@@ -158,7 +162,7 @@ export function useGoogleCalendar() {
       console.error('Error fetching events:', error);
       return [];
     }
-  };
+  }, []);
 
   return {
     isConnected,
