@@ -59,6 +59,82 @@ export function WeeklyPlannerCalendar({
     return { top, height };
   };
 
+  // Calculate overlapping event positions
+  const getOverlapLayout = useCallback((dayEvents: CalendarEvent[]) => {
+    if (dayEvents.length === 0) return [];
+
+    // Sort events by start time, then by duration (longer first)
+    const sortedEvents = [...dayEvents].sort((a, b) => {
+      const aStart = parseISO(a.start);
+      const bStart = parseISO(b.start);
+      if (aStart.getTime() !== bStart.getTime()) {
+        return aStart.getTime() - bStart.getTime();
+      }
+      const aDuration = differenceInMinutes(parseISO(a.end), aStart);
+      const bDuration = differenceInMinutes(parseISO(b.end), bStart);
+      return bDuration - aDuration;
+    });
+
+    const columns: CalendarEvent[][] = [];
+    const eventColumns: Map<string, { column: number; totalColumns: number }> = new Map();
+
+    for (const event of sortedEvents) {
+      const eventStart = parseISO(event.start);
+      const eventEnd = parseISO(event.end);
+
+      // Find a column where this event doesn't overlap with existing events
+      let placedColumn = -1;
+      for (let col = 0; col < columns.length; col++) {
+        const columnEvents = columns[col];
+        const hasOverlap = columnEvents.some(existingEvent => {
+          const existingStart = parseISO(existingEvent.start);
+          const existingEnd = parseISO(existingEvent.end);
+          return eventStart < existingEnd && eventEnd > existingStart;
+        });
+
+        if (!hasOverlap) {
+          placedColumn = col;
+          break;
+        }
+      }
+
+      if (placedColumn === -1) {
+        placedColumn = columns.length;
+        columns.push([]);
+      }
+
+      columns[placedColumn].push(event);
+      eventColumns.set(event.id, { column: placedColumn, totalColumns: 0 });
+    }
+
+    // Update total columns for each event based on overlapping groups
+    for (const event of sortedEvents) {
+      const eventStart = parseISO(event.start);
+      const eventEnd = parseISO(event.end);
+
+      // Find max column index among overlapping events
+      let maxColumn = 0;
+      for (const otherEvent of sortedEvents) {
+        const otherStart = parseISO(otherEvent.start);
+        const otherEnd = parseISO(otherEvent.end);
+        
+        if (eventStart < otherEnd && eventEnd > otherStart) {
+          const otherCol = eventColumns.get(otherEvent.id)!.column;
+          maxColumn = Math.max(maxColumn, otherCol);
+        }
+      }
+
+      const info = eventColumns.get(event.id)!;
+      info.totalColumns = maxColumn + 1;
+    }
+
+    return sortedEvents.map(event => ({
+      event,
+      ...getEventPosition(event),
+      ...eventColumns.get(event.id)!
+    }));
+  }, []);
+
   const handleDragOver = (e: React.DragEvent, dayIndex: number, hour: number) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
@@ -147,6 +223,7 @@ export function WeeklyPlannerCalendar({
           {/* Day columns with drop zones */}
           {dates.map((date, dayIndex) => {
             const dayEvents = getEventsForDay(date);
+            const eventLayout = getOverlapLayout(dayEvents);
             const isToday = isSameDay(date, new Date());
 
             return (
@@ -186,17 +263,26 @@ export function WeeklyPlannerCalendar({
                   );
                 })}
 
-                {/* Existing calendar events */}
+                {/* Existing calendar events with overlap handling */}
                 <AnimatePresence>
-                  {dayEvents.map((event) => {
-                    const { top, height } = getEventPosition(event);
+                  {eventLayout.map(({ event, top, height, column, totalColumns }) => {
+                    const width = totalColumns > 1 ? `calc(${100 / totalColumns}% - 2px)` : 'calc(100% - 4px)';
+                    const left = totalColumns > 1 ? `calc(${(column / totalColumns) * 100}% + 1px)` : '2px';
+                    
                     return (
                       <motion.div
                         key={event.id}
-                        className="absolute left-0.5 right-0.5 rounded px-1.5 py-1 bg-muted/80 border border-border text-xs overflow-hidden cursor-pointer hover:bg-muted transition-colors"
-                        style={{ top, height, minHeight: 20 }}
+                        className="absolute rounded px-1.5 py-1 bg-muted/80 border border-border text-xs overflow-hidden cursor-pointer hover:bg-muted transition-colors"
+                        style={{ 
+                          top, 
+                          height, 
+                          minHeight: 20,
+                          width,
+                          left,
+                        }}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
+                        whileHover={{ zIndex: 10 }}
                         onClick={() => handleEventClick(event)}
                       >
                         <div className="font-medium truncate text-muted-foreground">
