@@ -70,7 +70,7 @@ serve(async (req) => {
     console.log("User ID:", userId);
 
     // Parse request body
-    const { summary, description, start, end, location } = await req.json();
+    const { summary, description, start, end, location, colorId } = await req.json();
 
     if (!summary || !start || !end) {
       return new Response(JSON.stringify({ error: "Missing required fields: summary, start, end" }), {
@@ -78,6 +78,8 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    
+    console.log("Event details - summary:", summary, "colorId:", colorId);
 
     // Get user's Google OAuth tokens using service role
     const adminSupabase = createClient(
@@ -174,7 +176,10 @@ serve(async (req) => {
       eventData.location = location;
     }
 
-    console.log("Creating event:", JSON.stringify(eventData));
+    // Add color if provided (Google Calendar colorId: 1-11)
+    if (colorId && colorId >= '1' && colorId <= '11') {
+      eventData.colorId = colorId;
+    }
 
     const calendarResponse = await fetch(
       "https://www.googleapis.com/calendar/v3/calendars/primary/events",
