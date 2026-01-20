@@ -9,13 +9,13 @@ export function DailyHourglass({ elapsedSeconds, totalSeconds }: DailyHourglassP
   const progress = Math.min(Math.max(elapsedSeconds / totalSeconds, 0), 1);
   
   // Top bulb: y ranges from 12 (top) to 58 (pinch)
-  // Height of top bulb area = 46 pixels
+  // Sand settles at BOTTOM of top bulb (like gravity), level drops from above
   const topBulbHeight = 46;
   const topSandHeight = (1 - progress) * topBulbHeight; // Remaining time
-  const topSandY = 12; // Always anchored at top
+  const topSandY = 58 - topSandHeight; // Anchored at bottom of bulb (pinch), grows upward
   
   // Bottom bulb: y ranges from 62 (pinch) to 108 (bottom)
-  // Height of bottom bulb area = 46 pixels
+  // Sand settles at bottom, fills upward
   const bottomBulbHeight = 46;
   const bottomSandHeight = progress * bottomBulbHeight; // Elapsed time
   const bottomSandY = 108 - bottomSandHeight; // Rises from bottom
@@ -39,19 +39,21 @@ export function DailyHourglass({ elapsedSeconds, totalSeconds }: DailyHourglassP
           </clipPath>
         </defs>
 
-        {/* Top sand - shows REMAINING time (depletes as day progresses) */}
+        {/* Top sand - shows REMAINING time (sand settles at bottom, level drops from top) */}
         <g clipPath="url(#topBulbClip)">
           <motion.rect
             x="10"
-            y={topSandY}
             width="60"
-            animate={{ height: topSandHeight }}
             className="fill-hourglass-sand"
+            animate={{ 
+              y: topSandY,
+              height: topSandHeight 
+            }}
             transition={{ duration: 0.5, ease: "easeOut" }}
           />
         </g>
 
-        {/* Bottom sand - shows ELAPSED time (fills as day progresses) */}
+        {/* Bottom sand - shows ELAPSED time (fills from bottom up) */}
         <g clipPath="url(#bottomBulbClip)">
           <motion.rect
             x="10"
@@ -65,20 +67,34 @@ export function DailyHourglass({ elapsedSeconds, totalSeconds }: DailyHourglassP
           />
         </g>
 
-        {/* Falling sand stream in the middle */}
-        {progress > 0.01 && progress < 0.99 && (
-          <motion.line
-            x1="40"
-            y1="58"
-            x2="40"
-            y2="62"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            className="text-hourglass-sand"
-            animate={{ opacity: [0.4, 1, 0.4] }}
-            transition={{ duration: 0.6, repeat: Infinity }}
-          />
+        {/* Falling sand stream - visible when there's sand to fall */}
+        {topSandHeight > 1 && (
+          <motion.g>
+            {/* Main stream */}
+            <motion.line
+              x1="40"
+              y1="56"
+              x2="40"
+              y2="64"
+              strokeWidth="3"
+              strokeLinecap="round"
+              className="stroke-hourglass-sand"
+              animate={{ opacity: [0.6, 1, 0.6] }}
+              transition={{ duration: 0.4, repeat: Infinity }}
+            />
+            {/* Particles effect */}
+            <motion.circle
+              cx="40"
+              cy="60"
+              r="1.5"
+              className="fill-hourglass-sand"
+              animate={{ 
+                cy: [58, 64],
+                opacity: [1, 0]
+              }}
+              transition={{ duration: 0.3, repeat: Infinity }}
+            />
+          </motion.g>
         )}
 
         {/* Glass frame - top bulb */}
