@@ -286,8 +286,8 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
 
                 {/* Events with overlap handling */}
                 {eventLayout.map(({ event, top, height, column, totalColumns }) => {
-                  const width = totalColumns > 1 ? `calc(${100 / totalColumns}% - 2px)` : 'calc(100% - 4px)';
-                  const left = totalColumns > 1 ? `calc(${(column / totalColumns) * 100}% + 1px)` : '2px';
+                  const widthPercent = 100 / totalColumns;
+                  const leftPercent = column * widthPercent;
                   
                   return (
                     <motion.div
@@ -301,12 +301,13 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
                         top, 
                         height, 
                         minHeight: 18,
-                        width,
-                        left,
+                        width: `calc(${widthPercent}% - 4px)`,
+                        left: `calc(${leftPercent}% + 2px)`,
+                        zIndex: column + 1,
                       }}
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      whileHover={{ scale: 1.02, zIndex: 10 }}
+                      whileHover={{ zIndex: 20 }}
                       onClick={() => handleEventClick(event)}
                     >
                       <div className="font-medium truncate">{event.summary}</div>

@@ -266,8 +266,8 @@ export function WeeklyPlannerCalendar({
                 {/* Existing calendar events with overlap handling */}
                 <AnimatePresence>
                   {eventLayout.map(({ event, top, height, column, totalColumns }) => {
-                    const width = totalColumns > 1 ? `calc(${100 / totalColumns}% - 2px)` : 'calc(100% - 4px)';
-                    const left = totalColumns > 1 ? `calc(${(column / totalColumns) * 100}% + 1px)` : '2px';
+                    const widthPercent = 100 / totalColumns;
+                    const leftPercent = column * widthPercent;
                     
                     return (
                       <motion.div
@@ -277,12 +277,13 @@ export function WeeklyPlannerCalendar({
                           top, 
                           height, 
                           minHeight: 20,
-                          width,
-                          left,
+                          width: `calc(${widthPercent}% - 4px)`,
+                          left: `calc(${leftPercent}% + 2px)`,
+                          zIndex: column + 1,
                         }}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        whileHover={{ zIndex: 10 }}
+                        whileHover={{ zIndex: 20 }}
                         onClick={() => handleEventClick(event)}
                       >
                         <div className="font-medium truncate text-muted-foreground">
