@@ -32,7 +32,6 @@ interface CategorySliderProps {
   category: TimeBudgetCategory;
   onValueChange: (value: number) => void;
   onColorChange: (colorId: string) => void;
-  totalAllocated: number;
   maxTotal?: number;
 }
 
@@ -40,12 +39,10 @@ export function CategorySlider({
   category, 
   onValueChange, 
   onColorChange,
-  totalAllocated,
   maxTotal = 168 
 }: CategorySliderProps) {
   const Icon = iconMap[category.icon] || Target;
   const percentage = ((category.weeklyHoursTarget / maxTotal) * 100).toFixed(1);
-  const remaining = maxTotal - totalAllocated + category.weeklyHoursTarget;
   const selectedColor = GOOGLE_CALENDAR_COLORS[category.googleColorId] || GOOGLE_CALENDAR_COLORS['1'];
   
   return (
@@ -119,10 +116,11 @@ export function CategorySlider({
       
       <Slider
         value={[category.weeklyHoursTarget]}
-        max={Math.min(remaining, maxTotal)}
+        max={maxTotal}
         min={0}
         step={1}
         onValueChange={(values) => onValueChange(values[0])}
+        trackColor={selectedColor.hex}
         className="cursor-pointer"
       />
     </div>
