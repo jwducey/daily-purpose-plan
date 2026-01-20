@@ -57,11 +57,14 @@ export type Database = {
           created_at: string
           description: string | null
           due_date: string | null
+          google_event_id: string | null
           id: string
+          is_recurring: boolean | null
           labels: string[] | null
           life_area: string | null
           priority: number | null
           project: string | null
+          scheduled_at: string | null
           sort_order: number | null
           time_estimate_minutes: number | null
           title: string
@@ -74,11 +77,14 @@ export type Database = {
           created_at?: string
           description?: string | null
           due_date?: string | null
+          google_event_id?: string | null
           id?: string
+          is_recurring?: boolean | null
           labels?: string[] | null
           life_area?: string | null
           priority?: number | null
           project?: string | null
+          scheduled_at?: string | null
           sort_order?: number | null
           time_estimate_minutes?: number | null
           title: string
@@ -91,11 +97,14 @@ export type Database = {
           created_at?: string
           description?: string | null
           due_date?: string | null
+          google_event_id?: string | null
           id?: string
+          is_recurring?: boolean | null
           labels?: string[] | null
           life_area?: string | null
           priority?: number | null
           project?: string | null
+          scheduled_at?: string | null
           sort_order?: number | null
           time_estimate_minutes?: number | null
           title?: string

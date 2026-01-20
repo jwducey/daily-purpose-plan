@@ -34,38 +34,44 @@ export default function Tasks() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [showAssistant, setShowAssistant] = useState(true);
 
+  // Filter out scheduled tasks from the main view
+  const unscheduledTasks = useMemo(() => 
+    tasks.filter(t => !t.scheduled_at),
+    [tasks]
+  );
+
   const filteredTasks = useMemo(() => {
-    let filtered = tasks;
+    let filtered = unscheduledTasks;
 
     switch (filter) {
       case 'today':
-        filtered = tasks.filter(t => 
+        filtered = unscheduledTasks.filter(t => 
           !t.completed && t.due_date && isToday(parseISO(t.due_date))
         );
         break;
       case 'upcoming':
-        filtered = tasks.filter(t => 
+        filtered = unscheduledTasks.filter(t => 
           !t.completed && t.due_date && (isToday(parseISO(t.due_date)) || isTomorrow(parseISO(t.due_date)) || isThisWeek(parseISO(t.due_date)))
         );
         break;
       case 'completed':
-        filtered = tasks.filter(t => t.completed);
+        filtered = unscheduledTasks.filter(t => t.completed);
         break;
       default:
-        filtered = tasks.filter(t => !t.completed);
+        filtered = unscheduledTasks.filter(t => !t.completed);
     }
 
     return filtered;
-  }, [tasks, filter]);
+  }, [unscheduledTasks, filter]);
 
   const completedTasks = useMemo(() => 
-    tasks.filter(t => t.completed),
-    [tasks]
+    unscheduledTasks.filter(t => t.completed),
+    [unscheduledTasks]
   );
 
   const activeTasks = useMemo(() =>
-    tasks.filter(t => !t.completed),
-    [tasks]
+    unscheduledTasks.filter(t => !t.completed),
+    [unscheduledTasks]
   );
 
   if (!user) {
