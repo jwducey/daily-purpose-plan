@@ -6,92 +6,115 @@ interface DailyHourglassProps {
 }
 
 export function DailyHourglass({ elapsedSeconds, totalSeconds }: DailyHourglassProps) {
-  const progress = Math.min(elapsedSeconds / totalSeconds, 1);
+  const progress = Math.min(Math.max(elapsedSeconds / totalSeconds, 0), 1);
+  
+  // Top sand level: starts full (at top), depletes as time passes
+  // Range from 15 (full) to 55 (empty, near the pinch)
+  const topSandLevel = 15 + (progress * 40);
+  
+  // Bottom sand level: starts empty (at bottom), fills as time passes  
+  // Range from 105 (empty) to 65 (full, near the pinch)
+  const bottomSandLevel = 105 - (progress * 40);
 
   return (
     <div className="relative w-16 h-24 md:w-20 md:h-32">
-      {/* Hourglass frame */}
       <svg
         viewBox="0 0 80 120"
         className="w-full h-full"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Glass outline */}
-        <path
-          d="M10 10 L10 15 Q10 45 40 60 Q10 75 10 105 L10 110 L70 110 L70 105 Q70 75 40 60 Q70 45 70 15 L70 10 Z"
-          stroke="currentColor"
-          strokeWidth="3"
-          className="text-muted-foreground/40"
-          fill="transparent"
-        />
-        
-        {/* Top sand container clip path */}
         <defs>
-          <clipPath id="topSandClip">
-            <path d="M12 12 L12 15 Q12 43 40 58 L40 58 Q68 43 68 15 L68 12 Z" />
+          {/* Clip path for top bulb */}
+          <clipPath id="topBulbClip">
+            <path d="M15 12 L65 12 L65 15 Q65 50 40 58 Q15 50 15 15 Z" />
           </clipPath>
-          <clipPath id="bottomSandClip">
-            <path d="M12 62 Q12 77 12 108 L68 108 Q68 77 68 62 Q40 77 40 62 Z" />
+          {/* Clip path for bottom bulb */}
+          <clipPath id="bottomBulbClip">
+            <path d="M40 62 Q65 70 65 105 L65 108 L15 108 L15 105 Q15 70 40 62 Z" />
           </clipPath>
         </defs>
-        
-        {/* Top sand */}
-        <g clipPath="url(#topSandClip)">
+
+        {/* Top sand - remaining time */}
+        <g clipPath="url(#topBulbClip)">
           <motion.rect
             x="10"
-            y="10"
             width="60"
             height="50"
             className="fill-hourglass-sand"
-            initial={{ y: 10 }}
-            animate={{ 
-              y: 10 + (50 * progress),
-              height: Math.max(0, 50 - (50 * progress))
-            }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
+            animate={{ y: topSandLevel }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
           />
         </g>
-        
-        {/* Bottom sand */}
-        <g clipPath="url(#bottomSandClip)">
+
+        {/* Bottom sand - elapsed time */}
+        <g clipPath="url(#bottomBulbClip)">
           <motion.rect
             x="10"
             width="60"
+            height="50"
             className="fill-hourglass-sand"
-            initial={{ y: 108, height: 0 }}
-            animate={{ 
-              y: 108 - (46 * progress),
-              height: 46 * progress
-            }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
+            animate={{ y: bottomSandLevel }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
           />
         </g>
-        
-        {/* Falling sand stream */}
-        {progress < 1 && (
+
+        {/* Falling sand stream in the middle */}
+        {progress > 0 && progress < 1 && (
           <motion.line
             x1="40"
             y1="58"
             x2="40"
-            y2={62 + (46 * (1 - progress))}
+            y2="62"
             stroke="currentColor"
             strokeWidth="2"
+            strokeLinecap="round"
             className="text-hourglass-sand"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0.3, 1, 0.3] }}
-            transition={{ duration: 0.5, repeat: Infinity }}
+            animate={{ opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 0.6, repeat: Infinity }}
           />
         )}
-        
+
+        {/* Glass frame - top bulb */}
+        <path
+          d="M15 12 L15 15 Q15 50 40 58"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          className="text-muted-foreground/50"
+        />
+        <path
+          d="M65 12 L65 15 Q65 50 40 58"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          className="text-muted-foreground/50"
+        />
+
+        {/* Glass frame - bottom bulb */}
+        <path
+          d="M40 62 Q15 70 15 105 L15 108"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          className="text-muted-foreground/50"
+        />
+        <path
+          d="M40 62 Q65 70 65 105 L65 108"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          className="text-muted-foreground/50"
+        />
+
         {/* Top cap */}
-        <rect x="5" y="5" width="70" height="6" rx="2" className="fill-muted-foreground/60" />
+        <rect x="10" y="8" width="60" height="5" rx="2" className="fill-muted-foreground/70" />
         
         {/* Bottom cap */}
-        <rect x="5" y="109" width="70" height="6" rx="2" className="fill-muted-foreground/60" />
-        
-        {/* Center pinch decoration */}
-        <ellipse cx="40" cy="60" rx="8" ry="4" className="fill-muted-foreground/30" />
+        <rect x="10" y="107" width="60" height="5" rx="2" className="fill-muted-foreground/70" />
+
+        {/* Center pinch ring */}
+        <ellipse cx="40" cy="60" rx="6" ry="3" className="fill-muted-foreground/40" />
       </svg>
     </div>
   );
