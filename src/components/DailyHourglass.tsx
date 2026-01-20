@@ -8,13 +8,17 @@ interface DailyHourglassProps {
 export function DailyHourglass({ elapsedSeconds, totalSeconds }: DailyHourglassProps) {
   const progress = Math.min(Math.max(elapsedSeconds / totalSeconds, 0), 1);
   
-  // Top sand level: starts full (at top), depletes as time passes
-  // Range from 15 (full) to 55 (empty, near the pinch)
-  const topSandLevel = 15 + (progress * 40);
+  // Top bulb: y ranges from 12 (top) to 58 (pinch)
+  // Height of top bulb area = 46 pixels
+  const topBulbHeight = 46;
+  const topSandHeight = (1 - progress) * topBulbHeight; // Remaining time
+  const topSandY = 12; // Always anchored at top
   
-  // Bottom sand level: starts empty (at bottom), fills as time passes  
-  // Range from 105 (empty) to 65 (full, near the pinch)
-  const bottomSandLevel = 105 - (progress * 40);
+  // Bottom bulb: y ranges from 62 (pinch) to 108 (bottom)
+  // Height of bottom bulb area = 46 pixels
+  const bottomBulbHeight = 46;
+  const bottomSandHeight = progress * bottomBulbHeight; // Elapsed time
+  const bottomSandY = 108 - bottomSandHeight; // Rises from bottom
 
   return (
     <div className="relative w-16 h-24 md:w-20 md:h-32">
@@ -25,42 +29,44 @@ export function DailyHourglass({ elapsedSeconds, totalSeconds }: DailyHourglassP
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          {/* Clip path for top bulb */}
+          {/* Clip path for top bulb - curved shape */}
           <clipPath id="topBulbClip">
             <path d="M15 12 L65 12 L65 15 Q65 50 40 58 Q15 50 15 15 Z" />
           </clipPath>
-          {/* Clip path for bottom bulb */}
+          {/* Clip path for bottom bulb - curved shape */}
           <clipPath id="bottomBulbClip">
             <path d="M40 62 Q65 70 65 105 L65 108 L15 108 L15 105 Q15 70 40 62 Z" />
           </clipPath>
         </defs>
 
-        {/* Top sand - remaining time */}
+        {/* Top sand - shows REMAINING time (depletes as day progresses) */}
         <g clipPath="url(#topBulbClip)">
           <motion.rect
             x="10"
+            y={topSandY}
             width="60"
-            height="50"
+            animate={{ height: topSandHeight }}
             className="fill-hourglass-sand"
-            animate={{ y: topSandLevel }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
           />
         </g>
 
-        {/* Bottom sand - elapsed time */}
+        {/* Bottom sand - shows ELAPSED time (fills as day progresses) */}
         <g clipPath="url(#bottomBulbClip)">
           <motion.rect
             x="10"
             width="60"
-            height="50"
             className="fill-hourglass-sand"
-            animate={{ y: bottomSandLevel }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            animate={{ 
+              y: bottomSandY,
+              height: bottomSandHeight 
+            }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
           />
         </g>
 
         {/* Falling sand stream in the middle */}
-        {progress > 0 && progress < 1 && (
+        {progress > 0.01 && progress < 0.99 && (
           <motion.line
             x1="40"
             y1="58"
