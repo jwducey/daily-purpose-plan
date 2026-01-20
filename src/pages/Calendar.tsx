@@ -139,12 +139,17 @@ export default function Calendar() {
     handleRefresh();
   };
 
+  // Filter tasks to show only unscheduled
+  const unscheduledTasks = useMemo(() => {
+    return tasks.filter(t => !t.completed && !t.scheduled_at);
+  }, [tasks]);
+
   // Calculate total time of unscheduled tasks
   const totalTime = useMemo(() => {
-    return tasks
-      .filter(t => !t.completed && t.time_estimate_minutes)
+    return unscheduledTasks
+      .filter(t => t.time_estimate_minutes)
       .reduce((sum, t) => sum + (t.time_estimate_minutes || 0), 0);
-  }, [tasks]);
+  }, [unscheduledTasks]);
 
   // Drag and drop handlers for tasks
   const handleDragStart = (e: React.DragEvent, task: Task) => {
@@ -202,6 +207,14 @@ export default function Calendar() {
       }
 
       toast.success(`Scheduled "${task.title}" for ${format(startTime, 'EEE h:mm a')}`);
+      
+      // Mark task as scheduled
+      const eventId = data?.id || data?.eventId || null;
+      await updateTask(task.id, {
+        scheduled_at: new Date().toISOString(),
+        google_event_id: eventId,
+      });
+      
       handleRefresh();
     } catch (error) {
       console.error('Error creating event:', error);
@@ -417,7 +430,7 @@ export default function Calendar() {
               exit={{ width: 0, opacity: 0 }}
             >
               <TaskPoolSidebar
-                tasks={tasks}
+                tasks={unscheduledTasks}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
                 onCreateTask={createTask}

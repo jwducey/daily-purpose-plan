@@ -10,7 +10,8 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
-  Target
+  Target,
+  Repeat
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -47,6 +48,7 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
   const [priority, setPriority] = useState(4);
   const [timeEstimate, setTimeEstimate] = useState<number | undefined>();
   const [lifeArea, setLifeArea] = useState<string | undefined>();
+  const [isRecurring, setIsRecurring] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
 
@@ -62,6 +64,7 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
         priority,
         time_estimate_minutes: timeEstimate,
         life_area: lifeArea,
+        is_recurring: isRecurring,
       });
       
       // Reset form
@@ -71,6 +74,7 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
       setPriority(4);
       setTimeEstimate(undefined);
       setLifeArea(undefined);
+      setIsRecurring(false);
       setShowDetails(false);
       setIsExpanded(false);
     } finally {
@@ -257,6 +261,17 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
             </div>
           </PopoverContent>
         </Popover>
+
+        <Button
+          variant={isRecurring ? "secondary" : "outline"}
+          size="sm"
+          onClick={() => setIsRecurring(!isRecurring)}
+          className={cn(isRecurring && "text-primary")}
+          title="Recurring task - will repopulate after scheduled event is completed"
+        >
+          <Repeat className="h-4 w-4 mr-1" />
+          Recurring
+        </Button>
 
         <Button
           variant="ghost"

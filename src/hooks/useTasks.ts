@@ -39,6 +39,9 @@ export interface Task {
   life_area: string | null;
   created_at: string;
   updated_at: string;
+  scheduled_at: string | null;
+  is_recurring: boolean;
+  google_event_id: string | null;
 }
 
 export interface CreateTaskInput {
@@ -50,6 +53,7 @@ export interface CreateTaskInput {
   labels?: string[];
   time_estimate_minutes?: number;
   life_area?: string;
+  is_recurring?: boolean;
 }
 
 export interface UpdateTaskInput {
@@ -63,6 +67,9 @@ export interface UpdateTaskInput {
   sort_order?: number;
   time_estimate_minutes?: number | null;
   life_area?: string | null;
+  scheduled_at?: string | null;
+  is_recurring?: boolean;
+  google_event_id?: string | null;
 }
 
 export function useTasks() {
@@ -113,6 +120,7 @@ export function useTasks() {
           labels: input.labels || null,
           time_estimate_minutes: input.time_estimate_minutes || null,
           life_area: input.life_area || null,
+          is_recurring: input.is_recurring || false,
         })
         .select()
         .single();

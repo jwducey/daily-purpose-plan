@@ -37,20 +37,25 @@ export default function Review() {
   const [pendingSlot, setPendingSlot] = useState<{ date: Date; hour: number } | null>(null);
   const [showSidebar, setShowSidebar] = useState(true);
 
-  // Calculate total time of unscheduled tasks
-  const totalTime = useMemo(() => {
-    return tasks
-      .filter(t => !t.completed && t.time_estimate_minutes)
-      .reduce((sum, t) => sum + (t.time_estimate_minutes || 0), 0);
+  // Filter tasks to show only unscheduled (or recurring that need rescheduling)
+  const unscheduledTasks = useMemo(() => {
+    return tasks.filter(t => !t.completed && !t.scheduled_at);
   }, [tasks]);
 
-  // Get suggested tasks based on AI suggestions
+  // Calculate total time of unscheduled tasks
+  const totalTime = useMemo(() => {
+    return unscheduledTasks
+      .filter(t => t.time_estimate_minutes)
+      .reduce((sum, t) => sum + (t.time_estimate_minutes || 0), 0);
+  }, [unscheduledTasks]);
+
+  // Get suggested tasks based on AI suggestions (only from unscheduled tasks)
   const suggestedTasks = useMemo(() => {
     if (suggestions.length === 0) return [];
     return suggestions
-      .map(s => tasks.find(t => t.id === s.taskId))
+      .map(s => unscheduledTasks.find(t => t.id === s.taskId))
       .filter((t): t is Task => t !== undefined);
-  }, [suggestions, tasks]);
+  }, [suggestions, unscheduledTasks]);
 
   // Fetch events when week changes
   useEffect(() => {
@@ -63,9 +68,9 @@ export default function Review() {
 
   // Get AI suggestions when data is ready
   const handleGetSuggestions = useCallback(async () => {
-    if (!isConnected || tasks.length === 0) return;
-    await getSuggestions(tasks, events, weekStartDate);
-  }, [tasks, events, weekStartDate, isConnected, getSuggestions]);
+    if (!isConnected || unscheduledTasks.length === 0) return;
+    await getSuggestions(unscheduledTasks, events, weekStartDate);
+  }, [unscheduledTasks, events, weekStartDate, isConnected, getSuggestions]);
 
   const handleDragStart = (e: React.DragEvent, task: Task) => {
     e.dataTransfer.setData('application/json', JSON.stringify(task));
@@ -125,6 +130,13 @@ export default function Review() {
       }
 
       toast.success(`Scheduled "${task.title}" for ${format(startTime, 'EEE h:mm a')}`);
+      
+      // Mark task as scheduled (store event ID if available)
+      const eventId = data?.id || data?.eventId || null;
+      await updateTask(task.id, {
+        scheduled_at: new Date().toISOString(),
+        google_event_id: eventId,
+      });
       
       // Refresh events
       const timeMin = weekStartDate.toISOString();
@@ -238,7 +250,7 @@ export default function Review() {
               variant="outline"
               size="sm"
               onClick={handleGetSuggestions}
-              disabled={isSuggestionsLoading || tasks.length === 0}
+              disabled={isSuggestionsLoading || unscheduledTasks.length === 0}
               className="gap-2"
             >
               {isSuggestionsLoading ? (
@@ -274,7 +286,7 @@ export default function Review() {
               exit={{ width: 0, opacity: 0 }}
             >
               <TaskPoolSidebar
-                tasks={tasks}
+                tasks={unscheduledTasks}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
                 onCreateTask={createTask}
