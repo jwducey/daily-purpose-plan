@@ -1,5 +1,6 @@
 import { useTimeRemaining, useDayTimeRemaining } from '@/hooks/useTimeRemaining';
 import { motion } from 'framer-motion';
+import { DailyHourglass } from './DailyHourglass';
 
 interface MortalityCountdownProps {
   birthDate: Date;
@@ -56,8 +57,14 @@ export function MortalityCountdown({ birthDate, expectedLifespan }: MortalityCou
         <h3 className="text-sm uppercase tracking-widest text-muted-foreground mb-4">
           Seconds remaining today
         </h3>
-        <div className="font-sans text-5xl md:text-7xl lg:text-8xl font-light tracking-tight text-life-energy">
-          {formatNumber(dayRemaining.seconds)}
+        <div className="flex items-center justify-center gap-6 md:gap-8">
+          <DailyHourglass 
+            elapsedSeconds={86400 - dayRemaining.seconds} 
+            totalSeconds={86400} 
+          />
+          <div className="font-sans text-5xl md:text-7xl lg:text-8xl font-light tracking-tight text-life-energy">
+            {formatNumber(dayRemaining.seconds)}
+          </div>
         </div>
       </motion.div>
 
