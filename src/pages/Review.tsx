@@ -27,7 +27,7 @@ import { cn } from '@/lib/utils';
 
 export default function Review() {
   const { user } = useAuth();
-  const { tasks } = useTasks();
+  const { tasks, createTask, updateTask, deleteTask } = useTasks();
   const { events, isConnected, isLoading: isCalendarLoading, fetchEvents } = useGoogleCalendar();
   const { suggestions, isLoading: isSuggestionsLoading, getSuggestions } = useSchedulingSuggestions();
   
@@ -277,6 +277,9 @@ export default function Review() {
                 tasks={tasks}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
+                onCreateTask={createTask}
+                onUpdateTask={updateTask}
+                onDeleteTask={deleteTask}
                 suggestedTasks={suggestedTasks}
                 totalTime={totalTime}
               />

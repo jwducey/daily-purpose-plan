@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
-import { Task, LIFE_AREAS } from '@/hooks/useTasks';
+import { Task, LIFE_AREAS, CreateTaskInput, UpdateTaskInput } from '@/hooks/useTasks';
 import { DraggableTaskBlock } from './DraggableTaskBlock';
+import { AddTaskForm } from './AddTaskForm';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Clock, Flag, Sparkles, ChevronDown, ChevronRight } from 'lucide-react';
+import { Search, Clock, Sparkles, ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Collapsible,
@@ -20,6 +21,9 @@ interface TaskPoolSidebarProps {
   onDragEnd: (e: React.DragEvent) => void;
   suggestedTasks?: Task[];
   totalTime: number;
+  onCreateTask?: (input: CreateTaskInput) => Promise<any>;
+  onUpdateTask?: (id: string, input: UpdateTaskInput) => Promise<boolean>;
+  onDeleteTask?: (id: string) => Promise<boolean>;
 }
 
 type SortBy = 'priority' | 'time' | 'area';
@@ -30,7 +34,10 @@ export function TaskPoolSidebar({
   onDragStart, 
   onDragEnd, 
   suggestedTasks = [],
-  totalTime 
+  totalTime,
+  onCreateTask,
+  onUpdateTask,
+  onDeleteTask
 }: TaskPoolSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [groupBy, setGroupBy] = useState<GroupBy>('area');
@@ -153,6 +160,11 @@ export function TaskPoolSidebar({
           </Badge>
         </div>
         
+        {/* Add Task Form */}
+        {onCreateTask && (
+          <AddTaskForm onAdd={onCreateTask} />
+        )}
+        
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -207,6 +219,8 @@ export function TaskPoolSidebar({
                 task={task}
                 onDragStart={onDragStart}
                 onDragEnd={onDragEnd}
+                onUpdate={onUpdateTask}
+                onDelete={onDeleteTask}
                 compact
               />
             ))}
@@ -248,6 +262,8 @@ export function TaskPoolSidebar({
                         task={task}
                         onDragStart={onDragStart}
                         onDragEnd={onDragEnd}
+                        onUpdate={onUpdateTask}
+                        onDelete={onDeleteTask}
                         compact
                       />
                     ))}

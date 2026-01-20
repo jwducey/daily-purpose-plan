@@ -4,7 +4,9 @@ import { CalendarMultiDayView } from '@/components/CalendarMultiDayView';
 import { CalendarMonthView } from '@/components/CalendarMonthView';
 import { MiniCalendar } from '@/components/MiniCalendar';
 import { CreateEventDialog } from '@/components/CreateEventDialog';
+import { TaskPoolSidebar } from '@/components/TaskPoolSidebar';
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
+import { useTasks, Task, LIFE_AREAS } from '@/hooks/useTasks';
 import { useAuth } from '@/hooks/useAuth';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -17,10 +19,14 @@ import {
   ChevronRight,
   RefreshCw,
   Menu,
-  Plus
+  Plus,
+  PanelRight,
+  PanelRightClose
 } from 'lucide-react';
-import { format, addDays, addWeeks, addMonths, subDays, subWeeks, subMonths, startOfWeek, startOfMonth } from 'date-fns';
+import { format, addDays, addWeeks, addMonths, subDays, subWeeks, subMonths, startOfWeek, startOfMonth, setHours, setMinutes, addMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import {
   Select,
   SelectContent,
@@ -47,12 +53,16 @@ const VIEW_OPTIONS = [
 export default function Calendar() {
   const { user } = useAuth();
   const { events, isConnected, isLoading, fetchEvents } = useGoogleCalendar();
+  const { tasks, createTask, updateTask, deleteTask } = useTasks();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewType, setViewType] = useState('week');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [taskSidebarOpen, setTaskSidebarOpen] = useState(false);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [createEventDefaultDate, setCreateEventDefaultDate] = useState<Date | undefined>();
   const [createEventDefaultTime, setCreateEventDefaultTime] = useState<string | undefined>();
+  const [draggingTask, setDraggingTask] = useState<Task | null>(null);
+  const [isCreatingEvent, setIsCreatingEvent] = useState(false);
 
   const viewConfig = VIEW_OPTIONS.find(v => v.value === viewType) || VIEW_OPTIONS[3];
   const isMonthView = viewType === 'month';
@@ -127,6 +137,78 @@ export default function Calendar() {
 
   const handleEventCreated = () => {
     handleRefresh();
+  };
+
+  // Calculate total time of unscheduled tasks
+  const totalTime = useMemo(() => {
+    return tasks
+      .filter(t => !t.completed && t.time_estimate_minutes)
+      .reduce((sum, t) => sum + (t.time_estimate_minutes || 0), 0);
+  }, [tasks]);
+
+  // Drag and drop handlers for tasks
+  const handleDragStart = (e: React.DragEvent, task: Task) => {
+    e.dataTransfer.setData('application/json', JSON.stringify(task));
+    e.dataTransfer.effectAllowed = 'copy';
+    setDraggingTask(task);
+  };
+
+  const handleDragEnd = () => {
+    setDraggingTask(null);
+  };
+
+  const handleDropTask = async (task: Task, date: Date, hour: number) => {
+    if (!isConnected) {
+      toast.error('Connect Google Calendar in Settings first');
+      return;
+    }
+
+    setIsCreatingEvent(true);
+
+    try {
+      const startTime = setMinutes(setHours(date, hour), 0);
+      const duration = task.time_estimate_minutes || 60;
+      const endTime = addMinutes(startTime, duration);
+
+      const lifeArea = LIFE_AREAS.find(a => a.value === task.life_area);
+      const description = [
+        task.description,
+        lifeArea ? `Life Area: ${lifeArea.label}` : null,
+        `Priority: ${{ 1: 'Urgent', 2: 'High', 3: 'Medium', 4: 'Low' }[task.priority] || 'Normal'}`,
+      ].filter(Boolean).join('\n');
+
+      const { data, error } = await supabase.functions.invoke('google-calendar-create-event', {
+        body: {
+          summary: task.title,
+          description,
+          start: startTime.toISOString(),
+          end: endTime.toISOString(),
+        },
+      });
+
+      if (error) {
+        const errorMessage = error.message || String(error);
+        if (errorMessage.includes('insufficient') || errorMessage.includes('scope') || errorMessage.includes('permission')) {
+          toast.error('Calendar permissions need to be updated. Please disconnect and reconnect Google Calendar in Settings.', {
+            duration: 8000,
+            action: {
+              label: 'Go to Settings',
+              onClick: () => window.location.href = '/settings',
+            },
+          });
+          return;
+        }
+        throw error;
+      }
+
+      toast.success(`Scheduled "${task.title}" for ${format(startTime, 'EEE h:mm a')}`);
+      handleRefresh();
+    } catch (error) {
+      console.error('Error creating event:', error);
+      toast.error('Failed to create calendar event');
+    } finally {
+      setIsCreatingEvent(false);
+    }
   };
 
   const getHeaderTitle = () => {
@@ -292,6 +374,14 @@ export default function Calendar() {
             >
               <Plus className="h-4 w-4" />
             </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setTaskSidebarOpen(!taskSidebarOpen)}
+              className="hidden lg:flex"
+            >
+              {taskSidebarOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRight className="h-4 w-4" />}
+            </Button>
           </div>
         </div>
 
@@ -317,6 +407,26 @@ export default function Calendar() {
               />
             )}
           </div>
+
+          {/* Task sidebar - right side */}
+          {taskSidebarOpen && (
+            <motion.div 
+              className="hidden lg:block w-80 flex-shrink-0 overflow-hidden"
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 320, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+            >
+              <TaskPoolSidebar
+                tasks={tasks}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onCreateTask={createTask}
+                onUpdateTask={updateTask}
+                onDeleteTask={deleteTask}
+                totalTime={totalTime}
+              />
+            </motion.div>
+          )}
         </div>
 
         <CreateEventDialog
