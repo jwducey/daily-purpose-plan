@@ -1,14 +1,24 @@
-import { useMemo } from 'react';
-import { Task, LIFE_AREAS, TIME_ESTIMATES } from '@/hooks/useTasks';
+import { useMemo, useState } from 'react';
+import { Task, LIFE_AREAS, TIME_ESTIMATES, UpdateTaskInput } from '@/hooks/useTasks';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { Clock, GripVertical, Repeat, Flag, Calendar } from 'lucide-react';
+import { Clock, GripVertical, Repeat, Flag, Calendar, Trash2, Edit2, Check, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar as CalendarPicker } from '@/components/ui/calendar';
 
 interface DraggableTaskBlockProps {
   task: Task;
   onDragStart?: (e: React.DragEvent, task: Task) => void;
   onDragEnd?: (e: React.DragEvent) => void;
+  onUpdate?: (id: string, input: UpdateTaskInput) => Promise<boolean>;
+  onDelete?: (id: string) => Promise<boolean>;
   isDragging?: boolean;
   compact?: boolean;
 }
@@ -30,13 +40,26 @@ const priorityLabels = {
   4: 'Low',
 };
 
+const priorityTextColors = {
+  1: 'text-red-500',
+  2: 'text-orange-500',
+  3: 'text-yellow-500',
+  4: 'text-blue-500',
+};
+
 export function DraggableTaskBlock({ 
   task, 
   onDragStart, 
   onDragEnd, 
+  onUpdate,
+  onDelete,
   isDragging = false,
   compact = false 
 }: DraggableTaskBlockProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(task.title);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const lifeArea = useMemo(() => 
     LIFE_AREAS.find(a => a.value === task.life_area),
     [task.life_area]
@@ -56,6 +79,76 @@ export function DraggableTaskBlock({
 
   const isRecurring = task.labels?.includes('recurring');
 
+  const handleSave = async () => {
+    if (editTitle.trim() && onUpdate) {
+      await onUpdate(task.id, { title: editTitle.trim() });
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditTitle(task.title);
+    setIsEditing(false);
+  };
+
+  const handleDelete = async () => {
+    if (!onDelete) return;
+    setIsDeleting(true);
+    await onDelete(task.id);
+  };
+
+  const handlePriorityChange = async (priority: number) => {
+    if (onUpdate) {
+      await onUpdate(task.id, { priority });
+    }
+  };
+
+  const handleDateChange = async (date: Date | undefined) => {
+    if (onUpdate) {
+      await onUpdate(task.id, { due_date: date ? date.toISOString() : null });
+    }
+  };
+
+  const handleTimeEstimateChange = async (minutes: number | null) => {
+    if (onUpdate) {
+      await onUpdate(task.id, { time_estimate_minutes: minutes });
+    }
+  };
+
+  const handleLifeAreaChange = async (area: string | null) => {
+    if (onUpdate) {
+      await onUpdate(task.id, { life_area: area });
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <div className={cn(
+        "rounded-lg border-l-4 bg-card shadow-sm p-2",
+        priorityColors[task.priority as keyof typeof priorityColors] || 'border-l-muted'
+      )}>
+        <div className="flex items-center gap-2">
+          <Input
+            value={editTitle}
+            onChange={(e) => setEditTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSave();
+              if (e.key === 'Escape') handleCancel();
+            }}
+            className="flex-1 h-8 text-sm"
+            autoFocus
+          />
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleSave}>
+            <Check className="h-4 w-4" />
+          </Button>
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleCancel}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       draggable
@@ -66,6 +159,7 @@ export function DraggableTaskBlock({
         "hover:shadow-md hover:scale-[1.02]",
         priorityColors[task.priority as keyof typeof priorityColors] || 'border-l-muted',
         isDragging && "opacity-50 scale-95",
+        isDeleting && "opacity-50 pointer-events-none",
         compact ? "p-2" : "p-3"
       )}
       style={{ height: compact ? 'auto' : blockHeight }}
@@ -80,9 +174,118 @@ export function DraggableTaskBlock({
         <GripVertical className="h-4 w-4 text-muted-foreground" />
       </div>
 
+      {/* Action buttons - show on hover */}
+      {(onUpdate || onDelete) && (
+        <div className="absolute right-1 top-1 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 bg-card/90 rounded p-0.5">
+          {onUpdate && (
+            <>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="icon" variant="ghost" className="h-6 w-6">
+                    <Flag className={cn("h-3 w-3", priorityTextColors[task.priority as keyof typeof priorityTextColors])} />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-32 p-2" align="end">
+                  <div className="flex flex-col gap-1">
+                    {[1, 2, 3, 4].map((p) => (
+                      <Button
+                        key={p}
+                        size="sm"
+                        variant={task.priority === p ? "secondary" : "ghost"}
+                        className="justify-start h-7 text-xs"
+                        onClick={() => handlePriorityChange(p)}
+                      >
+                        <Flag className={cn("h-3 w-3 mr-1", priorityTextColors[p as keyof typeof priorityTextColors])} />
+                        {priorityLabels[p as keyof typeof priorityLabels]}
+                      </Button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="icon" variant="ghost" className="h-6 w-6">
+                    <Clock className={cn("h-3 w-3", task.time_estimate_minutes && "text-primary")} />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-36 p-2" align="end">
+                  <div className="flex flex-col gap-1">
+                    {TIME_ESTIMATES.map((t) => (
+                      <Button
+                        key={t.value}
+                        size="sm"
+                        variant={task.time_estimate_minutes === t.value ? "secondary" : "ghost"}
+                        className="justify-start h-7 text-xs"
+                        onClick={() => handleTimeEstimateChange(t.value)}
+                      >
+                        <Clock className="h-3 w-3 mr-1" />
+                        {t.label}
+                      </Button>
+                    ))}
+                    {task.time_estimate_minutes && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="justify-start h-7 text-xs text-muted-foreground"
+                        onClick={() => handleTimeEstimateChange(null)}
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="icon" variant="ghost" className="h-6 w-6">
+                    <Calendar className="h-3 w-3" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <CalendarPicker
+                    mode="single"
+                    selected={task.due_date ? parseISO(task.due_date) : undefined}
+                    onSelect={handleDateChange}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="h-6 w-6"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsEditing(true);
+                }}
+              >
+                <Edit2 className="h-3 w-3" />
+              </Button>
+            </>
+          )}
+
+          {onDelete && (
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              className="h-6 w-6 text-destructive hover:text-destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete();
+              }}
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+      )}
+
       <div className={cn("flex flex-col gap-1", !compact && "pl-4")}>
         {/* Title */}
-        <div className="font-medium text-sm line-clamp-2">{task.title}</div>
+        <div className="font-medium text-sm line-clamp-2 pr-20">{task.title}</div>
 
         {/* Metadata row */}
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
