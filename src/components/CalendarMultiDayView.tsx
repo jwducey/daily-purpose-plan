@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { format, parseISO, startOfDay, addDays, isSameDay, differenceInMinutes, setHours, setMinutes, isWithinInterval } from 'date-fns';
 import { CalendarEvent } from '@/hooks/useGoogleCalendar';
 import { cn } from '@/lib/utils';
@@ -15,16 +15,16 @@ interface CalendarMultiDayViewProps {
   onEventDeleted?: () => void;
 }
 
-// Show only 6 AM to 10 PM like Google Calendar
-const START_HOUR = 6;
-const END_HOUR = 22;
-const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => i + START_HOUR);
+// Full 24-hour calendar with default scroll to 6 AM
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const HOUR_HEIGHT = 48; // pixels per hour
+const DEFAULT_SCROLL_HOUR = 6; // Scroll to 6 AM by default
 
 export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventUpdated, onEventDeleted }: CalendarMultiDayViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const { categories } = useUser();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const dates = useMemo(() => {
     return Array.from({ length: numberOfDays }, (_, i) => addDays(startDate, i));
@@ -56,18 +56,24 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
     });
   };
 
+  // Scroll to default hour on mount
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = DEFAULT_SCROLL_HOUR * HOUR_HEIGHT;
+    }
+  }, []);
+
   const getEventPosition = (event: CalendarEvent, date: Date) => {
     const eventStart = parseISO(event.start);
     const eventEnd = parseISO(event.end);
     const dayStart = startOfDay(date);
-    const viewStart = setHours(dayStart, START_HOUR);
 
-    const displayStart = eventStart < viewStart ? viewStart : eventStart;
-    const startMinutes = differenceInMinutes(displayStart, viewStart);
+    const displayStart = eventStart < dayStart ? dayStart : eventStart;
+    const startMinutes = differenceInMinutes(displayStart, dayStart);
     const top = Math.max((startMinutes / 60) * HOUR_HEIGHT, 0);
 
-    const viewEnd = setHours(dayStart, END_HOUR);
-    const displayEnd = eventEnd > viewEnd ? viewEnd : eventEnd;
+    const dayEnd = addDays(dayStart, 1);
+    const displayEnd = eventEnd > dayEnd ? dayEnd : eventEnd;
     const duration = differenceInMinutes(displayEnd, displayStart);
     const height = Math.max((duration / 60) * HOUR_HEIGHT, 20);
 
@@ -186,13 +192,8 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
     const todayIndex = dates.findIndex(d => isSameDay(d, now));
     if (todayIndex === -1) return null;
 
-    const currentHour = now.getHours();
-    // Only show if within visible hours
-    if (currentHour < START_HOUR || currentHour >= END_HOUR) return null;
-
     const dayStart = startOfDay(now);
-    const viewStart = setHours(dayStart, START_HOUR);
-    const minutes = differenceInMinutes(now, viewStart);
+    const minutes = differenceInMinutes(now, dayStart);
     return { index: todayIndex, top: (minutes / 60) * HOUR_HEIGHT };
   }, [dates]);
 
@@ -257,7 +258,7 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
       </div>
 
       {/* Time grid */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto" ref={scrollContainerRef}>
         <div className="flex" style={{ height: HOURS.length * HOUR_HEIGHT }}>
           {/* Time labels column */}
           <div className="w-16 flex-shrink-0 relative">
