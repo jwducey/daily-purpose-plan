@@ -41,7 +41,15 @@ export default function Review() {
 
   // Filter tasks to show only unscheduled (or recurring that need rescheduling)
   const unscheduledTasks = useMemo(() => {
-    return tasks.filter(t => !t.completed && !t.scheduled_at);
+    const now = new Date();
+    return tasks.filter(t => {
+      if (t.completed) return false;
+      // Show unscheduled tasks
+      if (!t.scheduled_at) return true;
+      // Show recurring tasks whose scheduled time has passed (ready to be rescheduled)
+      if (t.is_recurring && new Date(t.scheduled_at) < now) return true;
+      return false;
+    });
   }, [tasks]);
 
   // Calculate total time of unscheduled tasks
