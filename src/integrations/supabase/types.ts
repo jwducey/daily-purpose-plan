@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      contacts: {
+        Row: {
+          created_at: string
+          id: string
+          is_high_value: boolean | null
+          last_connected_at: string | null
+          name: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_high_value?: boolean | null
+          last_connected_at?: string | null
+          name: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_high_value?: boolean | null
+          last_connected_at?: string | null
+          name?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_reviews: {
+        Row: {
+          created_at: string
+          followed_schedule: boolean | null
+          id: string
+          reflection_notes: string | null
+          review_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          followed_schedule?: boolean | null
+          id?: string
+          reflection_notes?: string | null
+          review_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          followed_schedule?: boolean | null
+          id?: string
+          reflection_notes?: string | null
+          review_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       google_oauth_tokens: {
         Row: {
           access_token: string
@@ -49,6 +112,92 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      review_activities: {
+        Row: {
+          activity_description: string
+          created_at: string
+          duration_minutes: number | null
+          id: string
+          life_area: string | null
+          review_id: string
+          user_id: string
+          was_planned: boolean | null
+        }
+        Insert: {
+          activity_description: string
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          life_area?: string | null
+          review_id: string
+          user_id: string
+          was_planned?: boolean | null
+        }
+        Update: {
+          activity_description?: string
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          life_area?: string | null
+          review_id?: string
+          user_id?: string
+          was_planned?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_activities_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "daily_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_connections: {
+        Row: {
+          connection_notes: string | null
+          contact_id: string | null
+          contact_name: string
+          created_at: string
+          id: string
+          review_id: string
+          user_id: string
+        }
+        Insert: {
+          connection_notes?: string | null
+          contact_id?: string | null
+          contact_name: string
+          created_at?: string
+          id?: string
+          review_id: string
+          user_id: string
+        }
+        Update: {
+          connection_notes?: string | null
+          contact_id?: string | null
+          contact_name?: string
+          created_at?: string
+          id?: string
+          review_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_connections_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_connections_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "daily_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tasks: {
         Row: {

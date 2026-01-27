@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { UserProvider } from "./contexts/UserContext";
+import { DailyReviewPanel } from "./components/DailyReviewPanel";
 import Index from "./pages/Index";
 import Budget from "./pages/Budget";
 import Review from "./pages/Review";
@@ -33,6 +34,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <DailyReviewPanel />
         </BrowserRouter>
       </TooltipProvider>
     </UserProvider>
