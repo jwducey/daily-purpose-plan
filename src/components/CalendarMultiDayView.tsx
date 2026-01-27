@@ -56,12 +56,23 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
     });
   };
 
-  // Scroll to default hour on mount
+  // Scroll to default hour on mount and when dates change
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = DEFAULT_SCROLL_HOUR * HOUR_HEIGHT;
-    }
-  }, []);
+    // Use requestAnimationFrame to ensure DOM is ready
+    const scrollToDefault = () => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = DEFAULT_SCROLL_HOUR * HOUR_HEIGHT;
+      }
+    };
+    
+    // Immediate scroll attempt
+    scrollToDefault();
+    
+    // Backup scroll after render completes
+    const frameId = requestAnimationFrame(scrollToDefault);
+    
+    return () => cancelAnimationFrame(frameId);
+  }, [startDate]);
 
   const getEventPosition = (event: CalendarEvent, date: Date) => {
     const eventStart = parseISO(event.start);
