@@ -4,6 +4,8 @@ import { CalendarEvent } from '@/hooks/useGoogleCalendar';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { EditEventDialog } from './EditEventDialog';
+import { useUser } from '@/contexts/UserContext';
+import { GOOGLE_CALENDAR_COLORS } from '@/types/user';
 
 interface CalendarMultiDayViewProps {
   events: CalendarEvent[];
@@ -13,12 +15,16 @@ interface CalendarMultiDayViewProps {
   onEventDeleted?: () => void;
 }
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
+// Show only 6 AM to 10 PM like Google Calendar
+const START_HOUR = 6;
+const END_HOUR = 22;
+const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => i + START_HOUR);
 const HOUR_HEIGHT = 48; // pixels per hour
 
 export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventUpdated, onEventDeleted }: CalendarMultiDayViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const { categories } = useUser();
 
   const dates = useMemo(() => {
     return Array.from({ length: numberOfDays }, (_, i) => addDays(startDate, i));
@@ -54,13 +60,14 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
     const eventStart = parseISO(event.start);
     const eventEnd = parseISO(event.end);
     const dayStart = startOfDay(date);
+    const viewStart = setHours(dayStart, START_HOUR);
 
-    const displayStart = eventStart < dayStart ? dayStart : eventStart;
-    const startMinutes = differenceInMinutes(displayStart, dayStart);
-    const top = (startMinutes / 60) * HOUR_HEIGHT;
+    const displayStart = eventStart < viewStart ? viewStart : eventStart;
+    const startMinutes = differenceInMinutes(displayStart, viewStart);
+    const top = Math.max((startMinutes / 60) * HOUR_HEIGHT, 0);
 
-    const dayEnd = addDays(dayStart, 1);
-    const displayEnd = eventEnd > dayEnd ? dayEnd : eventEnd;
+    const viewEnd = setHours(dayStart, END_HOUR);
+    const displayEnd = eventEnd > viewEnd ? viewEnd : eventEnd;
     const duration = differenceInMinutes(displayEnd, displayStart);
     const height = Math.max((duration / 60) * HOUR_HEIGHT, 20);
 
@@ -144,20 +151,21 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
   };
 
   const getEventColor = (event: CalendarEvent) => {
-    const colors: Record<string, string> = {
-      '1': 'bg-blue-500/90',
-      '2': 'bg-green-500/90',
-      '3': 'bg-purple-500/90',
-      '4': 'bg-red-500/90',
-      '5': 'bg-yellow-500/90',
-      '6': 'bg-orange-500/90',
-      '7': 'bg-cyan-500/90',
-      '8': 'bg-gray-500/90',
-      '9': 'bg-indigo-500/90',
-      '10': 'bg-emerald-500/90',
-      '11': 'bg-pink-500/90',
-    };
-    return event.colorId && colors[event.colorId] ? colors[event.colorId] : 'bg-primary/90';
+    // First, try to match by Google colorId to a budget category
+    if (event.colorId) {
+      const matchingCategory = categories.find(cat => cat.googleColorId === event.colorId);
+      if (matchingCategory) {
+        // Use the category's color from the budget (prefix with 'category-')
+        const colorVar = `hsl(var(--category-${matchingCategory.color}))`;
+        return { backgroundColor: colorVar };
+      }
+      // Fallback to Google Calendar color hex
+      const googleColor = GOOGLE_CALENDAR_COLORS[event.colorId];
+      if (googleColor) {
+        return { backgroundColor: googleColor.hex };
+      }
+    }
+    return { backgroundColor: 'hsl(var(--primary))' };
   };
 
   const handleEventClick = (event: CalendarEvent) => {
@@ -178,8 +186,13 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
     const todayIndex = dates.findIndex(d => isSameDay(d, now));
     if (todayIndex === -1) return null;
 
+    const currentHour = now.getHours();
+    // Only show if within visible hours
+    if (currentHour < START_HOUR || currentHour >= END_HOUR) return null;
+
     const dayStart = startOfDay(now);
-    const minutes = differenceInMinutes(now, dayStart);
+    const viewStart = setHours(dayStart, START_HOUR);
+    const minutes = differenceInMinutes(now, viewStart);
     return { index: todayIndex, top: (minutes / 60) * HOUR_HEIGHT };
   }, [dates]);
 
@@ -231,10 +244,8 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
               {allDayEvents.map((event) => (
                 <div
                   key={event.id}
-                  className={cn(
-                    "text-xs px-1 py-0.5 rounded truncate text-white cursor-pointer hover:opacity-80 transition-opacity",
-                    getEventColor(event)
-                  )}
+                  className="text-xs px-1 py-0.5 rounded truncate text-white cursor-pointer hover:opacity-80 transition-opacity"
+                  style={getEventColor(event)}
                   onClick={() => handleEventClick(event)}
                 >
                   {event.summary}
@@ -250,13 +261,13 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
         <div className="flex" style={{ height: HOURS.length * HOUR_HEIGHT }}>
           {/* Time labels column */}
           <div className="w-16 flex-shrink-0 relative">
-            {HOURS.map((hour) => (
+            {HOURS.map((hour, index) => (
               <div
                 key={hour}
                 className="absolute w-full text-right pr-2 text-xs text-muted-foreground"
-                style={{ top: hour * HOUR_HEIGHT - 6 }}
+                style={{ top: index * HOUR_HEIGHT - 6 }}
               >
-                {hour > 0 && format(setMinutes(setHours(new Date(), hour), 0), 'h a')}
+                {index > 0 && format(setMinutes(setHours(new Date(), hour), 0), 'h a')}
               </div>
             ))}
           </div>
@@ -276,11 +287,11 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
                 )}
               >
                 {/* Hour lines */}
-                {HOURS.map((hour) => (
+                {HOURS.map((hour, index) => (
                   <div
                     key={hour}
                     className="absolute w-full border-t border-border/50"
-                    style={{ top: hour * HOUR_HEIGHT }}
+                    style={{ top: index * HOUR_HEIGHT }}
                   />
                 ))}
 
@@ -292,11 +303,7 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
                   return (
                     <motion.div
                       key={event.id}
-                      className={cn(
-                        "absolute rounded px-1 py-0.5 overflow-hidden cursor-pointer",
-                        "text-white shadow-sm hover:shadow-md transition-shadow text-xs",
-                        getEventColor(event)
-                      )}
+                      className="absolute rounded px-1 py-0.5 overflow-hidden cursor-pointer text-white shadow-sm hover:shadow-md transition-shadow text-xs"
                       style={{ 
                         top, 
                         height, 
@@ -304,6 +311,7 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
                         width: `calc(${widthPercent}% - 4px)`,
                         left: `calc(${leftPercent}% + 2px)`,
                         zIndex: column + 1,
+                        ...getEventColor(event),
                       }}
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
