@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { format, differenceInDays } from 'date-fns';
 import { toast } from 'sonner';
+import { useUser } from '@/contexts/UserContext';
 
 export interface Contact {
   id: string;
@@ -40,6 +41,7 @@ export interface ReviewConnection {
 
 export function useDailyReview() {
   const { user } = useAuth();
+  const { categories } = useUser();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [todayReview, setTodayReview] = useState<DailyReview | null>(null);
   const [activities, setActivities] = useState<ReviewActivity[]>([]);
@@ -154,14 +156,12 @@ export function useDailyReview() {
     setTodayReview(prev => prev ? { ...prev, ...updates } : null);
   };
 
-  // Life area to Google Calendar color mapping
-  const lifeAreaColorMap: Record<string, string> = {
-    'Health': '11',      // Red
-    'Wealth': '5',       // Yellow
-    'Relationships': '10', // Green
-    'Growth': '9',       // Blue
-    'Career': '7',       // Cyan
-    'Leisure': '6',      // Orange
+  const getColorIdForLifeArea = (lifeArea?: string) => {
+    if (!lifeArea) return undefined;
+    const match = categories.find(
+      c => c.name.toLowerCase() === lifeArea.toLowerCase()
+    );
+    return match?.googleColorId;
   };
 
   // Add activity and create calendar event
@@ -190,13 +190,13 @@ export function useDailyReview() {
       const endTime = new Date();
       const startTime = new Date(endTime.getTime() - activity.duration_minutes * 60 * 1000);
       
-      const colorId = activity.life_area ? lifeAreaColorMap[activity.life_area] : undefined;
+      const colorId = getColorIdForLifeArea(activity.life_area);
       
       try {
         const { error: calendarError } = await supabase.functions.invoke('google-calendar-create-event', {
           body: {
             summary: activity.activity_description,
-            description: `Daily Review Activity - ${activity.life_area || 'Uncategorized'}${activity.was_planned ? '' : ' (Unplanned)'}`,
+             description: `Daily Review Activity - ${activity.life_area || 'Uncategorized'}${activity.was_planned ? '' : ' (Unplanned)'}`,
             start: startTime.toISOString(),
             end: endTime.toISOString(),
             colorId,
