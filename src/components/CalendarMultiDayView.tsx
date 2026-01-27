@@ -1,11 +1,10 @@
-import { useMemo, useState, useRef, useEffect } from 'react';
+import { useMemo, useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { format, parseISO, startOfDay, addDays, isSameDay, differenceInMinutes, setHours, setMinutes, isWithinInterval } from 'date-fns';
 import { CalendarEvent } from '@/hooks/useGoogleCalendar';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { EditEventDialog } from './EditEventDialog';
 import { useUser } from '@/contexts/UserContext';
-import { GOOGLE_CALENDAR_COLORS } from '@/types/user';
 
 interface CalendarMultiDayViewProps {
   events: CalendarEvent[];
@@ -56,23 +55,33 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
     });
   };
 
-  // Scroll to default hour on mount and when dates change
-  useEffect(() => {
-    // Use requestAnimationFrame to ensure DOM is ready
-    const scrollToDefault = () => {
-      if (scrollContainerRef.current) {
-        scrollContainerRef.current.scrollTop = DEFAULT_SCROLL_HOUR * HOUR_HEIGHT;
-      }
+  // Scroll to default hour (6am) on mount, on date changes, and after events render.
+  // useLayoutEffect helps ensure the scroll position is applied before the user sees the top.
+  useLayoutEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    const target = DEFAULT_SCROLL_HOUR * HOUR_HEIGHT;
+    el.scrollTo({ top: target });
+
+    // Extra attempts to handle async layout / font rendering / motion.
+    const t1 = window.setTimeout(() => el.scrollTo({ top: target }), 0);
+    const t2 = window.setTimeout(() => el.scrollTo({ top: target }), 50);
+
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
     };
-    
-    // Immediate scroll attempt
-    scrollToDefault();
-    
-    // Backup scroll after render completes
-    const frameId = requestAnimationFrame(scrollToDefault);
-    
-    return () => cancelAnimationFrame(frameId);
-  }, [startDate]);
+  }, [startDate, numberOfDays, events.length]);
+
+  // Defensive: if something else resets scroll after paint, re-assert once.
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const target = DEFAULT_SCROLL_HOUR * HOUR_HEIGHT;
+    const raf = requestAnimationFrame(() => el.scrollTo({ top: target }));
+    return () => cancelAnimationFrame(raf);
+  }, [startDate, numberOfDays]);
 
   const getEventPosition = (event: CalendarEvent, date: Date) => {
     const eventStart = parseISO(event.start);
@@ -167,22 +176,40 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
     }));
   };
 
+  const extractLifeAreaFromDescription = (description?: string) => {
+    if (!description) return null;
+
+    // Pattern 1: "Life Area: X" (used when scheduling tasks)
+    const lifeAreaMatch = description.match(/Life Area:\s*([^\n\r]+)/i);
+    if (lifeAreaMatch?.[1]) return lifeAreaMatch[1].trim();
+
+    // Pattern 2: "Daily Review Activity - X" (used for daily review sync)
+    const dailyReviewMatch = description.match(/Daily Review Activity\s*-\s*([^\n\r(]+)/i);
+    if (dailyReviewMatch?.[1]) return dailyReviewMatch[1].trim();
+
+    return null;
+  };
+
   const getEventColor = (event: CalendarEvent) => {
-    // First, try to match by Google colorId to a budget category
+    // 1) Best: match by Google colorId to a budget category
     if (event.colorId) {
       const matchingCategory = categories.find(cat => cat.googleColorId === event.colorId);
       if (matchingCategory) {
-        // Use the category's color from the budget (prefix with 'category-')
-        const colorVar = `hsl(var(--category-${matchingCategory.color}))`;
-        return { backgroundColor: colorVar };
-      }
-      // Fallback to Google Calendar color hex
-      const googleColor = GOOGLE_CALENDAR_COLORS[event.colorId];
-      if (googleColor) {
-        return { backgroundColor: googleColor.hex };
+        return { backgroundColor: `hsl(var(--category-${matchingCategory.color}))` };
       }
     }
-    return { backgroundColor: 'hsl(var(--primary))' };
+
+    // 2) Next: infer life area from description/summary and map to budget category
+    const inferred = extractLifeAreaFromDescription(event.description) || event.summary;
+    if (inferred) {
+      const byName = categories.find(cat => cat.name.toLowerCase() === inferred.toLowerCase());
+      if (byName) {
+        return { backgroundColor: `hsl(var(--category-${byName.color}))` };
+      }
+    }
+
+    // 3) Safe theme fallback (no raw hex)
+    return { backgroundColor: 'hsl(var(--time-passing))' };
   };
 
   const handleEventClick = (event: CalendarEvent) => {
