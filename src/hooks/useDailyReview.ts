@@ -154,7 +154,17 @@ export function useDailyReview() {
     setTodayReview(prev => prev ? { ...prev, ...updates } : null);
   };
 
-  // Add activity
+  // Life area to Google Calendar color mapping
+  const lifeAreaColorMap: Record<string, string> = {
+    'Health': '11',      // Red
+    'Wealth': '5',       // Yellow
+    'Relationships': '10', // Green
+    'Growth': '9',       // Blue
+    'Career': '7',       // Cyan
+    'Leisure': '6',      // Orange
+  };
+
+  // Add activity and create calendar event
   const addActivity = async (activity: Omit<ReviewActivity, 'id' | 'review_id'>) => {
     if (!user) return;
     
@@ -174,7 +184,35 @@ export function useDailyReview() {
     }
     
     setActivities(prev => [...prev, data]);
-    toast.success('Activity added');
+    
+    // Create Google Calendar event for the activity
+    if (activity.duration_minutes && activity.duration_minutes > 0) {
+      const endTime = new Date();
+      const startTime = new Date(endTime.getTime() - activity.duration_minutes * 60 * 1000);
+      
+      const colorId = activity.life_area ? lifeAreaColorMap[activity.life_area] : undefined;
+      
+      try {
+        const { error: calendarError } = await supabase.functions.invoke('google-calendar-create-event', {
+          body: {
+            summary: activity.activity_description,
+            description: `Daily Review Activity - ${activity.life_area || 'Uncategorized'}${activity.was_planned ? '' : ' (Unplanned)'}`,
+            start: startTime.toISOString(),
+            end: endTime.toISOString(),
+            colorId,
+          },
+        });
+        
+        if (calendarError) {
+          console.error('Error creating calendar event:', calendarError);
+          // Don't show error to user - calendar sync is optional
+        }
+      } catch (e) {
+        console.error('Calendar sync failed:', e);
+      }
+    }
+    
+    toast.success('Activity added to calendar');
   };
 
   // Add connection (and optionally create/update contact)
