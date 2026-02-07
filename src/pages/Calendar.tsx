@@ -270,7 +270,7 @@ export default function Calendar() {
 
   const SidebarContentBlock = () => (
     <div className="h-full flex flex-col">
-      <div className="p-4 border-b border-border space-y-2">
+      <div className="p-4 border-b border-border space-y-2 flex-shrink-0">
         <Button onClick={() => handleCreateEvent()} className="w-full">
           <Plus className="h-4 w-4 mr-2" />
           Create Event
@@ -279,26 +279,30 @@ export default function Calendar() {
           Today
         </Button>
       </div>
-      <MiniCalendar
-        selectedDate={selectedDate}
-        onDateSelect={handleDateSelect}
-        selectedRange={visibleRange}
-      />
-      <BudgetGapPrompt
-        events={events}
-        onCreateEvent={handleCreateEvent}
-        onCreateTask={createTask}
-      />
-      <div className="flex-1 overflow-hidden border-t">
-        <TaskPoolSidebar
-          tasks={unscheduledTasks}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          onCreateTask={createTask}
-          onUpdateTask={updateTask}
-          onDeleteTask={deleteTask}
-          totalTime={totalTime}
+      <div className="flex-shrink-0">
+        <MiniCalendar
+          selectedDate={selectedDate}
+          onDateSelect={handleDateSelect}
+          selectedRange={visibleRange}
         />
+      </div>
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <BudgetGapPrompt
+          events={events}
+          onCreateEvent={handleCreateEvent}
+          onCreateTask={createTask}
+        />
+        <div className="border-t">
+          <TaskPoolSidebar
+            tasks={unscheduledTasks}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onCreateTask={createTask}
+            onUpdateTask={updateTask}
+            onDeleteTask={deleteTask}
+            totalTime={totalTime}
+          />
+        </div>
       </div>
     </div>
   );

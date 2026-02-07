@@ -155,7 +155,7 @@ export function BudgetGapPrompt({ events, onCreateEvent, onCreateTask }: BudgetG
 
         <CollapsibleContent>
           <div className="px-3 pb-3">
-            <ScrollArea className="max-h-[60vh]">
+            <div className="space-y-1">
               <div className="space-y-1 pr-2">
                 <AnimatePresence>
                   {gaps.map((gap) => {
@@ -229,7 +229,7 @@ export function BudgetGapPrompt({ events, onCreateEvent, onCreateTask }: BudgetG
                   })}
                 </AnimatePresence>
               </div>
-            </ScrollArea>
+            </div>
           </div>
         </CollapsibleContent>
       </Collapsible>
