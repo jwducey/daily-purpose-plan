@@ -5,6 +5,7 @@ import { CalendarMonthView } from '@/components/CalendarMonthView';
 import { MiniCalendar } from '@/components/MiniCalendar';
 import { CreateEventDialog } from '@/components/CreateEventDialog';
 import { TaskPoolSidebar } from '@/components/TaskPoolSidebar';
+import { BudgetGapPrompt } from '@/components/BudgetGapPrompt';
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
 import { useTasks, Task, LIFE_AREAS } from '@/hooks/useTasks';
 import { useAuth } from '@/hooks/useAuth';
@@ -282,6 +283,11 @@ export default function Calendar() {
         selectedDate={selectedDate}
         onDateSelect={handleDateSelect}
         selectedRange={visibleRange}
+      />
+      <BudgetGapPrompt
+        events={events}
+        onCreateEvent={handleCreateEvent}
+        onCreateTask={createTask}
       />
       <div className="flex-1 overflow-hidden border-t">
         <TaskPoolSidebar
