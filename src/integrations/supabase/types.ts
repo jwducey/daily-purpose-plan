@@ -113,6 +113,77 @@ export type Database = {
         }
         Relationships: []
       }
+      habit_completions: {
+        Row: {
+          completed: boolean
+          completion_date: string
+          created_at: string
+          habit_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          completion_date: string
+          created_at?: string
+          habit_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          completion_date?: string
+          created_at?: string
+          habit_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_completions_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habits: {
+        Row: {
+          archived: boolean | null
+          color: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          sort_order: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived?: boolean | null
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          sort_order?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived?: boolean | null
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          sort_order?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       review_activities: {
         Row: {
           activity_description: string
