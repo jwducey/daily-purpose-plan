@@ -160,10 +160,6 @@ export function TaskPoolSidebar({
           </Badge>
         </div>
         
-        {/* Add Task Form */}
-        {onCreateTask && (
-          <AddTaskForm onAdd={onCreateTask} />
-        )}
         
         {/* Search */}
         <div className="relative">

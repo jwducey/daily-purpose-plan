@@ -76,7 +76,7 @@ export function BudgetGapPrompt({ events, onCreateEvent, onCreateTask }: BudgetG
   const { categories } = useUser();
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
   const [dismissed, setDismissed] = useState(false);
-  const [sectionOpen, setSectionOpen] = useState(true);
+  const [sectionOpen, setSectionOpen] = useState(false);
 
   const gaps = useMemo(() => {
     const now = new Date();
