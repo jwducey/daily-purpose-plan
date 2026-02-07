@@ -18,10 +18,16 @@ import {
   Loader2, 
   ChevronLeft, 
   ChevronRight,
+  ChevronDown,
   RefreshCw,
   Menu,
   Plus
 } from 'lucide-react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { format, addDays, addWeeks, addMonths, subDays, subWeeks, subMonths, startOfWeek, startOfMonth, setHours, setMinutes, addMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -279,13 +285,21 @@ export default function Calendar() {
           Today
         </Button>
       </div>
-      <div className="flex-shrink-0">
-        <MiniCalendar
-          selectedDate={selectedDate}
-          onDateSelect={handleDateSelect}
-          selectedRange={visibleRange}
-        />
-      </div>
+      <Collapsible defaultOpen={true}>
+        <div className="p-3 border-b border-border">
+          <CollapsibleTrigger className="flex items-center gap-2 w-full hover:opacity-80 transition-opacity">
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground collapsible-chevron" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Calendar</span>
+          </CollapsibleTrigger>
+        </div>
+        <CollapsibleContent>
+          <MiniCalendar
+            selectedDate={selectedDate}
+            onDateSelect={handleDateSelect}
+            selectedRange={visibleRange}
+          />
+        </CollapsibleContent>
+      </Collapsible>
       <div className="flex-1 min-h-0 overflow-y-auto">
         <BudgetGapPrompt
           events={events}
