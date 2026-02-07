@@ -150,7 +150,7 @@ export function BudgetGapPrompt({ events, onCreateEvent, onCreateTask }: BudgetG
           </button>
         </div>
 
-        <ScrollArea className="max-h-[300px]">
+        <ScrollArea className="max-h-[50vh]">
           <div className="space-y-1">
             <AnimatePresence>
               {gaps.map((gap) => {
