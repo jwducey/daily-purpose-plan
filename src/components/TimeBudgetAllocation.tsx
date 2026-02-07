@@ -1,9 +1,11 @@
 import { useUser } from '@/contexts/UserContext';
 import { CategorySlider } from './CategorySlider';
+import { WeekBudgetBar } from './WeekBudgetBar';
 import { motion } from 'framer-motion';
-import { Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Clock, AlertCircle, CheckCircle2, Layers, Sparkles } from 'lucide-react';
 
-const TOTAL_WEEKLY_HOURS = 168; // 24 * 7
+const TOTAL_WEEKLY_HOURS = 168;
+const MAJOR_THRESHOLD = 30;
 
 export function TimeBudgetAllocation() {
   const { categories, updateCategory } = useUser();
@@ -13,12 +15,21 @@ export function TimeBudgetAllocation() {
   const isOverBudget = remaining < 0;
   const isComplete = remaining === 0;
 
-  // Sort categories by hours allocated (highest first)
-  const sortedCategories = [...categories].sort((a, b) => b.weeklyHoursTarget - a.weeklyHoursTarget);
+  // Split into major (≥30h) and minor (<30h)
+  const majorCategories = [...categories]
+    .filter(c => c.weeklyHoursTarget >= MAJOR_THRESHOLD)
+    .sort((a, b) => b.weeklyHoursTarget - a.weeklyHoursTarget);
+  
+  const minorCategories = [...categories]
+    .filter(c => c.weeklyHoursTarget < MAJOR_THRESHOLD)
+    .sort((a, b) => b.weeklyHoursTarget - a.weeklyHoursTarget);
+
+  const majorTotal = majorCategories.reduce((sum, cat) => sum + cat.weeklyHoursTarget, 0);
+  const remainingAfterMajor = TOTAL_WEEKLY_HOURS - majorTotal;
 
   return (
-    <div className="space-y-6">
-      {/* Header with total */}
+    <div className="space-y-8">
+      {/* Status badge */}
       <div className="flex items-center justify-between p-4 rounded-xl bg-card shadow-card">
         <div className="flex items-center gap-3">
           <Clock className="w-5 h-5 text-muted-foreground" />
@@ -45,33 +56,89 @@ export function TimeBudgetAllocation() {
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="h-3 bg-muted rounded-full overflow-hidden">
-        <motion.div 
-          className={`h-full ${isOverBudget ? 'bg-destructive' : 'bg-life-energy'}`}
-          initial={{ width: 0 }}
-          animate={{ width: `${Math.min((totalAllocated / TOTAL_WEEKLY_HOURS) * 100, 100)}%` }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-        />
-      </div>
+      {/* Full week segmented bar */}
+      <motion.div
+        className="p-5 rounded-xl bg-card shadow-card"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+      >
+        <WeekBudgetBar categories={categories} />
+      </motion.div>
 
-      {/* Category sliders */}
-      <div className="grid gap-6">
-        {sortedCategories.map((category, index) => (
-          <motion.div
-            key={category.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.05, duration: 0.3 }}
-          >
-            <CategorySlider
-              category={category}
-              onValueChange={(value) => updateCategory(category.id, { weeklyHoursTarget: value })}
-              onColorChange={(colorId) => updateCategory(category.id, { googleColorId: colorId })}
-            />
-          </motion.div>
-        ))}
-      </div>
+      {/* Major commitments (≥30h) */}
+      {majorCategories.length > 0 && (
+        <motion.section
+          className="space-y-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <div className="flex items-center gap-2">
+            <Layers className="w-4 h-4 text-muted-foreground" />
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Major Commitments
+            </h2>
+            <span className="text-xs text-muted-foreground ml-auto">
+              {majorTotal}h / {TOTAL_WEEKLY_HOURS}h
+            </span>
+          </div>
+          <div className="grid gap-5 p-5 rounded-xl bg-card shadow-card">
+            {majorCategories.map((category, index) => (
+              <motion.div
+                key={category.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05, duration: 0.3 }}
+              >
+                <CategorySlider
+                  category={category}
+                  onValueChange={(value) => updateCategory(category.id, { weeklyHoursTarget: value })}
+                  onColorChange={(colorId) => updateCategory(category.id, { googleColorId: colorId })}
+                  maxTotal={TOTAL_WEEKLY_HOURS}
+                />
+              </motion.div>
+            ))}
+          </div>
+        </motion.section>
+      )}
+
+      {/* Minor categories (<30h) — slider max = remaining after major */}
+      {minorCategories.length > 0 && (
+        <motion.section
+          className="space-y-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-muted-foreground" />
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Life Enrichment
+            </h2>
+            <span className="text-xs text-muted-foreground ml-auto">
+              {remainingAfterMajor}h available
+            </span>
+          </div>
+          <div className="grid gap-5 p-5 rounded-xl bg-card shadow-card">
+            {minorCategories.map((category, index) => (
+              <motion.div
+                key={category.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 + index * 0.04, duration: 0.3 }}
+              >
+                <CategorySlider
+                  category={category}
+                  onValueChange={(value) => updateCategory(category.id, { weeklyHoursTarget: value })}
+                  onColorChange={(colorId) => updateCategory(category.id, { googleColorId: colorId })}
+                  maxTotal={Math.max(remainingAfterMajor, category.weeklyHoursTarget)}
+                />
+              </motion.div>
+            ))}
+          </div>
+        </motion.section>
+      )}
     </div>
   );
 }
