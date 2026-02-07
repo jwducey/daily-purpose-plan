@@ -1,10 +1,12 @@
 import { useMemo, useState, useRef, useEffect, useLayoutEffect } from 'react';
-import { format, parseISO, startOfDay, addDays, isSameDay, differenceInMinutes, setHours, setMinutes, isWithinInterval } from 'date-fns';
+import { format, parseISO, startOfDay, addDays, isSameDay, differenceInMinutes, setHours, setMinutes, isWithinInterval, addMinutes } from 'date-fns';
 import { CalendarEvent } from '@/hooks/useGoogleCalendar';
+import { Task } from '@/hooks/useTasks';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { EditEventDialog } from './EditEventDialog';
 import { useUser } from '@/contexts/UserContext';
+import { Loader2 } from 'lucide-react';
 
 interface CalendarMultiDayViewProps {
   events: CalendarEvent[];
@@ -12,6 +14,7 @@ interface CalendarMultiDayViewProps {
   numberOfDays: number;
   onEventUpdated?: () => void;
   onEventDeleted?: () => void;
+  onDropTask?: (task: Task, date: Date, hour: number) => Promise<void>;
 }
 
 // Full 24-hour calendar with default scroll to 6 AM
@@ -19,9 +22,10 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const HOUR_HEIGHT = 48; // pixels per hour
 const DEFAULT_SCROLL_HOUR = 6; // Scroll to 6 AM by default
 
-export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventUpdated, onEventDeleted }: CalendarMultiDayViewProps) {
+export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventUpdated, onEventDeleted, onDropTask }: CalendarMultiDayViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [dragOverSlot, setDragOverSlot] = useState<{ dateIndex: number; hour: number } | null>(null);
   const { categories } = useUser();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -225,6 +229,30 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
     onEventDeleted?.();
   };
 
+  const handleDragOver = (e: React.DragEvent, dateIndex: number, hour: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    setDragOverSlot({ dateIndex, hour });
+  };
+
+  const handleDragLeave = () => {
+    setDragOverSlot(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, dateIndex: number, hour: number) => {
+    e.preventDefault();
+    setDragOverSlot(null);
+    if (!onDropTask) return;
+    try {
+      const taskData = e.dataTransfer.getData('application/json');
+      if (!taskData) return;
+      const task: Task = JSON.parse(taskData);
+      await onDropTask(task, dates[dateIndex], hour);
+    } catch (error) {
+      console.error('Drop error:', error);
+    }
+  };
+
   const currentTimePosition = useMemo(() => {
     const now = new Date();
     const todayIndex = dates.findIndex(d => isSameDay(d, now));
@@ -325,14 +353,23 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
                   isToday && "bg-primary/5"
                 )}
               >
-                {/* Hour lines */}
-                {HOURS.map((hour, index) => (
-                  <div
-                    key={hour}
-                    className="absolute w-full border-t border-border/50"
-                    style={{ top: index * HOUR_HEIGHT }}
-                  />
-                ))}
+                {/* Hour slots as drop zones */}
+                {HOURS.map((hour, index) => {
+                  const isHovered = dragOverSlot?.dateIndex === dateIndex && dragOverSlot?.hour === hour;
+                  return (
+                    <div
+                      key={hour}
+                      className={cn(
+                        "absolute w-full border-t border-border/50 transition-colors",
+                        isHovered && "bg-primary/20"
+                      )}
+                      style={{ top: index * HOUR_HEIGHT, height: HOUR_HEIGHT }}
+                      onDragOver={(e) => handleDragOver(e, dateIndex, hour)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, dateIndex, hour)}
+                    />
+                  );
+                })}
 
                 {/* Events with overlap handling */}
                 {eventLayout.map(({ event, top, height, column, totalColumns }) => {

@@ -427,6 +427,7 @@ export default function Calendar() {
                 numberOfDays={numberOfDays}
                 onEventUpdated={handleRefresh}
                 onEventDeleted={handleRefresh}
+                onDropTask={handleDropTask}
               />
             )}
           </div>
