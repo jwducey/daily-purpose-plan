@@ -428,6 +428,7 @@ export default function Calendar() {
                 onEventUpdated={handleRefresh}
                 onEventDeleted={handleRefresh}
                 onDropTask={handleDropTask}
+                onSlotClick={(date, time) => handleCreateEvent(date, time)}
               />
             )}
           </div>

@@ -15,6 +15,7 @@ interface CalendarMultiDayViewProps {
   onEventUpdated?: () => void;
   onEventDeleted?: () => void;
   onDropTask?: (task: Task, date: Date, hour: number) => Promise<void>;
+  onSlotClick?: (date: Date, time: string) => void;
 }
 
 // Full 24-hour calendar with default scroll to 6 AM
@@ -22,7 +23,7 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const HOUR_HEIGHT = 48; // pixels per hour
 const DEFAULT_SCROLL_HOUR = 6; // Scroll to 6 AM by default
 
-export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventUpdated, onEventDeleted, onDropTask }: CalendarMultiDayViewProps) {
+export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventUpdated, onEventDeleted, onDropTask, onSlotClick }: CalendarMultiDayViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [dragOverSlot, setDragOverSlot] = useState<{ dateIndex: number; hour: number } | null>(null);
@@ -367,6 +368,14 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
                       onDragOver={(e) => handleDragOver(e, dateIndex, hour)}
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, dateIndex, hour)}
+                      onClick={() => {
+                        if (onSlotClick) {
+                          const timeStr = `${String(hour).padStart(2, '0')}:00`;
+                          onSlotClick(date, timeStr);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={-1}
                     />
                   );
                 })}
