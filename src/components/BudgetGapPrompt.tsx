@@ -76,6 +76,7 @@ export function BudgetGapPrompt({ events, onCreateEvent, onCreateTask }: BudgetG
   const { categories } = useUser();
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
   const [dismissed, setDismissed] = useState(false);
+  const [sectionOpen, setSectionOpen] = useState(true);
 
   const gaps = useMemo(() => {
     const now = new Date();
@@ -136,12 +137,14 @@ export function BudgetGapPrompt({ events, onCreateEvent, onCreateTask }: BudgetG
 
   return (
     <div className="border-t border-border">
-      <div className="p-3 space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+      <Collapsible open={sectionOpen} onOpenChange={setSectionOpen}>
+        <div className="p-3 flex items-center justify-between">
+          <CollapsibleTrigger className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            {sectionOpen ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
             <AlertTriangle className="h-4 w-4 text-amber-500" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Budget Gaps</span>
-          </div>
+            <Badge variant="outline" className="text-[10px] h-4 ml-1">{gaps.length}</Badge>
+          </CollapsibleTrigger>
           <button
             onClick={() => setDismissed(true)}
             className="text-xs text-muted-foreground hover:text-foreground"
@@ -150,82 +153,86 @@ export function BudgetGapPrompt({ events, onCreateEvent, onCreateTask }: BudgetG
           </button>
         </div>
 
-        <ScrollArea className="max-h-[50vh]">
-          <div className="space-y-1">
-            <AnimatePresence>
-              {gaps.map((gap) => {
-                const lifeAreaKey = gap.category.name.toLowerCase();
-                const ideas = IDEA_SUGGESTIONS[gap.category.name] || [];
-                const isExpanded = expandedAreas.has(gap.category.id);
+        <CollapsibleContent>
+          <div className="px-3 pb-3">
+            <ScrollArea className="max-h-[60vh]">
+              <div className="space-y-1 pr-2">
+                <AnimatePresence>
+                  {gaps.map((gap) => {
+                    const lifeAreaKey = gap.category.name.toLowerCase();
+                    const ideas = IDEA_SUGGESTIONS[gap.category.name] || [];
+                    const isExpanded = expandedAreas.has(gap.category.id);
 
-                return (
-                  <motion.div
-                    key={gap.category.id}
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="rounded-lg border border-border bg-card"
-                  >
-                    <Collapsible open={isExpanded} onOpenChange={() => toggleArea(gap.category.id)}>
-                      <CollapsibleTrigger className="flex items-center gap-2 w-full p-2.5 text-left text-sm hover:bg-muted/50 rounded-lg transition-colors">
-                        {isExpanded ? <ChevronDown className="h-3 w-3 shrink-0" /> : <ChevronRight className="h-3 w-3 shrink-0" />}
-                        <span className={cn("w-2 h-2 rounded-full shrink-0")} style={{ backgroundColor: `var(--${gap.category.color}, hsl(var(--muted)))` }} />
-                        <span className="font-medium truncate">{gap.category.name}</span>
-                        <Badge variant="outline" className="ml-auto text-[10px] h-4 shrink-0 text-amber-600 border-amber-300">
-                          <Clock className="h-2.5 w-2.5 mr-0.5" />
-                          {gap.gapHours.toFixed(1)}h behind
-                        </Badge>
-                      </CollapsibleTrigger>
+                    return (
+                      <motion.div
+                        key={gap.category.id}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="rounded-lg border border-border bg-card"
+                      >
+                        <Collapsible open={isExpanded} onOpenChange={() => toggleArea(gap.category.id)}>
+                          <CollapsibleTrigger className="flex items-center gap-2 w-full p-2.5 text-left text-sm hover:bg-muted/50 rounded-lg transition-colors">
+                            {isExpanded ? <ChevronDown className="h-3 w-3 shrink-0" /> : <ChevronRight className="h-3 w-3 shrink-0" />}
+                            <span className={cn("w-2 h-2 rounded-full shrink-0")} style={{ backgroundColor: `var(--${gap.category.color}, hsl(var(--muted)))` }} />
+                            <span className="font-medium truncate">{gap.category.name}</span>
+                            <Badge variant="outline" className="ml-auto text-[10px] h-4 shrink-0 text-amber-600 border-amber-300">
+                              <Clock className="h-2.5 w-2.5 mr-0.5" />
+                              {gap.gapHours.toFixed(1)}h behind
+                            </Badge>
+                          </CollapsibleTrigger>
 
-                      <CollapsibleContent>
-                        <div className="px-3 pb-3 space-y-2">
-                          <p className="text-xs text-muted-foreground">
-                            {gap.actualHours.toFixed(1)}h used of {gap.targetHours}h/week target
-                          </p>
+                          <CollapsibleContent>
+                            <div className="px-3 pb-3 space-y-2">
+                              <p className="text-xs text-muted-foreground">
+                                {gap.actualHours.toFixed(1)}h used of {gap.targetHours}h/week target
+                              </p>
 
-                          {ideas.length > 0 && (
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                <Lightbulb className="h-3 w-3" />
-                                <span>Ideas to schedule:</span>
-                              </div>
-                              {ideas.map((idea) => (
-                                <div key={idea} className="flex items-center justify-between gap-2 py-1 pl-4">
-                                  <span className="text-xs truncate">{idea}</span>
-                                  <div className="flex gap-1 shrink-0">
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-5 px-1.5 text-[10px]"
-                                      onClick={() => handleQuickAddTask(gap.category.name, idea, lifeAreaKey)}
-                                    >
-                                      <Plus className="h-2.5 w-2.5 mr-0.5" />
-                                      Task
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-5 px-1.5 text-[10px]"
-                                      onClick={() => onCreateEvent()}
-                                    >
-                                      <Plus className="h-2.5 w-2.5 mr-0.5" />
-                                      Event
-                                    </Button>
+                              {ideas.length > 0 && (
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                    <Lightbulb className="h-3 w-3" />
+                                    <span>Ideas to schedule:</span>
                                   </div>
+                                  {ideas.map((idea) => (
+                                    <div key={idea} className="flex items-center justify-between gap-2 py-1 pl-4">
+                                      <span className="text-xs truncate">{idea}</span>
+                                      <div className="flex gap-1 shrink-0">
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-5 px-1.5 text-[10px]"
+                                          onClick={() => handleQuickAddTask(gap.category.name, idea, lifeAreaKey)}
+                                        >
+                                          <Plus className="h-2.5 w-2.5 mr-0.5" />
+                                          Task
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-5 px-1.5 text-[10px]"
+                                          onClick={() => onCreateEvent()}
+                                        >
+                                          <Plus className="h-2.5 w-2.5 mr-0.5" />
+                                          Event
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
-                              ))}
+                              )}
                             </div>
-                          )}
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            </ScrollArea>
           </div>
-        </ScrollArea>
-      </div>
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 }
