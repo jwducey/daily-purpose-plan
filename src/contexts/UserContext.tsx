@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, TimeBudgetCategory, DEFAULT_CATEGORIES } from '@/types/user';
+import { toast } from 'sonner';
 
 interface UserContextType {
   user: UserProfile | null;
@@ -7,6 +8,8 @@ interface UserContextType {
   customSuggestions: Record<string, string[]>;
   setUser: (user: UserProfile | null) => void;
   updateCategory: (categoryId: string, updates: Partial<TimeBudgetCategory>) => void;
+  addCategory: (name: string, description?: string) => void;
+  deleteCategory: (categoryId: string) => void;
   addCustomSuggestion: (categoryName: string, suggestion: string) => void;
   removeCustomSuggestion: (categoryName: string, suggestion: string) => void;
   completeOnboarding: (userData: Partial<UserProfile>) => void;
@@ -22,7 +25,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load user from localStorage on mount
     const savedUser = localStorage.getItem('lifewealth_user');
     const savedCategories = localStorage.getItem('lifewealth_categories');
     
@@ -96,6 +98,41 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
+  const addCategory = (name: string, description?: string) => {
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
+    if (categories.some(c => c.name.toLowerCase() === trimmedName.toLowerCase())) {
+      toast.error('A category with that name already exists');
+      return;
+    }
+    const newCategory: TimeBudgetCategory = {
+      id: `cat_${Date.now()}`,
+      name: trimmedName,
+      icon: 'target',
+      color: trimmedName.toLowerCase().replace(/\s+/g, '-'),
+      googleColorId: '1',
+      weeklyHoursTarget: 2,
+      weeklyHoursActual: 0,
+      description: description || '',
+    };
+    setCategories(prev => [...prev, newCategory]);
+    toast.success(`Added "${trimmedName}" category`);
+  };
+
+  const deleteCategory = (categoryId: string) => {
+    const cat = categories.find(c => c.id === categoryId);
+    if (!cat) return;
+    setCategories(prev => prev.filter(c => c.id !== categoryId));
+    // Clean up custom suggestions for this category
+    setCustomSuggestions(prev => {
+      const next = { ...prev };
+      delete next[cat.name];
+      return next;
+    });
+    toast.success(`Removed "${cat.name}" category`);
+    // Note: task cleanup happens via the useTasks hook on the backend (life_areas column)
+  };
+
   const addCustomSuggestion = (categoryName: string, suggestion: string) => {
     setCustomSuggestions(prev => ({
       ...prev,
@@ -117,6 +154,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       customSuggestions,
       setUser, 
       updateCategory, 
+      addCategory,
+      deleteCategory,
       addCustomSuggestion,
       removeCustomSuggestion,
       completeOnboarding,

@@ -37,7 +37,7 @@ export function useSchedulingSuggestions() {
             title: t.title,
             priority: t.priority,
             time_estimate_minutes: t.time_estimate_minutes,
-            life_area: t.life_area,
+            life_areas: t.life_areas,
             due_date: t.due_date,
           })),
           events: events.map(e => ({

@@ -5,14 +5,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const LIFE_AREAS = ["health", "wealth", "relationships", "growth", "career", "leisure"];
 const TIME_ESTIMATES = [15, 30, 60, 120, 240, 480];
 
 const systemPrompt = `You are a Chief of Staff AI assistant helping users manage their tasks using the Getting Things Done (GTD) methodology.
 
 Your role is to:
 1. Parse natural language task input from users
-2. Extract structured task information including title, time estimate, life area, and priority
+2. Extract structured task information including title, time estimate, life areas, and priority
 3. Help users organize and prioritize their tasks
 
 When the user describes tasks they need to do, use the add_tasks tool to add them to their task list.
@@ -20,16 +19,9 @@ When the user describes tasks they need to do, use the add_tasks tool to add the
 Guidelines for task extraction:
 - Title: Clear, actionable task title starting with a verb when possible
 - Time estimate: Choose the closest value from [15, 30, 60, 120, 240, 480] minutes
-  - Quick tasks (emails, calls): 15-30 min
-  - Medium tasks (meetings, reviews): 60-120 min  
-  - Large tasks (deep work, projects): 240-480 min
-- Life area: Must be one of: health, wealth, relationships, growth, career, leisure
-  - health: Exercise, medical, nutrition, sleep
-  - wealth: Finances, investments, budgeting
-  - relationships: Family, friends, social
-  - growth: Learning, skills, personal development
-  - career: Work, professional, business
-  - leisure: Hobbies, entertainment, relaxation
+- Life areas: An array of one or more areas this task belongs to. A task can span multiple areas (e.g. volleyball = ["health", "family", "play"]). Use lowercase area names.
+  Common areas: sleep, health, work, family, community, wealth, impact, legacy, contribution, spiritual, emotional, play
+  But the user may have custom areas too - use whatever makes sense.
 - Priority: 1 (urgent/important), 2 (important), 3 (normal), 4 (low)
 
 Be conversational and helpful. After adding tasks, summarize what you added and offer to help prioritize or schedule them.`;
@@ -84,10 +76,10 @@ serve(async (req) => {
                         enum: TIME_ESTIMATES,
                         description: "Estimated time in minutes"
                       },
-                      life_area: { 
-                        type: "string",
-                        enum: LIFE_AREAS,
-                        description: "Which life area this task belongs to"
+                      life_areas: { 
+                        type: "array",
+                        items: { type: "string" },
+                        description: "Which life areas this task belongs to (can be multiple, e.g. ['health', 'family'])"
                       },
                       priority: {
                         type: "number",
@@ -95,7 +87,7 @@ serve(async (req) => {
                         description: "Priority: 1=urgent, 2=important, 3=normal, 4=low"
                       }
                     },
-                    required: ["title", "time_estimate_minutes", "life_area", "priority"],
+                    required: ["title", "time_estimate_minutes", "life_areas", "priority"],
                     additionalProperties: false
                   }
                 }

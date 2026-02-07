@@ -1,14 +1,15 @@
 import { useMemo, useState } from 'react';
-import { Task, LIFE_AREAS, CreateTaskInput, UpdateTaskInput } from '@/hooks/useTasks';
+import { Task, CreateTaskInput, UpdateTaskInput } from '@/hooks/useTasks';
+import { useUser } from '@/contexts/UserContext';
 import { DraggableTaskBlock } from './DraggableTaskBlock';
-import { AddTaskForm } from './AddTaskForm';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Clock, Sparkles, ChevronDown, ChevronRight, Plus } from 'lucide-react';
+import { Search, Clock, Sparkles, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { GOOGLE_CALENDAR_COLORS } from '@/types/user';
 import {
   Collapsible,
   CollapsibleContent,
@@ -26,7 +27,6 @@ interface TaskPoolSidebarProps {
   onDeleteTask?: (id: string) => Promise<boolean>;
 }
 
-type SortBy = 'priority' | 'time' | 'area';
 type GroupBy = 'none' | 'area' | 'priority';
 
 export function TaskPoolSidebar({ 
@@ -39,9 +39,12 @@ export function TaskPoolSidebar({
   onUpdateTask,
   onDeleteTask
 }: TaskPoolSidebarProps) {
+  const { categories } = useUser();
   const [searchQuery, setSearchQuery] = useState('');
   const [groupBy, setGroupBy] = useState<GroupBy>('area');
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(LIFE_AREAS.map(a => a.value)));
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+    new Set(categories.map(c => c.name.toLowerCase()))
+  );
 
   const filteredTasks = useMemo(() => {
     let filtered = tasks.filter(t => !t.completed);
@@ -50,7 +53,7 @@ export function TaskPoolSidebar({
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(t => 
         t.title.toLowerCase().includes(query) ||
-        t.life_area?.toLowerCase().includes(query)
+        (t.life_areas || []).some(a => a.includes(query))
       );
     }
     
@@ -64,21 +67,23 @@ export function TaskPoolSidebar({
     
     if (groupBy === 'area') {
       const groups: Record<string, Task[]> = {};
-      LIFE_AREAS.forEach(area => {
-        groups[area.value] = [];
+      categories.forEach(c => {
+        groups[c.name.toLowerCase()] = [];
       });
       groups['unassigned'] = [];
       
       filteredTasks.forEach(task => {
-        const area = task.life_area || 'unassigned';
-        if (groups[area]) {
-          groups[area].push(task);
-        } else {
+        const areas = task.life_areas || [];
+        if (areas.length === 0) {
           groups['unassigned'].push(task);
+        } else {
+          areas.forEach(area => {
+            if (!groups[area]) groups[area] = [];
+            groups[area].push(task);
+          });
         }
       });
       
-      // Remove empty groups
       return Object.fromEntries(
         Object.entries(groups).filter(([_, tasks]) => tasks.length > 0)
       );
@@ -86,10 +91,7 @@ export function TaskPoolSidebar({
     
     if (groupBy === 'priority') {
       const groups: Record<string, Task[]> = {
-        '1': [],
-        '2': [],
-        '3': [],
-        '4': [],
+        '1': [], '2': [], '3': [], '4': [],
       };
       
       filteredTasks.forEach(task => {
@@ -103,7 +105,7 @@ export function TaskPoolSidebar({
     }
     
     return { 'All Tasks': filteredTasks };
-  }, [filteredTasks, groupBy]);
+  }, [filteredTasks, groupBy, categories]);
 
   const toggleGroup = (group: string) => {
     const newExpanded = new Set(expandedGroups);
@@ -117,15 +119,12 @@ export function TaskPoolSidebar({
 
   const getGroupLabel = (key: string) => {
     if (groupBy === 'area') {
-      const area = LIFE_AREAS.find(a => a.value === key);
-      return area?.label || 'Unassigned';
+      const cat = categories.find(c => c.name.toLowerCase() === key);
+      return cat?.name || (key === 'unassigned' ? 'Unassigned' : key);
     }
     if (groupBy === 'priority') {
       const labels: Record<string, string> = {
-        '1': '🔴 Urgent',
-        '2': '🟠 High',
-        '3': '🟡 Medium',
-        '4': '🔵 Low',
+        '1': '🔴 Urgent', '2': '🟠 High', '3': '🟡 Medium', '4': '🔵 Low',
       };
       return labels[key] || key;
     }
@@ -134,10 +133,10 @@ export function TaskPoolSidebar({
 
   const getGroupColor = (key: string) => {
     if (groupBy === 'area') {
-      const area = LIFE_AREAS.find(a => a.value === key);
-      return area?.color || 'bg-muted';
+      const cat = categories.find(c => c.name.toLowerCase() === key);
+      if (cat) return GOOGLE_CALENDAR_COLORS[cat.googleColorId]?.hex;
     }
-    return 'bg-muted';
+    return undefined;
   };
 
   const formatTotalTime = (minutes: number) => {
@@ -150,7 +149,6 @@ export function TaskPoolSidebar({
 
   return (
     <div className="flex flex-col h-full bg-card border-r">
-      {/* Header */}
       <div className="p-4 border-b space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-serif text-lg">Task Pool</h2>
@@ -160,8 +158,6 @@ export function TaskPoolSidebar({
           </Badge>
         </div>
         
-        
-        {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -172,7 +168,6 @@ export function TaskPoolSidebar({
           />
         </div>
         
-        {/* Group by buttons */}
         <div className="flex gap-1">
           <Button 
             variant={groupBy === 'area' ? 'secondary' : 'ghost'} 
@@ -201,7 +196,6 @@ export function TaskPoolSidebar({
         </div>
       </div>
 
-      {/* AI Suggestions */}
       {suggestedTasks.length > 0 && (
         <div className="p-4 border-b bg-primary/5">
           <div className="flex items-center gap-2 mb-3">
@@ -224,7 +218,6 @@ export function TaskPoolSidebar({
         </div>
       )}
 
-      {/* Task list */}
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
           {Object.entries(groupedTasks).map(([group, groupTasks]) => (
@@ -239,10 +232,10 @@ export function TaskPoolSidebar({
                 ) : (
                   <ChevronRight className="h-4 w-4" />
                 )}
-                <span className={cn(
-                  "w-2 h-2 rounded-full",
-                  getGroupColor(group)
-                )} />
+                <span 
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: getGroupColor(group) || 'hsl(var(--muted))' }}
+                />
                 <span>{getGroupLabel(group)}</span>
                 <Badge variant="outline" className="ml-auto h-5 text-xs">
                   {groupTasks.length}

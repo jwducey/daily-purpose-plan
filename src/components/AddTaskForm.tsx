@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { CreateTaskInput, LIFE_AREAS, TIME_ESTIMATES } from '@/hooks/useTasks';
+import { CreateTaskInput, TIME_ESTIMATES } from '@/hooks/useTasks';
+import { useUser } from '@/contexts/UserContext';
+import { GOOGLE_CALENDAR_COLORS } from '@/types/user';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Plus, 
   Calendar, 
@@ -41,13 +44,14 @@ const priorityLabels: Record<number, string> = {
 };
 
 export function AddTaskForm({ onAdd }: AddTaskFormProps) {
+  const { categories } = useUser();
   const [isExpanded, setIsExpanded] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<Date | undefined>();
   const [priority, setPriority] = useState(4);
   const [timeEstimate, setTimeEstimate] = useState<number | undefined>();
-  const [lifeArea, setLifeArea] = useState<string | undefined>();
+  const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrencePerWeek, setRecurrencePerWeek] = useState<number>(2);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,18 +68,17 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
         due_date: dueDate?.toISOString(),
         priority,
         time_estimate_minutes: timeEstimate,
-        life_area: lifeArea,
+        life_areas: selectedAreas.length > 0 ? selectedAreas : undefined,
         is_recurring: isRecurring,
         recurrence_per_week: isRecurring ? recurrencePerWeek : undefined,
       });
       
-      // Reset form
       setTitle('');
       setDescription('');
       setDueDate(undefined);
       setPriority(4);
       setTimeEstimate(undefined);
-      setLifeArea(undefined);
+      setSelectedAreas([]);
       setIsRecurring(false);
       setRecurrencePerWeek(2);
       setShowDetails(false);
@@ -96,7 +99,14 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
   };
 
   const selectedTimeEstimate = TIME_ESTIMATES.find(t => t.value === timeEstimate);
-  const selectedLifeArea = LIFE_AREAS.find(a => a.value === lifeArea);
+
+  const toggleArea = (areaName: string) => {
+    setSelectedAreas(prev =>
+      prev.includes(areaName)
+        ? prev.filter(a => a !== areaName)
+        : [...prev, areaName]
+    );
+  };
 
   if (!isExpanded) {
     return (
@@ -217,48 +227,58 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
           </PopoverContent>
         </Popover>
 
+        {/* Multi-select life areas */}
         <Popover>
           <PopoverTrigger asChild>
             <Button 
               variant="outline" 
               size="sm"
-              className={cn(lifeArea && "text-primary")}
+              className={cn(selectedAreas.length > 0 && "text-primary")}
             >
-              {selectedLifeArea ? (
+              {selectedAreas.length > 0 ? (
                 <>
-                  <span className={cn("h-3 w-3 rounded-full mr-2", selectedLifeArea.color)} />
-                  {selectedLifeArea.label}
+                  <Target className="h-4 w-4 mr-1" />
+                  {selectedAreas.length} area{selectedAreas.length !== 1 ? 's' : ''}
                 </>
               ) : (
                 <>
                   <Target className="h-4 w-4 mr-1" />
-                  Life area
+                  Life areas
                 </>
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-44 p-2" align="start">
+          <PopoverContent className="w-52 p-2" align="start">
             <div className="flex flex-col gap-1">
-              {LIFE_AREAS.map((area) => (
-                <Button
-                  key={area.value}
-                  size="sm"
-                  variant={lifeArea === area.value ? "secondary" : "ghost"}
-                  className="justify-start"
-                  onClick={() => setLifeArea(area.value)}
+              <p className="text-xs text-muted-foreground px-2 py-1">Select multiple areas</p>
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  className={cn(
+                    "flex items-center gap-2 px-2 py-1.5 rounded-md text-sm hover:bg-muted transition-colors text-left",
+                    selectedAreas.includes(cat.name.toLowerCase()) && "bg-muted"
+                  )}
+                  onClick={() => toggleArea(cat.name.toLowerCase())}
                 >
-                  <span className={cn("h-3 w-3 rounded-full mr-2", area.color)} />
-                  {area.label}
-                </Button>
+                  <Checkbox
+                    checked={selectedAreas.includes(cat.name.toLowerCase())}
+                    className="h-3.5 w-3.5"
+                  />
+                  <div 
+                    className="w-3 h-3 rounded-full shrink-0" 
+                    style={{ backgroundColor: GOOGLE_CALENDAR_COLORS[cat.googleColorId]?.hex }}
+                  />
+                  <span className="truncate">{cat.name}</span>
+                </button>
               ))}
-              {lifeArea && (
+              {selectedAreas.length > 0 && (
                 <Button
                   size="sm"
                   variant="ghost"
                   className="justify-start text-muted-foreground"
-                  onClick={() => setLifeArea(undefined)}
+                  onClick={() => setSelectedAreas([])}
                 >
-                  Clear
+                  Clear all
                 </Button>
               )}
             </div>

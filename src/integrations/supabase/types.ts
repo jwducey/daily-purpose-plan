@@ -281,7 +281,7 @@ export type Database = {
           id: string
           is_recurring: boolean | null
           labels: string[] | null
-          life_area: string | null
+          life_areas: string[] | null
           priority: number | null
           project: string | null
           recurrence_per_week: number | null
@@ -303,7 +303,7 @@ export type Database = {
           id?: string
           is_recurring?: boolean | null
           labels?: string[] | null
-          life_area?: string | null
+          life_areas?: string[] | null
           priority?: number | null
           project?: string | null
           recurrence_per_week?: number | null
@@ -325,7 +325,7 @@ export type Database = {
           id?: string
           is_recurring?: boolean | null
           labels?: string[] | null
-          life_area?: string | null
+          life_areas?: string[] | null
           priority?: number | null
           project?: string | null
           recurrence_per_week?: number | null
