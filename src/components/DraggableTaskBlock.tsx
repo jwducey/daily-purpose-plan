@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { Task, LIFE_AREAS, TIME_ESTIMATES, UpdateTaskInput } from '@/hooks/useTasks';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { Clock, GripVertical, Repeat, Flag, Calendar, Trash2, Edit2, Check, X } from 'lucide-react';
+import { Clock, GripVertical, Repeat, Flag, Calendar, Trash2, Edit2, Check, X, SkipForward } from 'lucide-react';
+import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -118,6 +119,23 @@ export function DraggableTaskBlock({
   const handleLifeAreaChange = async (area: string | null) => {
     if (onUpdate) {
       await onUpdate(task.id, { life_area: area });
+    }
+  };
+
+  const handleSkip = async () => {
+    if (!onUpdate) return;
+    const newSkipCount = (task.skip_count || 0) + 1;
+    
+    // Reduce recurrence for this week by treating skip as a "scheduled" instance
+    // Set scheduled_at to now so it counts as handled, but mark the skip
+    await onUpdate(task.id, { skip_count: newSkipCount });
+    
+    if (newSkipCount >= 3) {
+      toast.warning(`You've skipped "${task.title}" ${newSkipCount} times in a row. Consider adjusting your schedule or removing this task.`, {
+        duration: 6000,
+      });
+    } else {
+      toast.info(`Skipped "${task.title}" (${newSkipCount} skip${newSkipCount > 1 ? 's' : ''} in a row)`);
     }
   };
 
@@ -252,6 +270,22 @@ export function DraggableTaskBlock({
                   />
                 </PopoverContent>
               </Popover>
+
+              {/* Skip button for recurring tasks */}
+              {task.is_recurring && task.recurrence_per_week && (
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSkip();
+                  }}
+                  title="Skip this instance"
+                >
+                  <SkipForward className="h-3 w-3" />
+                </Button>
+              )}
 
               <Button 
                 size="icon" 

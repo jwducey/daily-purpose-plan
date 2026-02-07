@@ -43,6 +43,7 @@ export interface Task {
   is_recurring: boolean;
   google_event_id: string | null;
   recurrence_per_week: number | null;
+  skip_count: number;
 }
 
 export interface CreateTaskInput {
@@ -73,6 +74,7 @@ export interface UpdateTaskInput {
   is_recurring?: boolean;
   google_event_id?: string | null;
   recurrence_per_week?: number | null;
+  skip_count?: number;
 }
 
 export function useTasks() {

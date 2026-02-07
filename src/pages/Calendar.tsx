@@ -154,8 +154,10 @@ export default function Calendar() {
             eventStart <= nextWeek
           );
         }).length;
-        // Hide if already scheduled enough times this week
-        return upcomingCount < t.recurrence_per_week;
+        // Count skips toward the quota too
+        const totalHandled = upcomingCount + (t.skip_count || 0);
+        // Hide if already scheduled + skipped enough times this week
+        return totalHandled < t.recurrence_per_week;
       }
       
       // Show unscheduled tasks
@@ -234,7 +236,7 @@ export default function Calendar() {
       
       // For recurring tasks with frequency, don't set scheduled_at — let the event count control visibility
       if (task.is_recurring && task.recurrence_per_week) {
-        await updateTask(task.id, { google_event_id: eventId });
+        await updateTask(task.id, { google_event_id: eventId, skip_count: 0 });
       } else {
         await updateTask(task.id, {
           scheduled_at: new Date().toISOString(),
