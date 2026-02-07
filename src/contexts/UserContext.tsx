@@ -4,8 +4,11 @@ import { UserProfile, TimeBudgetCategory, DEFAULT_CATEGORIES } from '@/types/use
 interface UserContextType {
   user: UserProfile | null;
   categories: TimeBudgetCategory[];
+  customSuggestions: Record<string, string[]>;
   setUser: (user: UserProfile | null) => void;
   updateCategory: (categoryId: string, updates: Partial<TimeBudgetCategory>) => void;
+  addCustomSuggestion: (categoryName: string, suggestion: string) => void;
+  removeCustomSuggestion: (categoryName: string, suggestion: string) => void;
   completeOnboarding: (userData: Partial<UserProfile>) => void;
   isLoading: boolean;
 }
@@ -15,6 +18,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [categories, setCategories] = useState<TimeBudgetCategory[]>([]);
+  const [customSuggestions, setCustomSuggestions] = useState<Record<string, string[]>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -35,7 +39,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (savedCategories) {
       setCategories(JSON.parse(savedCategories));
     } else {
-      // Initialize with default categories
       const initialCategories = DEFAULT_CATEGORIES.map((cat, index) => ({
         ...cat,
         id: `cat_${index}`,
@@ -43,6 +46,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         googleColorId: cat.googleColorId || '1',
       }));
       setCategories(initialCategories);
+    }
+
+    const savedSuggestions = localStorage.getItem('lifewealth_custom_suggestions');
+    if (savedSuggestions) {
+      setCustomSuggestions(JSON.parse(savedSuggestions));
     }
     
     setIsLoading(false);
@@ -59,6 +67,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('lifewealth_categories', JSON.stringify(categories));
     }
   }, [categories]);
+
+  useEffect(() => {
+    localStorage.setItem('lifewealth_custom_suggestions', JSON.stringify(customSuggestions));
+  }, [customSuggestions]);
 
   const completeOnboarding = (userData: Partial<UserProfile>) => {
     const newUser: UserProfile = {
@@ -84,12 +96,29 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
+  const addCustomSuggestion = (categoryName: string, suggestion: string) => {
+    setCustomSuggestions(prev => ({
+      ...prev,
+      [categoryName]: [...(prev[categoryName] || []), suggestion],
+    }));
+  };
+
+  const removeCustomSuggestion = (categoryName: string, suggestion: string) => {
+    setCustomSuggestions(prev => ({
+      ...prev,
+      [categoryName]: (prev[categoryName] || []).filter(s => s !== suggestion),
+    }));
+  };
+
   return (
     <UserContext.Provider value={{ 
       user, 
       categories, 
+      customSuggestions,
       setUser, 
       updateCategory, 
+      addCustomSuggestion,
+      removeCustomSuggestion,
       completeOnboarding,
       isLoading 
     }}>
