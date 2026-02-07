@@ -136,18 +136,35 @@ export default function Calendar() {
     handleRefresh();
   };
 
-  // Filter tasks to show only unscheduled OR recurring tasks whose scheduled time has passed
+  // Filter tasks to show only those that need scheduling
   const unscheduledTasks = useMemo(() => {
     const now = new Date();
+    const nextWeek = addDays(now, 7);
+    
     return tasks.filter(t => {
       if (t.completed) return false;
+      
+      // For recurring tasks with a frequency, check if sufficiently scheduled in next 7 days
+      if (t.is_recurring && t.recurrence_per_week) {
+        const upcomingCount = events.filter(event => {
+          const eventStart = new Date(event.start);
+          return (
+            event.summary === t.title &&
+            eventStart >= now &&
+            eventStart <= nextWeek
+          );
+        }).length;
+        // Hide if already scheduled enough times this week
+        return upcomingCount < t.recurrence_per_week;
+      }
+      
       // Show unscheduled tasks
       if (!t.scheduled_at) return true;
       // Show recurring tasks whose scheduled time has passed (ready to be rescheduled)
       if (t.is_recurring && new Date(t.scheduled_at) < now) return true;
       return false;
     });
-  }, [tasks]);
+  }, [tasks, events]);
 
   // Calculate total time of unscheduled tasks
   const totalTime = useMemo(() => {
@@ -213,12 +230,17 @@ export default function Calendar() {
 
       toast.success(`Scheduled "${task.title}" for ${format(startTime, 'EEE h:mm a')}`);
       
-      // Mark task as scheduled
       const eventId = data?.id || data?.eventId || null;
-      await updateTask(task.id, {
-        scheduled_at: new Date().toISOString(),
-        google_event_id: eventId,
-      });
+      
+      // For recurring tasks with frequency, don't set scheduled_at — let the event count control visibility
+      if (task.is_recurring && task.recurrence_per_week) {
+        await updateTask(task.id, { google_event_id: eventId });
+      } else {
+        await updateTask(task.id, {
+          scheduled_at: new Date().toISOString(),
+          google_event_id: eventId,
+        });
+      }
       
       handleRefresh();
     } catch (error) {

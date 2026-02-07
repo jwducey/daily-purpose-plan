@@ -1,0 +1,1 @@
+ALTER TABLE public.tasks ADD COLUMN recurrence_per_week integer DEFAULT NULL;
