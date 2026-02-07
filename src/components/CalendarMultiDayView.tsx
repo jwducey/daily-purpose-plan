@@ -21,7 +21,7 @@ interface CalendarMultiDayViewProps {
 // Full 24-hour calendar with default scroll to 6 AM
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const HOUR_HEIGHT = 48; // pixels per hour
-const DEFAULT_SCROLL_HOUR = 6; // Scroll to 6 AM by default
+const DEFAULT_SCROLL_HOUR = 5; // Scroll to 5 AM by default
 
 export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventUpdated, onEventDeleted, onDropTask, onSlotClick }: CalendarMultiDayViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
