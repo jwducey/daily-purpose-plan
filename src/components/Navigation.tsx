@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, PieChart, ClipboardList, Settings, Timer, Calendar, CheckSquare } from 'lucide-react';
+import { LayoutDashboard, PieChart, ClipboardList, Settings, Timer, Calendar, CheckSquare, Flame } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/tasks', icon: CheckSquare, label: 'Tasks' },
+  { to: '/habits', icon: Flame, label: 'Habits' },
   { to: '/budget', icon: PieChart, label: 'Budget' },
   { to: '/calendar', icon: Calendar, label: 'Calendar' },
   { to: '/review', icon: ClipboardList, label: 'Review' },
