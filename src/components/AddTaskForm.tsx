@@ -49,6 +49,7 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
   const [timeEstimate, setTimeEstimate] = useState<number | undefined>();
   const [lifeArea, setLifeArea] = useState<string | undefined>();
   const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrencePerWeek, setRecurrencePerWeek] = useState<number>(2);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
 
@@ -65,6 +66,7 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
         time_estimate_minutes: timeEstimate,
         life_area: lifeArea,
         is_recurring: isRecurring,
+        recurrence_per_week: isRecurring ? recurrencePerWeek : undefined,
       });
       
       // Reset form
@@ -75,6 +77,7 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
       setTimeEstimate(undefined);
       setLifeArea(undefined);
       setIsRecurring(false);
+      setRecurrencePerWeek(2);
       setShowDetails(false);
       setIsExpanded(false);
     } finally {
@@ -267,11 +270,36 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
           size="sm"
           onClick={() => setIsRecurring(!isRecurring)}
           className={cn(isRecurring && "text-primary")}
-          title="Recurring task - will repopulate after scheduled event is completed"
+          title="Recurring task"
         >
           <Repeat className="h-4 w-4 mr-1" />
           Recurring
         </Button>
+
+        {isRecurring && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="text-primary">
+                {recurrencePerWeek}x/week
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-36 p-2" align="start">
+              <div className="flex flex-col gap-1">
+                {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+                  <Button
+                    key={n}
+                    size="sm"
+                    variant={recurrencePerWeek === n ? "secondary" : "ghost"}
+                    className="justify-start"
+                    onClick={() => setRecurrencePerWeek(n)}
+                  >
+                    {n}x per week
+                  </Button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
 
         <Button
           variant="ghost"

@@ -77,7 +77,7 @@ export function DraggableTaskBlock({
     return Math.max(hours * HOUR_HEIGHT, 36); // Minimum 36px
   }, [task.time_estimate_minutes]);
 
-  const isRecurring = task.labels?.includes('recurring');
+  const isRecurring = task.is_recurring;
 
   const handleSave = async () => {
     if (editTitle.trim() && onUpdate) {
@@ -325,6 +325,7 @@ export function DraggableTaskBlock({
           {isRecurring && (
             <span className="flex items-center gap-1 text-primary">
               <Repeat className="h-3 w-3" />
+              {task.recurrence_per_week && <span>{task.recurrence_per_week}x/wk</span>}
             </span>
           )}
 

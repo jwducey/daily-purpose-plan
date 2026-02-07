@@ -284,6 +284,7 @@ export type Database = {
           life_area: string | null
           priority: number | null
           project: string | null
+          recurrence_per_week: number | null
           scheduled_at: string | null
           sort_order: number | null
           time_estimate_minutes: number | null
@@ -304,6 +305,7 @@ export type Database = {
           life_area?: string | null
           priority?: number | null
           project?: string | null
+          recurrence_per_week?: number | null
           scheduled_at?: string | null
           sort_order?: number | null
           time_estimate_minutes?: number | null
@@ -324,6 +326,7 @@ export type Database = {
           life_area?: string | null
           priority?: number | null
           project?: string | null
+          recurrence_per_week?: number | null
           scheduled_at?: string | null
           sort_order?: number | null
           time_estimate_minutes?: number | null
