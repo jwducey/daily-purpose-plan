@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Task, UpdateTaskInput, LIFE_AREAS, TIME_ESTIMATES } from '@/hooks/useTasks';
+import { Task, UpdateTaskInput, TIME_ESTIMATES } from '@/hooks/useTasks';
+import { useUser } from '@/contexts/UserContext';
+import { GOOGLE_CALENDAR_COLORS } from '@/types/user';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +25,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar as CalendarPicker } from '@/components/ui/calendar';
+import { Checkbox as CheckboxPrimitive } from '@/components/ui/checkbox';
 
 interface TaskItemProps {
   task: Task;
@@ -46,6 +49,7 @@ const priorityLabels: Record<number, string> = {
 };
 
 export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskItemProps) {
+  const { categories } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -81,8 +85,12 @@ export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskIte
     await onUpdate(task.id, { time_estimate_minutes: minutes });
   };
 
-  const handleLifeAreaChange = async (area: string | null) => {
-    await onUpdate(task.id, { life_area: area });
+  const toggleLifeArea = async (areaName: string) => {
+    const current = task.life_areas || [];
+    const updated = current.includes(areaName)
+      ? current.filter(a => a !== areaName)
+      : [...current, areaName];
+    await onUpdate(task.id, { life_areas: updated.length > 0 ? updated : null });
   };
 
   const formatDueDate = (dateStr: string) => {
@@ -99,7 +107,11 @@ export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskIte
     return `${Math.round(minutes / 60)}h`;
   };
 
-  const lifeArea = LIFE_AREAS.find(a => a.value === task.life_area);
+  const taskAreas = (task.life_areas || []).map(area => {
+    const cat = categories.find(c => c.name.toLowerCase() === area);
+    return cat ? { name: cat.name, colorId: cat.googleColorId } : { name: area, colorId: '1' };
+  });
+
   const isOverdue = task.due_date && isPast(parseISO(task.due_date)) && !isToday(parseISO(task.due_date)) && !task.completed;
 
   return (
@@ -179,12 +191,15 @@ export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskIte
                 </Badge>
               )}
 
-              {lifeArea && (
-                <Badge variant="outline" className="text-xs">
-                  <span className={cn("h-2 w-2 rounded-full mr-1", lifeArea.color)} />
-                  {lifeArea.label}
+              {taskAreas.map(area => (
+                <Badge key={area.name} variant="outline" className="text-xs">
+                  <span 
+                    className="h-2 w-2 rounded-full mr-1 inline-block"
+                    style={{ backgroundColor: GOOGLE_CALENDAR_COLORS[area.colorId]?.hex }}
+                  />
+                  {area.name}
                 </Badge>
-              )}
+              ))}
               
               {task.project && (
                 <Badge variant="secondary" className="text-xs">
@@ -277,40 +292,49 @@ export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskIte
           </PopoverContent>
         </Popover>
 
+        {/* Multi-select life areas */}
         <Popover>
           <PopoverTrigger asChild>
             <Button size="icon" variant="ghost" className="h-7 w-7">
-              {lifeArea ? (
-                <span className={cn("h-4 w-4 rounded-full", lifeArea.color)} />
+              {taskAreas.length > 0 ? (
+                <div className="flex -space-x-1">
+                  {taskAreas.slice(0, 2).map(a => (
+                    <span 
+                      key={a.name}
+                      className="h-3 w-3 rounded-full border border-card" 
+                      style={{ backgroundColor: GOOGLE_CALENDAR_COLORS[a.colorId]?.hex }}
+                    />
+                  ))}
+                </div>
               ) : (
                 <Target className="h-4 w-4" />
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-40 p-2" align="end">
+          <PopoverContent className="w-48 p-2" align="end">
             <div className="flex flex-col gap-1">
-              {LIFE_AREAS.map((area) => (
-                <Button
-                  key={area.value}
-                  size="sm"
-                  variant={task.life_area === area.value ? "secondary" : "ghost"}
-                  className="justify-start"
-                  onClick={() => handleLifeAreaChange(area.value)}
-                >
-                  <span className={cn("h-3 w-3 rounded-full mr-2", area.color)} />
-                  {area.label}
-                </Button>
-              ))}
-              {task.life_area && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="justify-start text-muted-foreground"
-                  onClick={() => handleLifeAreaChange(null)}
-                >
-                  Clear
-                </Button>
-              )}
+              <p className="text-xs text-muted-foreground px-2 py-1">Select areas</p>
+              {categories.map((cat) => {
+                const areaKey = cat.name.toLowerCase();
+                const isSelected = (task.life_areas || []).includes(areaKey);
+                return (
+                  <button
+                    key={cat.id}
+                    className={cn(
+                      "flex items-center gap-2 px-2 py-1.5 rounded-md text-sm hover:bg-muted transition-colors text-left",
+                      isSelected && "bg-muted"
+                    )}
+                    onClick={() => toggleLifeArea(areaKey)}
+                  >
+                    <CheckboxPrimitive checked={isSelected} className="h-3.5 w-3.5" />
+                    <span 
+                      className="w-3 h-3 rounded-full shrink-0"
+                      style={{ backgroundColor: GOOGLE_CALENDAR_COLORS[cat.googleColorId]?.hex }}
+                    />
+                    <span className="truncate">{cat.name}</span>
+                  </button>
+                );
+              })}
             </div>
           </PopoverContent>
         </Popover>

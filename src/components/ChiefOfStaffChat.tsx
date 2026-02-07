@@ -4,7 +4,9 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { useTasks, LIFE_AREAS, TIME_ESTIMATES, CreateTaskInput } from '@/hooks/useTasks';
+import { useTasks, TIME_ESTIMATES, CreateTaskInput } from '@/hooks/useTasks';
+import { useUser } from '@/contexts/UserContext';
+import { GOOGLE_CALENDAR_COLORS } from '@/types/user';
 import { Send, Bot, User, Loader2, CheckCircle2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -18,7 +20,7 @@ interface ExtractedTask {
   title: string;
   description?: string;
   time_estimate_minutes: number;
-  life_area: string;
+  life_areas: string[];
   priority: number;
 }
 
@@ -33,6 +35,7 @@ export function ChiefOfStaffChat() {
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { createTask } = useTasks();
+  const { categories } = useUser();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -43,14 +46,14 @@ export function ChiefOfStaffChat() {
   const addTasksToList = async (tasks: ExtractedTask[]) => {
     let addedCount = 0;
     for (const task of tasks) {
-      const input: CreateTaskInput = {
+      const taskInput: CreateTaskInput = {
         title: task.title,
         description: task.description,
         time_estimate_minutes: task.time_estimate_minutes,
-        life_area: task.life_area,
+        life_areas: task.life_areas,
         priority: task.priority,
       };
-      const result = await createTask(input);
+      const result = await createTask(taskInput);
       if (result) addedCount++;
     }
     return addedCount;
@@ -85,15 +88,17 @@ export function ChiefOfStaffChat() {
       let assistantContent = '';
       let extractedTasks: ExtractedTask[] = [];
 
-      // Check for tool calls
       if (choice.message?.tool_calls) {
         for (const toolCall of choice.message.tool_calls) {
           if (toolCall.function?.name === 'add_tasks') {
             try {
               const args = JSON.parse(toolCall.function.arguments);
-              extractedTasks = args.tasks || [];
+              // Normalize: convert life_area string to life_areas array
+              extractedTasks = (args.tasks || []).map((t: any) => ({
+                ...t,
+                life_areas: t.life_areas || (t.life_area ? [t.life_area] : []),
+              }));
               
-              // Add tasks to the database
               const addedCount = await addTasksToList(extractedTasks);
               toast.success(`Added ${addedCount} task${addedCount !== 1 ? 's' : ''} to your list`);
             } catch (e) {
@@ -103,10 +108,8 @@ export function ChiefOfStaffChat() {
         }
       }
 
-      // Get the assistant's message content
       assistantContent = choice.message?.content || '';
       
-      // If no content but we have tasks, generate a summary
       if (!assistantContent && extractedTasks.length > 0) {
         assistantContent = `I've added ${extractedTasks.length} task${extractedTasks.length !== 1 ? 's' : ''} to your list. Would you like me to help prioritize them or find time in your calendar to schedule them?`;
       }
@@ -130,9 +133,10 @@ export function ChiefOfStaffChat() {
     }
   };
 
-  const getLifeAreaColor = (area: string) => {
-    const found = LIFE_AREAS.find(a => a.value === area);
-    return found?.color || 'bg-gray-500';
+  const getLifeAreaColor = (areas: string[]) => {
+    if (areas.length === 0) return undefined;
+    const cat = categories.find(c => c.name.toLowerCase() === areas[0]);
+    return cat ? GOOGLE_CALENDAR_COLORS[cat.googleColorId]?.hex : undefined;
   };
 
   const getTimeLabel = (minutes: number) => {
@@ -152,7 +156,6 @@ export function ChiefOfStaffChat() {
 
   return (
     <div className="flex flex-col h-full bg-background rounded-lg border">
-      {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b bg-muted/30">
         <div className="p-2 rounded-full bg-primary/10">
           <Sparkles className="h-5 w-5 text-primary" />
@@ -163,7 +166,6 @@ export function ChiefOfStaffChat() {
         </div>
       </div>
 
-      {/* Messages */}
       <ScrollArea className="flex-1 p-4" ref={scrollRef}>
         <div className="space-y-4">
           {messages.map((message, index) => (
@@ -185,7 +187,6 @@ export function ChiefOfStaffChat() {
                   <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                 </div>
                 
-                {/* Show extracted tasks */}
                 {message.tasks && message.tasks.length > 0 && (
                   <div className="mt-3 space-y-2">
                     {message.tasks.map((task, taskIndex) => (
@@ -197,9 +198,15 @@ export function ChiefOfStaffChat() {
                             <Badge variant="outline" className="text-xs">
                               {getTimeLabel(task.time_estimate_minutes)}
                             </Badge>
-                            <Badge className={`text-xs text-white ${getLifeAreaColor(task.life_area)}`}>
-                              {task.life_area}
-                            </Badge>
+                            {task.life_areas.map(area => (
+                              <Badge 
+                                key={area} 
+                                className="text-xs text-white"
+                                style={{ backgroundColor: getLifeAreaColor([area]) || 'hsl(var(--muted))' }}
+                              >
+                                {area}
+                              </Badge>
+                            ))}
                             <Badge variant="secondary" className="text-xs">
                               {getPriorityLabel(task.priority)}
                             </Badge>
@@ -227,7 +234,6 @@ export function ChiefOfStaffChat() {
         </div>
       </ScrollArea>
 
-      {/* Input */}
       <div className="p-4 border-t">
         <form 
           onSubmit={(e) => { e.preventDefault(); sendMessage(); }}

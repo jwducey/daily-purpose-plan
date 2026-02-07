@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { 
   Moon, Heart, Briefcase, Users, Globe, TrendingUp, 
   Target, Award, Gift, Sun, Smile, Gamepad2,
-  LucideIcon, Palette, ChevronDown, ChevronRight, Plus, X, Lightbulb
+  LucideIcon, Palette, ChevronDown, ChevronRight, Plus, X, Lightbulb, Trash2
 } from 'lucide-react';
 import {
   Popover,
@@ -40,6 +40,7 @@ interface CategorySliderProps {
   category: TimeBudgetCategory;
   onValueChange: (value: number) => void;
   onColorChange: (colorId: string) => void;
+  onDelete: () => void;
   maxTotal?: number;
 }
 
@@ -47,6 +48,7 @@ export function CategorySlider({
   category, 
   onValueChange, 
   onColorChange,
+  onDelete,
   maxTotal = 168 
 }: CategorySliderProps) {
   const Icon = iconMap[category.icon] || Target;
@@ -81,6 +83,16 @@ export function CategorySlider({
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {/* Delete button */}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+            onClick={onDelete}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </Button>
+
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="sm" className="h-7 w-7 p-0 hover:bg-muted">

@@ -18,7 +18,7 @@ import {
 interface BudgetGapPromptProps {
   events: CalendarEvent[];
   onCreateEvent: (date?: Date, time?: string) => void;
-  onCreateTask: (input: { title: string; life_area?: string; time_estimate_minutes?: number }) => Promise<any>;
+  onCreateTask: (input: { title: string; life_areas?: string[]; time_estimate_minutes?: number }) => Promise<any>;
 }
 
 interface AreaGap {
@@ -128,7 +128,7 @@ export function BudgetGapPrompt({ events, onCreateEvent, onCreateTask }: BudgetG
   const handleQuickAddTask = async (catName: string, ideaTitle: string, lifeArea: string) => {
     await onCreateTask({
       title: ideaTitle,
-      life_area: lifeArea,
+      life_areas: [lifeArea],
       time_estimate_minutes: 60,
     });
   };

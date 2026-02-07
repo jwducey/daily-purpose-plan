@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { TaskPoolSidebar } from '@/components/TaskPoolSidebar';
 import { WeeklyPlannerCalendar } from '@/components/WeeklyPlannerCalendar';
-import { useTasks, Task, LIFE_AREAS } from '@/hooks/useTasks';
+import { useTasks, Task } from '@/hooks/useTasks';
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
 import { useSchedulingSuggestions } from '@/hooks/useSchedulingSuggestions';
 import { useAuth } from '@/hooks/useAuth';
@@ -106,18 +106,18 @@ export default function Review() {
       const duration = task.time_estimate_minutes || 60;
       const endTime = addMinutes(startTime, duration);
 
-      // Get life area for description and color
-      const lifeArea = LIFE_AREAS.find(a => a.value === task.life_area);
+      // Get life areas for description and color
+      const areas = task.life_areas || [];
       const description = [
         task.description,
-        lifeArea ? `Life Area: ${lifeArea.label}` : null,
+        areas.length > 0 ? `Life Area: ${areas.join(', ')}` : null,
         `Priority: ${{ 1: 'Urgent', 2: 'High', 3: 'Medium', 4: 'Low' }[task.priority] || 'Normal'}`,
       ].filter(Boolean).join('\n');
       
-      // Get color from matching category
-      const matchingCategory = categories.find(c => 
-        c.name.toLowerCase() === task.life_area?.toLowerCase()
-      );
+      // Get color from first matching category
+      const matchingCategory = areas.length > 0
+        ? categories.find(c => c.name.toLowerCase() === areas[0])
+        : undefined;
       const colorId = matchingCategory?.googleColorId || undefined;
 
       const { data, error } = await supabase.functions.invoke('google-calendar-create-event', {

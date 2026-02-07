@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Task, LIFE_AREAS, TIME_ESTIMATES, UpdateTaskInput } from '@/hooks/useTasks';
+import { Task, TIME_ESTIMATES, UpdateTaskInput } from '@/hooks/useTasks';
+import { useUser } from '@/contexts/UserContext';
+import { GOOGLE_CALENDAR_COLORS } from '@/types/user';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { Clock, GripVertical, Repeat, Flag, Calendar, Trash2, Edit2, Check, X, SkipForward } from 'lucide-react';
@@ -24,9 +26,8 @@ interface DraggableTaskBlockProps {
   compact?: boolean;
 }
 
-const HOUR_HEIGHT = 48; // Match the calendar hour height
+const HOUR_HEIGHT = 48;
 
-// Priority colors
 const priorityColors = {
   1: 'border-l-red-500',
   2: 'border-l-orange-500',
@@ -57,13 +58,17 @@ export function DraggableTaskBlock({
   isDragging = false,
   compact = false 
 }: DraggableTaskBlockProps) {
+  const { categories } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const lifeArea = useMemo(() => 
-    LIFE_AREAS.find(a => a.value === task.life_area),
-    [task.life_area]
+  const taskAreas = useMemo(() => 
+    (task.life_areas || []).map(area => {
+      const cat = categories.find(c => c.name.toLowerCase() === area);
+      return cat ? { name: cat.name, colorId: cat.googleColorId } : { name: area, colorId: '1' };
+    }),
+    [task.life_areas, categories]
   );
 
   const timeEstimate = useMemo(() =>
@@ -71,11 +76,10 @@ export function DraggableTaskBlock({
     [task.time_estimate_minutes]
   );
 
-  // Calculate height based on time estimate (min 24px, proportional to hours)
   const blockHeight = useMemo(() => {
     if (!task.time_estimate_minutes) return 'auto';
     const hours = task.time_estimate_minutes / 60;
-    return Math.max(hours * HOUR_HEIGHT, 36); // Minimum 36px
+    return Math.max(hours * HOUR_HEIGHT, 36);
   }, [task.time_estimate_minutes]);
 
   const isRecurring = task.is_recurring;
@@ -116,18 +120,9 @@ export function DraggableTaskBlock({
     }
   };
 
-  const handleLifeAreaChange = async (area: string | null) => {
-    if (onUpdate) {
-      await onUpdate(task.id, { life_area: area });
-    }
-  };
-
   const handleSkip = async () => {
     if (!onUpdate) return;
     const newSkipCount = (task.skip_count || 0) + 1;
-    
-    // Reduce recurrence for this week by treating skip as a "scheduled" instance
-    // Set scheduled_at to now so it counts as handled, but mark the skip
     await onUpdate(task.id, { skip_count: newSkipCount });
     
     if (newSkipCount >= 3) {
@@ -187,12 +182,10 @@ export function DraggableTaskBlock({
       whileTap={{ scale: 0.98 }}
       layout
     >
-      {/* Drag handle */}
       <div className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-50 transition-opacity">
         <GripVertical className="h-4 w-4 text-muted-foreground" />
       </div>
 
-      {/* Action buttons - show on hover */}
       {(onUpdate || onDelete) && (
         <div className="absolute right-1 top-1 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 bg-card/90 rounded p-0.5">
           {onUpdate && (
@@ -271,7 +264,6 @@ export function DraggableTaskBlock({
                 </PopoverContent>
               </Popover>
 
-              {/* Skip button for recurring tasks */}
               {task.is_recurring && task.recurrence_per_week && (
                 <Button 
                   size="icon" 
@@ -318,22 +310,20 @@ export function DraggableTaskBlock({
       )}
 
       <div className={cn("flex flex-col gap-1", !compact && "pl-4")}>
-        {/* Title */}
         <div className="font-medium text-sm line-clamp-2 pr-20">{task.title}</div>
 
-        {/* Metadata row */}
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          {/* Life Area Badge */}
-          {lifeArea && (
-            <span className={cn(
-              "inline-flex items-center px-1.5 py-0.5 rounded-full text-white",
-              lifeArea.color
-            )}>
-              {lifeArea.label}
+          {/* Life Area Badges */}
+          {taskAreas.map(area => (
+            <span 
+              key={area.name}
+              className="inline-flex items-center px-1.5 py-0.5 rounded-full text-white text-[10px]"
+              style={{ backgroundColor: GOOGLE_CALENDAR_COLORS[area.colorId]?.hex }}
+            >
+              {area.name}
             </span>
-          )}
+          ))}
 
-          {/* Priority Badge */}
           <span className="flex items-center gap-1">
             <Flag className={cn(
               "h-3 w-3",
@@ -347,7 +337,6 @@ export function DraggableTaskBlock({
             </span>
           </span>
 
-          {/* Time Estimate */}
           {timeEstimate && (
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
@@ -355,7 +344,6 @@ export function DraggableTaskBlock({
             </span>
           )}
 
-          {/* Recurring indicator */}
           {isRecurring && (
             <span className="flex items-center gap-1 text-primary">
               <Repeat className="h-3 w-3" />
@@ -363,7 +351,6 @@ export function DraggableTaskBlock({
             </span>
           )}
 
-          {/* Due date */}
           {task.due_date && (
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />

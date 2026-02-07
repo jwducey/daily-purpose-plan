@@ -1,21 +1,25 @@
+import { useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { CategorySlider } from './CategorySlider';
 import { WeekBudgetBar } from './WeekBudgetBar';
 import { motion } from 'framer-motion';
-import { Clock, AlertCircle, CheckCircle2, Layers, Sparkles } from 'lucide-react';
+import { Clock, AlertCircle, CheckCircle2, Layers, Sparkles, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const TOTAL_WEEKLY_HOURS = 168;
 const MAJOR_THRESHOLD = 30;
 
 export function TimeBudgetAllocation() {
-  const { categories, updateCategory } = useUser();
+  const { categories, updateCategory, addCategory, deleteCategory } = useUser();
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [showAddForm, setShowAddForm] = useState(false);
 
   const totalAllocated = categories.reduce((sum, cat) => sum + cat.weeklyHoursTarget, 0);
   const remaining = TOTAL_WEEKLY_HOURS - totalAllocated;
   const isOverBudget = remaining < 0;
   const isComplete = remaining === 0;
 
-  // Split into major (≥30h) and minor (<30h)
   const majorCategories = [...categories]
     .filter(c => c.weeklyHoursTarget >= MAJOR_THRESHOLD)
     .sort((a, b) => b.weeklyHoursTarget - a.weeklyHoursTarget);
@@ -26,6 +30,14 @@ export function TimeBudgetAllocation() {
 
   const majorTotal = majorCategories.reduce((sum, cat) => sum + cat.weeklyHoursTarget, 0);
   const remainingAfterMajor = TOTAL_WEEKLY_HOURS - majorTotal;
+
+  const handleAddCategory = () => {
+    if (newCategoryName.trim()) {
+      addCategory(newCategoryName.trim());
+      setNewCategoryName('');
+      setShowAddForm(false);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -95,6 +107,7 @@ export function TimeBudgetAllocation() {
                   category={category}
                   onValueChange={(value) => updateCategory(category.id, { weeklyHoursTarget: value })}
                   onColorChange={(colorId) => updateCategory(category.id, { googleColorId: colorId })}
+                  onDelete={() => deleteCategory(category.id)}
                   maxTotal={TOTAL_WEEKLY_HOURS}
                 />
               </motion.div>
@@ -103,7 +116,7 @@ export function TimeBudgetAllocation() {
         </motion.section>
       )}
 
-      {/* Minor categories (<30h) — slider max = remaining after major */}
+      {/* Minor categories (<30h) */}
       {minorCategories.length > 0 && (
         <motion.section
           className="space-y-4"
@@ -132,6 +145,7 @@ export function TimeBudgetAllocation() {
                   category={category}
                   onValueChange={(value) => updateCategory(category.id, { weeklyHoursTarget: value })}
                   onColorChange={(colorId) => updateCategory(category.id, { googleColorId: colorId })}
+                  onDelete={() => deleteCategory(category.id)}
                   maxTotal={Math.max(remainingAfterMajor, category.weeklyHoursTarget)}
                 />
               </motion.div>
@@ -139,6 +153,37 @@ export function TimeBudgetAllocation() {
           </div>
         </motion.section>
       )}
+
+      {/* Add category */}
+      <motion.div
+        className="p-5 rounded-xl bg-card shadow-card"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        {showAddForm ? (
+          <div className="flex gap-2">
+            <Input
+              placeholder="Category name (e.g. Volunteering)"
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+              autoFocus
+            />
+            <Button size="sm" onClick={handleAddCategory} disabled={!newCategoryName.trim()}>
+              Add
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => { setShowAddForm(false); setNewCategoryName(''); }}>
+              Cancel
+            </Button>
+          </div>
+        ) : (
+          <Button variant="outline" className="w-full" onClick={() => setShowAddForm(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Life Area
+          </Button>
+        )}
+      </motion.div>
     </div>
   );
 }

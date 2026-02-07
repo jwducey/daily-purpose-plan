@@ -3,17 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
-export const LIFE_AREAS = [
-  { value: 'health', label: 'Health', color: 'bg-green-500' },
-  { value: 'wealth', label: 'Wealth', color: 'bg-amber-500' },
-  { value: 'relationships', label: 'Relationships', color: 'bg-pink-500' },
-  { value: 'growth', label: 'Growth', color: 'bg-purple-500' },
-  { value: 'career', label: 'Career', color: 'bg-blue-500' },
-  { value: 'leisure', label: 'Leisure', color: 'bg-cyan-500' },
-] as const;
-
-export type LifeArea = typeof LIFE_AREAS[number]['value'];
-
 export const TIME_ESTIMATES = [
   { value: 15, label: '15 min' },
   { value: 30, label: '30 min' },
@@ -36,7 +25,7 @@ export interface Task {
   labels: string[] | null;
   sort_order: number;
   time_estimate_minutes: number | null;
-  life_area: string | null;
+  life_areas: string[] | null;
   created_at: string;
   updated_at: string;
   scheduled_at: string | null;
@@ -54,7 +43,7 @@ export interface CreateTaskInput {
   project?: string;
   labels?: string[];
   time_estimate_minutes?: number;
-  life_area?: string;
+  life_areas?: string[];
   is_recurring?: boolean;
   recurrence_per_week?: number;
 }
@@ -69,7 +58,7 @@ export interface UpdateTaskInput {
   labels?: string[];
   sort_order?: number;
   time_estimate_minutes?: number | null;
-  life_area?: string | null;
+  life_areas?: string[] | null;
   scheduled_at?: string | null;
   is_recurring?: boolean;
   google_event_id?: string | null;
@@ -100,7 +89,7 @@ export function useTasks() {
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
-      setTasks(data || []);
+      setTasks((data || []) as unknown as Task[]);
     } catch (error) {
       console.error('Error fetching tasks:', error);
       toast.error('Failed to load tasks');
@@ -124,7 +113,7 @@ export function useTasks() {
           project: input.project || null,
           labels: input.labels || null,
           time_estimate_minutes: input.time_estimate_minutes || null,
-          life_area: input.life_area || null,
+          life_areas: input.life_areas || [],
           is_recurring: input.is_recurring || false,
           recurrence_per_week: input.recurrence_per_week || null,
         })
@@ -133,9 +122,10 @@ export function useTasks() {
 
       if (error) throw error;
       
-      setTasks(prev => [...prev, data]);
+      const typedData = data as unknown as Task;
+      setTasks(prev => [...prev, typedData]);
       toast.success('Task created');
-      return data;
+      return typedData;
     } catch (error) {
       console.error('Error creating task:', error);
       toast.error('Failed to create task');
@@ -147,7 +137,6 @@ export function useTasks() {
     try {
       const updateData: any = { ...input };
       
-      // Set completed_at when completing a task
       if (input.completed === true) {
         updateData.completed_at = new Date().toISOString();
       } else if (input.completed === false) {
