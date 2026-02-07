@@ -1,0 +1,1 @@
+ALTER TABLE public.tasks ADD COLUMN skip_count integer DEFAULT 0;

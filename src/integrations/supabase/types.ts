@@ -286,6 +286,7 @@ export type Database = {
           project: string | null
           recurrence_per_week: number | null
           scheduled_at: string | null
+          skip_count: number | null
           sort_order: number | null
           time_estimate_minutes: number | null
           title: string
@@ -307,6 +308,7 @@ export type Database = {
           project?: string | null
           recurrence_per_week?: number | null
           scheduled_at?: string | null
+          skip_count?: number | null
           sort_order?: number | null
           time_estimate_minutes?: number | null
           title: string
@@ -328,6 +330,7 @@ export type Database = {
           project?: string | null
           recurrence_per_week?: number | null
           scheduled_at?: string | null
+          skip_count?: number | null
           sort_order?: number | null
           time_estimate_minutes?: number | null
           title?: string
