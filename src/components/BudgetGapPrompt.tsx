@@ -57,7 +57,7 @@ function matchEventToCategory(event: CalendarEvent, categories: TimeBudgetCatego
   return null;
 }
 
-const IDEA_SUGGESTIONS: Record<string, string[]> = {
+const DEFAULT_IDEA_SUGGESTIONS: Record<string, string[]> = {
   'Sleep': ['Wind-down routine', 'Set consistent bedtime', 'Digital sunset (no screens 1hr before bed)'],
   'Health': ['Morning walk', 'Gym session', 'Meal prep', 'Yoga class', 'Meditation'],
   'Work': ['Deep work block', 'Weekly planning', 'Skill development', 'Project review'],
@@ -73,7 +73,7 @@ const IDEA_SUGGESTIONS: Record<string, string[]> = {
 };
 
 export function BudgetGapPrompt({ events, onCreateEvent, onCreateTask }: BudgetGapPromptProps) {
-  const { categories } = useUser();
+  const { categories, customSuggestions } = useUser();
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
   const [dismissed, setDismissed] = useState(false);
   const [sectionOpen, setSectionOpen] = useState(false);
@@ -160,7 +160,9 @@ export function BudgetGapPrompt({ events, onCreateEvent, onCreateTask }: BudgetG
                 <AnimatePresence>
                   {gaps.map((gap) => {
                     const lifeAreaKey = gap.category.name.toLowerCase();
-                    const ideas = IDEA_SUGGESTIONS[gap.category.name] || [];
+                    const customIdeas = customSuggestions[gap.category.name] || [];
+                    const defaultIdeas = DEFAULT_IDEA_SUGGESTIONS[gap.category.name] || [];
+                    const ideas = [...customIdeas, ...defaultIdeas.filter(d => !customIdeas.includes(d))];
                     const isExpanded = expandedAreas.has(gap.category.id);
 
                     return (
