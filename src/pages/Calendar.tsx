@@ -19,9 +19,7 @@ import {
   ChevronRight,
   RefreshCw,
   Menu,
-  Plus,
-  PanelRight,
-  PanelRightClose
+  Plus
 } from 'lucide-react';
 import { format, addDays, addWeeks, addMonths, subDays, subWeeks, subMonths, startOfWeek, startOfMonth, setHours, setMinutes, addMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -57,7 +55,6 @@ export default function Calendar() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewType, setViewType] = useState('week');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [taskSidebarOpen, setTaskSidebarOpen] = useState(false);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [createEventDefaultDate, setCreateEventDefaultDate] = useState<Date | undefined>();
   const [createEventDefaultTime, setCreateEventDefaultTime] = useState<string | undefined>();
@@ -246,7 +243,7 @@ export default function Calendar() {
     return `${format(viewStartDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}`;
   };
 
-  const SidebarContent = () => (
+  const SidebarContentBlock = () => (
     <div className="h-full flex flex-col">
       <div className="p-4 border-b border-border space-y-2">
         <Button onClick={() => handleCreateEvent()} className="w-full">
@@ -262,6 +259,17 @@ export default function Calendar() {
         onDateSelect={handleDateSelect}
         selectedRange={visibleRange}
       />
+      <div className="flex-1 overflow-hidden border-t">
+        <TaskPoolSidebar
+          tasks={unscheduledTasks}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onCreateTask={createTask}
+          onUpdateTask={updateTask}
+          onDeleteTask={deleteTask}
+          totalTime={totalTime}
+        />
+      </div>
     </div>
   );
 
@@ -341,8 +349,8 @@ export default function Calendar() {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-72 p-0">
-                <SidebarContent />
+              <SheetContent side="left" className="w-80 p-0">
+                <SidebarContentBlock />
               </SheetContent>
             </Sheet>
 
@@ -395,21 +403,13 @@ export default function Calendar() {
             >
               <Plus className="h-4 w-4" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => setTaskSidebarOpen(!taskSidebarOpen)}
-              className="hidden lg:flex"
-            >
-              {taskSidebarOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRight className="h-4 w-4" />}
-            </Button>
           </div>
         </div>
 
         <div className="flex-1 flex overflow-hidden">
           {/* Desktop sidebar */}
-          <div className="hidden lg:block w-64 border-r border-border flex-shrink-0 overflow-auto">
-            <SidebarContent />
+          <div className="hidden lg:flex lg:flex-col w-80 border-r border-border flex-shrink-0 overflow-hidden">
+            <SidebarContentBlock />
           </div>
 
           {/* Calendar view */}
@@ -431,25 +431,6 @@ export default function Calendar() {
             )}
           </div>
 
-          {/* Task sidebar - right side */}
-          {taskSidebarOpen && (
-            <motion.div 
-              className="hidden lg:block w-80 flex-shrink-0 overflow-hidden"
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 320, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-            >
-              <TaskPoolSidebar
-                tasks={unscheduledTasks}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-                onCreateTask={createTask}
-                onUpdateTask={updateTask}
-                onDeleteTask={deleteTask}
-                totalTime={totalTime}
-              />
-            </motion.div>
-          )}
         </div>
 
         <CreateEventDialog
