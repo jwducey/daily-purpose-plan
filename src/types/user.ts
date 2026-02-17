@@ -41,17 +41,13 @@ export const GOOGLE_CALENDAR_COLORS: Record<string, { name: string; hex: string 
 
 export const DEFAULT_CATEGORIES: Omit<TimeBudgetCategory, 'id' | 'weeklyHoursActual'>[] = [
   { name: 'Sleep', icon: 'moon', color: 'sleep', googleColorId: '9', weeklyHoursTarget: 56, description: 'Rest and recovery' },
-  { name: 'Health', icon: 'heart', color: 'health', googleColorId: '2', weeklyHoursTarget: 7, description: 'Exercise, nutrition, wellness' },
-  { name: 'Work', icon: 'briefcase', color: 'work', googleColorId: '7', weeklyHoursTarget: 40, description: 'Career and professional growth' },
-  { name: 'Family', icon: 'users', color: 'family', googleColorId: '4', weeklyHoursTarget: 14, description: 'Quality time with loved ones' },
-  { name: 'Community', icon: 'globe', color: 'community', googleColorId: '3', weeklyHoursTarget: 4, description: 'Friends and social connections' },
-  { name: 'Wealth', icon: 'trending-up', color: 'wealth', googleColorId: '5', weeklyHoursTarget: 5, description: 'Financial planning and growth' },
-  { name: 'Impact', icon: 'target', color: 'impact', googleColorId: '6', weeklyHoursTarget: 3, description: 'Making a difference' },
-  { name: 'Legacy', icon: 'award', color: 'legacy', googleColorId: '1', weeklyHoursTarget: 2, description: 'Building lasting value' },
-  { name: 'Contribution', icon: 'gift', color: 'contribution', googleColorId: '3', weeklyHoursTarget: 2, description: 'Giving back' },
-  { name: 'Spiritual', icon: 'sun', color: 'spiritual', googleColorId: '1', weeklyHoursTarget: 5, description: 'Purpose and meaning' },
-  { name: 'Emotional', icon: 'smile', color: 'emotional', googleColorId: '4', weeklyHoursTarget: 5, description: 'Mental health and growth' },
-  { name: 'Play', icon: 'gamepad-2', color: 'play', googleColorId: '10', weeklyHoursTarget: 25, description: 'Fun and recreation' },
+  { name: 'Financial', icon: 'trending-up', color: 'financial', googleColorId: '5', weeklyHoursTarget: 5, description: 'Financial planning, investing, and wealth building' },
+  { name: 'Business and Career', icon: 'briefcase', color: 'business', googleColorId: '7', weeklyHoursTarget: 40, description: 'Professional growth and career development' },
+  { name: 'Relationships', icon: 'users', color: 'relationships', googleColorId: '4', weeklyHoursTarget: 14, description: 'Family, friends, and meaningful connections' },
+  { name: 'Health and Fitness', icon: 'heart', color: 'health', googleColorId: '2', weeklyHoursTarget: 10, description: 'Exercise, nutrition, and wellness' },
+  { name: 'Fun and Recreation', icon: 'gamepad-2', color: 'fun', googleColorId: '10', weeklyHoursTarget: 20, description: 'Hobbies, play, and leisure activities' },
+  { name: 'Personal Growth', icon: 'book-open', color: 'growth', googleColorId: '3', weeklyHoursTarget: 7, description: 'Learning, spirituality, and self-improvement' },
+  { name: 'Community Contribution', icon: 'globe', color: 'community', googleColorId: '6', weeklyHoursTarget: 4, description: 'Giving back and making a difference' },
 ];
 
 export interface TimeRemaining {
