@@ -7,6 +7,7 @@ import { UserProvider } from "./contexts/UserContext";
 import { DailyReviewPanel } from "./components/DailyReviewPanel";
 import Index from "./pages/Index";
 import Budget from "./pages/Budget";
+import Capital from "./pages/Capital";
 import Review from "./pages/Review";
 import Settings from "./pages/Settings";
 import Calendar from "./pages/Calendar";
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/habits" element={<Habits />} />
             <Route path="/budget" element={<Budget />} />
+            <Route path="/capital" element={<Capital />} />
             <Route path="/review" element={<Review />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/settings" element={<Settings />} />

@@ -13,6 +13,7 @@ interface UserContextType {
   categories: TimeBudgetCategory[];
   customSuggestions: Record<string, string[]>;
   goals: LifeGoal[];
+  capitalRatings: Record<string, number>;
   setUser: (user: UserProfile | null) => void;
   updateCategory: (categoryId: string, updates: Partial<TimeBudgetCategory>) => void;
   resetCategories: () => void;
@@ -23,6 +24,7 @@ interface UserContextType {
   addGoal: (categoryId: string, text: string) => void;
   updateGoal: (goalId: string, text: string) => void;
   removeGoal: (goalId: string) => void;
+  setCapitalRating: (capitalId: string, rating: number) => void;
   completeOnboarding: (userData: Partial<UserProfile>) => void;
   isLoading: boolean;
 }
@@ -34,6 +36,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [categories, setCategories] = useState<TimeBudgetCategory[]>([]);
   const [customSuggestions, setCustomSuggestions] = useState<Record<string, string[]>>({});
   const [goals, setGoals] = useState<LifeGoal[]>([]);
+  const [capitalRatings, setCapitalRatings] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -71,6 +74,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (savedGoals) {
       setGoals(JSON.parse(savedGoals));
     }
+
+    const savedCapital = localStorage.getItem('lifewealth_capital_ratings');
+    if (savedCapital) {
+      setCapitalRatings(JSON.parse(savedCapital));
+    }
     
     setIsLoading(false);
   }, []);
@@ -94,6 +102,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     localStorage.setItem('lifewealth_goals', JSON.stringify(goals));
   }, [goals]);
+
+  useEffect(() => {
+    localStorage.setItem('lifewealth_capital_ratings', JSON.stringify(capitalRatings));
+  }, [capitalRatings]);
 
   const completeOnboarding = (userData: Partial<UserProfile>) => {
     const newUser: UserProfile = {
@@ -193,12 +205,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setGoals(prev => prev.filter(g => g.id !== goalId));
   };
 
+  const setCapitalRating = (capitalId: string, rating: number) => {
+    setCapitalRatings(prev => ({ ...prev, [capitalId]: rating }));
+  };
+
   return (
     <UserContext.Provider value={{ 
       user, 
       categories, 
       customSuggestions,
       goals,
+      capitalRatings,
       setUser, 
       updateCategory,
       resetCategories,
@@ -209,6 +226,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       addGoal,
       updateGoal,
       removeGoal,
+      setCapitalRating,
       completeOnboarding,
       isLoading 
     }}>
