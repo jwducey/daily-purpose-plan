@@ -3,11 +3,11 @@ import { MortalityCountdown } from '@/components/MortalityCountdown';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { Navigation } from '@/components/Navigation';
 import { motion } from 'framer-motion';
-import { PieChart, ArrowRight } from 'lucide-react';
+import { PieChart, ArrowRight, Target } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
-  const { user, categories } = useUser();
+  const { user, categories, goals } = useUser();
 
   if (!user) return null;
 
@@ -15,6 +15,8 @@ export default function Dashboard() {
   const topCategories = [...categories]
     .sort((a, b) => b.weeklyHoursTarget - a.weeklyHoursTarget)
     .slice(0, 3);
+
+  const categoriesWithGoals = categories.filter(cat => goals.some(g => g.categoryId === cat.id));
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background">
@@ -98,6 +100,56 @@ export default function Dashboard() {
               </Link>
             </motion.div>
           </div>
+
+          {/* Life Goals Widget */}
+          {(categoriesWithGoals.length > 0 || goals.length === 0) && (
+            <motion.section
+              className="p-6 rounded-2xl bg-card shadow-card"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.4 }}
+            >
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-life-energy/10">
+                    <Target className="w-5 h-5 text-life-energy" />
+                  </div>
+                  <h3 className="font-serif text-lg">Life Goals</h3>
+                </div>
+                <Link 
+                  to="/budget" 
+                  className="text-sm text-muted-foreground hover:text-life-energy transition-colors flex items-center gap-1"
+                >
+                  Manage <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+
+              {goals.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No goals set yet. Head to the <Link to="/budget" className="text-life-energy hover:underline">Budget tab</Link> to add goals for each life area.
+                </p>
+              ) : (
+                <div className="space-y-5">
+                  {categoriesWithGoals.map((cat) => {
+                    const catGoals = goals.filter(g => g.categoryId === cat.id);
+                    return (
+                      <div key={cat.id}>
+                        <h4 className="text-sm font-medium mb-2">{cat.name}</h4>
+                        <ul className="space-y-1.5 pl-1">
+                          {catGoals.map((goal) => (
+                            <li key={goal.id} className="text-sm text-muted-foreground flex items-start gap-2">
+                              <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-life-energy shrink-0" />
+                              {goal.text}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </motion.section>
+          )}
         </div>
       </main>
     </div>

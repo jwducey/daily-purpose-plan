@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Slider } from '@/components/ui/slider';
+import { LifeAreaGoals } from './LifeAreaGoals';
 import { TimeBudgetCategory, GOOGLE_CALENDAR_COLORS } from '@/types/user';
 import { Input } from '@/components/ui/input';
 import { 
@@ -151,6 +152,18 @@ export function CategorySlider({
         trackColor={selectedColor.hex}
         className="cursor-pointer"
       />
+
+      {/* Goals */}
+      <Collapsible>
+        <CollapsibleTrigger className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+          {<ChevronRight className="h-3 w-3 transition-transform [[data-state=open]>&]:rotate-90" />}
+          <Target className="h-3 w-3" />
+          <span>Goals</span>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <LifeAreaGoals categoryId={category.id} />
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Custom ideas dropdown */}
       <Collapsible open={ideasOpen} onOpenChange={setIdeasOpen}>
