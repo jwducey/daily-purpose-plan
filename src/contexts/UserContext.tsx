@@ -2,10 +2,17 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, TimeBudgetCategory, DEFAULT_CATEGORIES } from '@/types/user';
 import { toast } from 'sonner';
 
+export interface LifeGoal {
+  id: string;
+  categoryId: string;
+  text: string;
+}
+
 interface UserContextType {
   user: UserProfile | null;
   categories: TimeBudgetCategory[];
   customSuggestions: Record<string, string[]>;
+  goals: LifeGoal[];
   setUser: (user: UserProfile | null) => void;
   updateCategory: (categoryId: string, updates: Partial<TimeBudgetCategory>) => void;
   resetCategories: () => void;
@@ -13,6 +20,9 @@ interface UserContextType {
   deleteCategory: (categoryId: string) => void;
   addCustomSuggestion: (categoryName: string, suggestion: string) => void;
   removeCustomSuggestion: (categoryName: string, suggestion: string) => void;
+  addGoal: (categoryId: string, text: string) => void;
+  updateGoal: (goalId: string, text: string) => void;
+  removeGoal: (goalId: string) => void;
   completeOnboarding: (userData: Partial<UserProfile>) => void;
   isLoading: boolean;
 }
@@ -23,6 +33,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [categories, setCategories] = useState<TimeBudgetCategory[]>([]);
   const [customSuggestions, setCustomSuggestions] = useState<Record<string, string[]>>({});
+  const [goals, setGoals] = useState<LifeGoal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -55,6 +66,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (savedSuggestions) {
       setCustomSuggestions(JSON.parse(savedSuggestions));
     }
+
+    const savedGoals = localStorage.getItem('lifewealth_goals');
+    if (savedGoals) {
+      setGoals(JSON.parse(savedGoals));
+    }
     
     setIsLoading(false);
   }, []);
@@ -74,6 +90,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     localStorage.setItem('lifewealth_custom_suggestions', JSON.stringify(customSuggestions));
   }, [customSuggestions]);
+
+  useEffect(() => {
+    localStorage.setItem('lifewealth_goals', JSON.stringify(goals));
+  }, [goals]);
 
   const completeOnboarding = (userData: Partial<UserProfile>) => {
     const newUser: UserProfile = {
@@ -160,11 +180,25 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
+  const addGoal = (categoryId: string, text: string) => {
+    const newGoal: LifeGoal = { id: `goal_${Date.now()}`, categoryId, text };
+    setGoals(prev => [...prev, newGoal]);
+  };
+
+  const updateGoal = (goalId: string, text: string) => {
+    setGoals(prev => prev.map(g => g.id === goalId ? { ...g, text } : g));
+  };
+
+  const removeGoal = (goalId: string) => {
+    setGoals(prev => prev.filter(g => g.id !== goalId));
+  };
+
   return (
     <UserContext.Provider value={{ 
       user, 
       categories, 
       customSuggestions,
+      goals,
       setUser, 
       updateCategory,
       resetCategories,
@@ -172,6 +206,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       deleteCategory,
       addCustomSuggestion,
       removeCustomSuggestion,
+      addGoal,
+      updateGoal,
+      removeGoal,
       completeOnboarding,
       isLoading 
     }}>
