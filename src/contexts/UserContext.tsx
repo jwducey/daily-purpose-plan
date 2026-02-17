@@ -8,6 +8,7 @@ interface UserContextType {
   customSuggestions: Record<string, string[]>;
   setUser: (user: UserProfile | null) => void;
   updateCategory: (categoryId: string, updates: Partial<TimeBudgetCategory>) => void;
+  resetCategories: () => void;
   addCategory: (name: string, description?: string) => void;
   deleteCategory: (categoryId: string) => void;
   addCustomSuggestion: (categoryName: string, suggestion: string) => void;
@@ -90,6 +91,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setUser(newUser);
   };
 
+  const resetCategories = () => {
+    const initialCategories = DEFAULT_CATEGORIES.map((cat, index) => ({
+      ...cat,
+      id: `cat_${index}`,
+      weeklyHoursActual: 0,
+      googleColorId: cat.googleColorId || '1',
+    }));
+    setCategories(initialCategories);
+    setCustomSuggestions({});
+    toast.success('Life areas reset to defaults');
+  };
+
   const updateCategory = (categoryId: string, updates: Partial<TimeBudgetCategory>) => {
     setCategories(prev => 
       prev.map(cat => 
@@ -153,7 +166,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       categories, 
       customSuggestions,
       setUser, 
-      updateCategory, 
+      updateCategory,
+      resetCategories,
       addCategory,
       deleteCategory,
       addCustomSuggestion,
