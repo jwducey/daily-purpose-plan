@@ -3,7 +3,7 @@ import { useUser } from '@/contexts/UserContext';
 import { CategorySlider } from './CategorySlider';
 import { WeekBudgetBar } from './WeekBudgetBar';
 import { motion } from 'framer-motion';
-import { Clock, AlertCircle, CheckCircle2, Layers, Sparkles, Plus } from 'lucide-react';
+import { Clock, AlertCircle, CheckCircle2, Layers, Sparkles, Plus, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -11,7 +11,7 @@ const TOTAL_WEEKLY_HOURS = 168;
 const MAJOR_THRESHOLD = 30;
 
 export function TimeBudgetAllocation() {
-  const { categories, updateCategory, addCategory, deleteCategory } = useUser();
+  const { categories, updateCategory, addCategory, deleteCategory, resetCategories } = useUser();
   const [newCategoryName, setNewCategoryName] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -178,10 +178,16 @@ export function TimeBudgetAllocation() {
             </Button>
           </div>
         ) : (
-          <Button variant="outline" className="w-full" onClick={() => setShowAddForm(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Life Area
-          </Button>
+          <div className="flex gap-2 w-full">
+            <Button variant="outline" className="flex-1" onClick={() => setShowAddForm(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Life Area
+            </Button>
+            <Button variant="ghost" size="sm" onClick={resetCategories} title="Reset to default categories">
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Reset
+            </Button>
+          </div>
         )}
       </motion.div>
     </div>
