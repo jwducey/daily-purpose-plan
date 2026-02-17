@@ -52,7 +52,7 @@ function GoalItem({ goal, onUpdate, onRemove }: GoalItemProps) {
 
   return (
     <div className="flex items-center gap-1.5 group/goal text-xs py-1 px-2 rounded bg-muted/50">
-      <span className="flex-1 truncate">{goal.text}</span>
+      <span className="flex-1 break-words min-w-0">{goal.text}</span>
       <button
         onClick={() => setEditing(true)}
         className="opacity-0 group-hover/goal:opacity-100 transition-opacity text-muted-foreground hover:text-foreground shrink-0"
