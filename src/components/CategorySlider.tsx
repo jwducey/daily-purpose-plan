@@ -154,9 +154,9 @@ export function CategorySlider({
       />
 
       {/* Goals */}
-      <Collapsible>
+      <Collapsible defaultOpen>
         <CollapsibleTrigger className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
-          {<ChevronRight className="h-3 w-3 transition-transform [[data-state=open]>&]:rotate-90" />}
+          <ChevronDown className="h-3 w-3 transition-transform [[data-state=closed]>&]:-rotate-90" />
           <Target className="h-3 w-3" />
           <span>Goals</span>
         </CollapsibleTrigger>
