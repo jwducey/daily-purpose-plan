@@ -8,12 +8,20 @@ export interface LifeGoal {
   text: string;
 }
 
+export interface CapitalAsset {
+  id: string;
+  capitalId: string;
+  name: string;
+  value: string;
+}
+
 interface UserContextType {
   user: UserProfile | null;
   categories: TimeBudgetCategory[];
   customSuggestions: Record<string, string[]>;
   goals: LifeGoal[];
   capitalRatings: Record<string, number>;
+  capitalAssets: CapitalAsset[];
   setUser: (user: UserProfile | null) => void;
   updateCategory: (categoryId: string, updates: Partial<TimeBudgetCategory>) => void;
   resetCategories: () => void;
@@ -25,6 +33,9 @@ interface UserContextType {
   updateGoal: (goalId: string, text: string) => void;
   removeGoal: (goalId: string) => void;
   setCapitalRating: (capitalId: string, rating: number) => void;
+  addCapitalAsset: (capitalId: string, name: string, value: string) => void;
+  updateCapitalAsset: (assetId: string, updates: Partial<Pick<CapitalAsset, 'name' | 'value'>>) => void;
+  removeCapitalAsset: (assetId: string) => void;
   completeOnboarding: (userData: Partial<UserProfile>) => void;
   isLoading: boolean;
 }
@@ -37,6 +48,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [customSuggestions, setCustomSuggestions] = useState<Record<string, string[]>>({});
   const [goals, setGoals] = useState<LifeGoal[]>([]);
   const [capitalRatings, setCapitalRatings] = useState<Record<string, number>>({});
+  const [capitalAssets, setCapitalAssets] = useState<CapitalAsset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -79,6 +91,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (savedCapital) {
       setCapitalRatings(JSON.parse(savedCapital));
     }
+
+    const savedAssets = localStorage.getItem('lifewealth_capital_assets');
+    if (savedAssets) {
+      setCapitalAssets(JSON.parse(savedAssets));
+    }
     
     setIsLoading(false);
   }, []);
@@ -106,6 +123,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     localStorage.setItem('lifewealth_capital_ratings', JSON.stringify(capitalRatings));
   }, [capitalRatings]);
+
+  useEffect(() => {
+    localStorage.setItem('lifewealth_capital_assets', JSON.stringify(capitalAssets));
+  }, [capitalAssets]);
 
   const completeOnboarding = (userData: Partial<UserProfile>) => {
     const newUser: UserProfile = {
@@ -209,6 +230,19 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setCapitalRatings(prev => ({ ...prev, [capitalId]: rating }));
   };
 
+  const addCapitalAsset = (capitalId: string, name: string, value: string) => {
+    const newAsset: CapitalAsset = { id: `asset_${Date.now()}`, capitalId, name, value };
+    setCapitalAssets(prev => [...prev, newAsset]);
+  };
+
+  const updateCapitalAsset = (assetId: string, updates: Partial<Pick<CapitalAsset, 'name' | 'value'>>) => {
+    setCapitalAssets(prev => prev.map(a => a.id === assetId ? { ...a, ...updates } : a));
+  };
+
+  const removeCapitalAsset = (assetId: string) => {
+    setCapitalAssets(prev => prev.filter(a => a.id !== assetId));
+  };
+
   return (
     <UserContext.Provider value={{ 
       user, 
@@ -216,6 +250,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       customSuggestions,
       goals,
       capitalRatings,
+      capitalAssets,
       setUser, 
       updateCategory,
       resetCategories,
@@ -227,6 +262,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       updateGoal,
       removeGoal,
       setCapitalRating,
+      addCapitalAsset,
+      updateCapitalAsset,
+      removeCapitalAsset,
       completeOnboarding,
       isLoading 
     }}>
