@@ -32,6 +32,7 @@ interface UserContextType {
   capitalRatings: Record<string, number>;
   capitalAssets: CapitalAsset[];
   socialRelationships: SocialRelationship[];
+  financialConfig: { yearlyExpenses: number; yearlyROI: number };
   setUser: (user: UserProfile | null) => void;
   updateCategory: (categoryId: string, updates: Partial<TimeBudgetCategory>) => void;
   resetCategories: () => void;
@@ -49,6 +50,7 @@ interface UserContextType {
   addSocialRelationship: (name: string) => void;
   updateSocialRelationship: (id: string, updates: Partial<Omit<SocialRelationship, 'id'>>) => void;
   removeSocialRelationship: (id: string) => void;
+  setFinancialConfig: (config: { yearlyExpenses?: number; yearlyROI?: number }) => void;
   completeOnboarding: (userData: Partial<UserProfile>) => void;
   isLoading: boolean;
 }
@@ -62,6 +64,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [goals, setGoals] = useState<LifeGoal[]>([]);
   const [capitalRatings, setCapitalRatings] = useState<Record<string, number>>({});
   const [capitalAssets, setCapitalAssets] = useState<CapitalAsset[]>([]);
+  const [financialConfig, setFinancialConfigState] = useState<{ yearlyExpenses: number; yearlyROI: number }>({ yearlyExpenses: 0, yearlyROI: 0 });
   const [socialRelationships, setSocialRelationships] = useState<SocialRelationship[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -115,6 +118,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (savedRelationships) {
       setSocialRelationships(JSON.parse(savedRelationships));
     }
+
+    const savedFinConfig = localStorage.getItem('lifewealth_financial_config');
+    if (savedFinConfig) {
+      setFinancialConfigState(JSON.parse(savedFinConfig));
+    }
     
     setIsLoading(false);
   }, []);
@@ -150,6 +158,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     localStorage.setItem('lifewealth_social_relationships', JSON.stringify(socialRelationships));
   }, [socialRelationships]);
+
+  useEffect(() => {
+    localStorage.setItem('lifewealth_financial_config', JSON.stringify(financialConfig));
+  }, [financialConfig]);
 
   const completeOnboarding = (userData: Partial<UserProfile>) => {
     const newUser: UserProfile = {
@@ -275,6 +287,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setSocialRelationships(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
   };
 
+  const setFinancialConfig = (config: { yearlyExpenses?: number; yearlyROI?: number }) => {
+    setFinancialConfigState(prev => ({ ...prev, ...config }));
+  };
+
   const removeSocialRelationship = (id: string) => {
     setSocialRelationships(prev => prev.filter(r => r.id !== id));
   };
@@ -288,6 +304,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       capitalRatings,
       capitalAssets,
       socialRelationships,
+      financialConfig,
       setUser, 
       updateCategory,
       resetCategories,
@@ -305,6 +322,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       addSocialRelationship,
       updateSocialRelationship,
       removeSocialRelationship,
+      setFinancialConfig,
       completeOnboarding,
       isLoading 
     }}>
