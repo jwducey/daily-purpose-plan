@@ -2,12 +2,14 @@ import { Navigation } from '@/components/Navigation';
 import { motion } from 'framer-motion';
 import { useUser } from '@/contexts/UserContext';
 import { cn } from '@/lib/utils';
+import { useTimeRemaining } from '@/hooks/useTimeRemaining';
 import { Plus, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { SocialCapitalScorer } from '@/components/SocialCapitalScorer';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
+import { useCallback } from 'react';
 
 const CAPITAL_FORMS = [
   { id: 'financial', name: 'Financial Capital', icon: '💰', description: 'Cash, savings, equity, debt (negative).', valueLabel: 'Currency ($)' },
@@ -21,7 +23,48 @@ const CAPITAL_FORMS = [
 ];
 
 export default function Capital() {
-  const { capitalRatings, setCapitalRating, capitalAssets, addCapitalAsset, updateCapitalAsset, removeCapitalAsset, socialRelationships, addSocialRelationship, updateSocialRelationship, removeSocialRelationship } = useUser();
+  const { user, capitalRatings, setCapitalRating, capitalAssets, addCapitalAsset, updateCapitalAsset, removeCapitalAsset, socialRelationships, addSocialRelationship, updateSocialRelationship, removeSocialRelationship, financialConfig, setFinancialConfig } = useUser();
+
+  const birthDate = user?.birthDate || new Date(new Date().getFullYear() - 30, 0, 1);
+  const expectedLifespan = user?.expectedLifespan || 80;
+  const lifeRemaining = useTimeRemaining(birthDate, expectedLifespan);
+  const yearsRemaining = lifeRemaining.years;
+
+  // Auto-calculate financial capital rating
+  const financialRating = useMemo(() => {
+    const totalAssets = capitalAssets
+      .filter(a => a.capitalId === 'financial')
+      .reduce((sum, a) => {
+        const num = parseFloat(a.value.replace(/[^0-9.-]/g, ''));
+        return sum + (isNaN(num) ? 0 : num);
+      }, 0);
+
+    const { yearlyExpenses, yearlyROI } = financialConfig;
+    if (yearlyExpenses <= 0 || yearsRemaining <= 0) return 0;
+
+    // How many years can assets sustain? (accounting for ROI)
+    // With ROI: assets grow each year, so we simulate year by year
+    let remaining = totalAssets;
+    let yearsSustained = 0;
+    const roiRate = (yearlyROI || 0) / 100;
+
+    for (let i = 0; i < yearsRemaining && remaining > 0; i++) {
+      remaining = remaining * (1 + roiRate) - yearlyExpenses;
+      if (remaining >= 0) yearsSustained++;
+      else break;
+    }
+
+    // If sustained >= yearsRemaining, they're financially independent = 10
+    const ratio = Math.min(yearsSustained / yearsRemaining, 1);
+    return Math.max(1, Math.round(ratio * 10)) || 0;
+  }, [capitalAssets, financialConfig, yearsRemaining]);
+
+  // Sync auto-calculated financial rating
+  useEffect(() => {
+    if (financialConfig.yearlyExpenses > 0 && financialRating > 0) {
+      setCapitalRating('financial', financialRating);
+    }
+  }, [financialRating, financialConfig.yearlyExpenses, setCapitalRating]);
 
   const totalScore = CAPITAL_FORMS.reduce((sum, form) => sum + (capitalRatings[form.id] || 0), 0);
   const maxScore = CAPITAL_FORMS.length * 10;
@@ -83,10 +126,15 @@ export default function Capital() {
                 onUpdateAsset={updateCapitalAsset}
                 onRemoveAsset={removeCapitalAsset}
                 isSocial={form.id === 'social'}
+                isFinancial={form.id === 'financial'}
                 socialRelationships={socialRelationships}
                 onAddRelationship={addSocialRelationship}
                 onUpdateRelationship={updateSocialRelationship}
                 onRemoveRelationship={removeSocialRelationship}
+                financialConfig={financialConfig}
+                onFinancialConfigChange={setFinancialConfig}
+                yearsRemaining={yearsRemaining}
+                financialRating={financialRating}
               />
             ))}
           </div>
@@ -106,13 +154,18 @@ interface CapitalFormCardProps {
   onUpdateAsset: (id: string, updates: { name?: string; value?: string }) => void;
   onRemoveAsset: (id: string) => void;
   isSocial?: boolean;
+  isFinancial?: boolean;
   socialRelationships?: import('@/components/SocialCapitalScorer').SocialRelationship[];
   onAddRelationship?: (name: string) => void;
   onUpdateRelationship?: (id: string, updates: Partial<Omit<import('@/components/SocialCapitalScorer').SocialRelationship, 'id'>>) => void;
   onRemoveRelationship?: (id: string) => void;
+  financialConfig?: { yearlyExpenses: number; yearlyROI: number };
+  onFinancialConfigChange?: (config: { yearlyExpenses?: number; yearlyROI?: number }) => void;
+  yearsRemaining?: number;
+  financialRating?: number;
 }
 
-function CapitalFormCard({ form, index, rating, onRate, assets, onAddAsset, onUpdateAsset, onRemoveAsset, isSocial, socialRelationships, onAddRelationship, onUpdateRelationship, onRemoveRelationship }: CapitalFormCardProps) {
+function CapitalFormCard({ form, index, rating, onRate, assets, onAddAsset, onUpdateAsset, onRemoveAsset, isSocial, isFinancial, socialRelationships, onAddRelationship, onUpdateRelationship, onRemoveRelationship, financialConfig, onFinancialConfigChange, yearsRemaining, financialRating }: CapitalFormCardProps) {
   const [newName, setNewName] = useState('');
   const [newValue, setNewValue] = useState('');
 
@@ -147,12 +200,13 @@ function CapitalFormCard({ form, index, rating, onRate, assets, onAddAsset, onUp
           return (
             <button
               key={num}
-              onClick={() => onRate(num)}
+              onClick={() => !isFinancial && onRate(num)}
               className={cn(
                 'h-9 w-9 rounded-lg text-sm font-medium transition-all border',
                 selected
                   ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                  : 'bg-muted/50 text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground'
+                  : 'bg-muted/50 text-muted-foreground border-border',
+                isFinancial ? 'cursor-default' : 'hover:bg-accent hover:text-accent-foreground'
               )}
             >
               {num}
@@ -160,6 +214,44 @@ function CapitalFormCard({ form, index, rating, onRate, assets, onAddAsset, onUp
           );
         })}
       </div>
+
+      {/* Financial config */}
+      {isFinancial && financialConfig && onFinancialConfigChange && (
+        <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
+          <p className="text-xs font-semibold text-foreground">Financial Independence Calculator</p>
+          <p className="text-xs text-muted-foreground">
+            Rating auto-calculated: total assets ÷ yearly expenses (adjusted for ROI) vs. {yearsRemaining ?? '?'} years remaining.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Yearly Expenses ($)</label>
+              <Input
+                type="number"
+                value={financialConfig.yearlyExpenses || ''}
+                onChange={(e) => onFinancialConfigChange({ yearlyExpenses: parseFloat(e.target.value) || 0 })}
+                className="h-8 text-sm"
+                placeholder="e.g. 60000"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Avg. Yearly ROI (%)</label>
+              <Input
+                type="number"
+                value={financialConfig.yearlyROI || ''}
+                onChange={(e) => onFinancialConfigChange({ yearlyROI: parseFloat(e.target.value) || 0 })}
+                className="h-8 text-sm"
+                placeholder="e.g. 7"
+              />
+            </div>
+          </div>
+          {financialConfig.yearlyExpenses > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Auto-rated: <span className="text-foreground font-bold">{financialRating}/10</span>
+              {financialRating === 10 && ' — Financially Independent 🎉'}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Assets inventory */}
       <div className="space-y-2">
