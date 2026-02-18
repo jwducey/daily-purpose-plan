@@ -15,6 +15,15 @@ export interface CapitalAsset {
   value: string;
 }
 
+export interface SocialRelationship {
+  id: string;
+  name: string;
+  reliability: number;
+  vulnerability: number;
+  resourceFlow: number;
+  influence: number;
+}
+
 interface UserContextType {
   user: UserProfile | null;
   categories: TimeBudgetCategory[];
@@ -22,6 +31,7 @@ interface UserContextType {
   goals: LifeGoal[];
   capitalRatings: Record<string, number>;
   capitalAssets: CapitalAsset[];
+  socialRelationships: SocialRelationship[];
   setUser: (user: UserProfile | null) => void;
   updateCategory: (categoryId: string, updates: Partial<TimeBudgetCategory>) => void;
   resetCategories: () => void;
@@ -36,6 +46,9 @@ interface UserContextType {
   addCapitalAsset: (capitalId: string, name: string, value: string) => void;
   updateCapitalAsset: (assetId: string, updates: Partial<Pick<CapitalAsset, 'name' | 'value'>>) => void;
   removeCapitalAsset: (assetId: string) => void;
+  addSocialRelationship: (name: string) => void;
+  updateSocialRelationship: (id: string, updates: Partial<Omit<SocialRelationship, 'id'>>) => void;
+  removeSocialRelationship: (id: string) => void;
   completeOnboarding: (userData: Partial<UserProfile>) => void;
   isLoading: boolean;
 }
@@ -49,6 +62,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [goals, setGoals] = useState<LifeGoal[]>([]);
   const [capitalRatings, setCapitalRatings] = useState<Record<string, number>>({});
   const [capitalAssets, setCapitalAssets] = useState<CapitalAsset[]>([]);
+  const [socialRelationships, setSocialRelationships] = useState<SocialRelationship[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -96,6 +110,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (savedAssets) {
       setCapitalAssets(JSON.parse(savedAssets));
     }
+
+    const savedRelationships = localStorage.getItem('lifewealth_social_relationships');
+    if (savedRelationships) {
+      setSocialRelationships(JSON.parse(savedRelationships));
+    }
     
     setIsLoading(false);
   }, []);
@@ -127,6 +146,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     localStorage.setItem('lifewealth_capital_assets', JSON.stringify(capitalAssets));
   }, [capitalAssets]);
+
+  useEffect(() => {
+    localStorage.setItem('lifewealth_social_relationships', JSON.stringify(socialRelationships));
+  }, [socialRelationships]);
 
   const completeOnboarding = (userData: Partial<UserProfile>) => {
     const newUser: UserProfile = {
@@ -243,6 +266,19 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setCapitalAssets(prev => prev.filter(a => a.id !== assetId));
   };
 
+  const addSocialRelationship = (name: string) => {
+    const newRel: SocialRelationship = { id: `rel_${Date.now()}`, name, reliability: 0, vulnerability: 0, resourceFlow: 0, influence: 0 };
+    setSocialRelationships(prev => [...prev, newRel]);
+  };
+
+  const updateSocialRelationship = (id: string, updates: Partial<Omit<SocialRelationship, 'id'>>) => {
+    setSocialRelationships(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
+  };
+
+  const removeSocialRelationship = (id: string) => {
+    setSocialRelationships(prev => prev.filter(r => r.id !== id));
+  };
+
   return (
     <UserContext.Provider value={{ 
       user, 
@@ -251,6 +287,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       goals,
       capitalRatings,
       capitalAssets,
+      socialRelationships,
       setUser, 
       updateCategory,
       resetCategories,
@@ -265,6 +302,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       addCapitalAsset,
       updateCapitalAsset,
       removeCapitalAsset,
+      addSocialRelationship,
+      updateSocialRelationship,
+      removeSocialRelationship,
       completeOnboarding,
       isLoading 
     }}>
