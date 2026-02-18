@@ -46,18 +46,8 @@ const DIMENSIONS = [
   },
 ];
 
-function calcDepth(r: SocialRelationship): number {
-  const avg = (r.reliability + r.vulnerability + r.resourceFlow + r.influence) / 4;
-  return Math.round(avg);
-}
-
-function calcDiversity(r: SocialRelationship): number {
-  // Resource flow + influence represent diversity of skills/networks
-  return Math.round((r.resourceFlow + r.influence) / 2);
-}
-
 function calcScore(r: SocialRelationship): number {
-  return calcDepth(r) * calcDiversity(r);
+  return r.reliability + r.vulnerability + r.resourceFlow + r.influence;
 }
 
 interface Props {
@@ -94,7 +84,7 @@ export function SocialCapitalScorer({ relationships, onAdd, onUpdate, onRemove }
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Rate each dimension 1–5. Score = Relational Depth × Resource Diversity.
+        Rate each dimension 1–5. Score = sum of all four ratings (max 20).
       </p>
 
       {relationships.map((rel) => (
@@ -138,8 +128,6 @@ function RelationshipCard({
   onUpdate: (id: string, updates: Partial<Omit<SocialRelationship, 'id'>>) => void;
   onRemove: (id: string) => void;
 }) {
-  const depth = calcDepth(rel);
-  const diversity = calcDiversity(rel);
   const score = calcScore(rel);
 
   return (
@@ -152,13 +140,9 @@ function RelationshipCard({
           placeholder="Name"
         />
         <div className="flex items-center gap-3">
-          <div className="text-xs text-muted-foreground space-x-2">
-            <span>Depth: <span className="text-foreground font-medium">{depth}</span></span>
-            <span>×</span>
-            <span>Diversity: <span className="text-foreground font-medium">{diversity}</span></span>
-            <span>=</span>
-            <span className="text-foreground font-bold">{score}</span>
-          </div>
+          <span className="text-xs text-muted-foreground">
+            Total: <span className="text-foreground font-bold">{score}</span>/20
+          </span>
           <Button
             variant="ghost"
             size="icon"
