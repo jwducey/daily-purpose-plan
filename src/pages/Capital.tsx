@@ -6,6 +6,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import { SocialCapitalScorer } from '@/components/SocialCapitalScorer';
 
 const CAPITAL_FORMS = [
   { id: 'financial', name: 'Financial Capital', icon: '💰', description: 'Cash, savings, equity, debt (negative).', valueLabel: 'Currency ($)' },
@@ -19,7 +20,7 @@ const CAPITAL_FORMS = [
 ];
 
 export default function Capital() {
-  const { capitalRatings, setCapitalRating, capitalAssets, addCapitalAsset, updateCapitalAsset, removeCapitalAsset } = useUser();
+  const { capitalRatings, setCapitalRating, capitalAssets, addCapitalAsset, updateCapitalAsset, removeCapitalAsset, socialRelationships, addSocialRelationship, updateSocialRelationship, removeSocialRelationship } = useUser();
 
   const totalScore = CAPITAL_FORMS.reduce((sum, form) => sum + (capitalRatings[form.id] || 0), 0);
   const maxScore = CAPITAL_FORMS.length * 10;
@@ -66,6 +67,11 @@ export default function Capital() {
                 onAddAsset={(name, value) => addCapitalAsset(form.id, name, value)}
                 onUpdateAsset={updateCapitalAsset}
                 onRemoveAsset={removeCapitalAsset}
+                isSocial={form.id === 'social'}
+                socialRelationships={socialRelationships}
+                onAddRelationship={addSocialRelationship}
+                onUpdateRelationship={updateSocialRelationship}
+                onRemoveRelationship={removeSocialRelationship}
               />
             ))}
           </div>
@@ -84,9 +90,14 @@ interface CapitalFormCardProps {
   onAddAsset: (name: string, value: string) => void;
   onUpdateAsset: (id: string, updates: { name?: string; value?: string }) => void;
   onRemoveAsset: (id: string) => void;
+  isSocial?: boolean;
+  socialRelationships?: import('@/components/SocialCapitalScorer').SocialRelationship[];
+  onAddRelationship?: (name: string) => void;
+  onUpdateRelationship?: (id: string, updates: Partial<Omit<import('@/components/SocialCapitalScorer').SocialRelationship, 'id'>>) => void;
+  onRemoveRelationship?: (id: string) => void;
 }
 
-function CapitalFormCard({ form, index, rating, onRate, assets, onAddAsset, onUpdateAsset, onRemoveAsset }: CapitalFormCardProps) {
+function CapitalFormCard({ form, index, rating, onRate, assets, onAddAsset, onUpdateAsset, onRemoveAsset, isSocial, socialRelationships, onAddRelationship, onUpdateRelationship, onRemoveRelationship }: CapitalFormCardProps) {
   const [newName, setNewName] = useState('');
   const [newValue, setNewValue] = useState('');
 
@@ -196,6 +207,15 @@ function CapitalFormCard({ form, index, rating, onRate, assets, onAddAsset, onUp
           </Button>
         </div>
       </div>
+
+      {isSocial && socialRelationships && onAddRelationship && onUpdateRelationship && onRemoveRelationship && (
+        <SocialCapitalScorer
+          relationships={socialRelationships}
+          onAdd={onAddRelationship}
+          onUpdate={onUpdateRelationship}
+          onRemove={onRemoveRelationship}
+        />
+      )}
     </motion.div>
   );
 }
