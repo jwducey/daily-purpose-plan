@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { SocialCapitalScorer } from '@/components/SocialCapitalScorer';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 
 const CAPITAL_FORMS = [
   { id: 'financial', name: 'Financial Capital', icon: '💰', description: 'Cash, savings, equity, debt (negative).', valueLabel: 'Currency ($)' },
@@ -42,16 +43,30 @@ export default function Capital() {
             </p>
           </motion.header>
 
-          {/* Overall Score */}
+          {/* Radar Chart */}
           <motion.div
-            className="rounded-2xl border border-border bg-card p-6 text-center"
+            className="rounded-2xl border border-border bg-card p-6"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.05 }}
           >
-            <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Overall Capital Score</p>
-            <p className="text-5xl font-serif font-bold text-foreground">{totalScore}</p>
-            <p className="text-sm text-muted-foreground mt-1">out of {maxScore}</p>
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="w-full md:w-2/3 h-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart data={CAPITAL_FORMS.map(f => ({ name: f.icon + ' ' + f.name.replace(' Capital', ''), value: capitalRatings[f.id] || 0, fullMark: 10 }))}>
+                    <PolarGrid stroke="hsl(var(--border))" />
+                    <PolarAngleAxis dataKey="name" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                    <PolarRadiusAxis angle={90} domain={[0, 10]} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} />
+                    <Radar name="Capital" dataKey="value" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} strokeWidth={2} />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="text-center md:text-left">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Holistic Wealth Score</p>
+                <p className="text-5xl font-serif font-bold text-foreground">{totalScore}</p>
+                <p className="text-sm text-muted-foreground mt-1">out of {maxScore}</p>
+              </div>
+            </div>
           </motion.div>
 
           {/* Capital Forms */}
