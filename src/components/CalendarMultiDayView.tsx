@@ -18,10 +18,9 @@ interface CalendarMultiDayViewProps {
   onSlotClick?: (date: Date, time: string) => void;
 }
 
-// Full 24-hour calendar with default scroll to 6 AM
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
+// Full 24-hour calendar
+const ALL_HOURS = Array.from({ length: 24 }, (_, i) => i);
 const HOUR_HEIGHT = 48; // pixels per hour
-const DEFAULT_SCROLL_HOUR = 5; // Scroll to 5 AM by default
 
 export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventUpdated, onEventDeleted, onDropTask, onSlotClick }: CalendarMultiDayViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -29,6 +28,45 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
   const [dragOverSlot, setDragOverSlot] = useState<{ dateIndex: number; hour: number } | null>(null);
   const { categories } = useUser();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Determine sleep hours from budget category
+  const sleepCategory = categories.find(c => c.name.toLowerCase() === 'sleep');
+  const dailySleepHours = sleepCategory ? Math.round(sleepCategory.weeklyHoursTarget / 7) : 8;
+  // Sleep window centered on midnight: e.g. 8h sleep = 10pm (22) to 6am
+  const sleepStart = 24 - Math.ceil(dailySleepHours / 2); // e.g. 22
+  const sleepEnd = Math.floor(dailySleepHours / 2);        // e.g. 4
+
+  // Determine which hours have events across all visible days
+  const hoursWithEvents = useMemo(() => {
+    const occupied = new Set<number>();
+    const visibleDates = Array.from({ length: numberOfDays }, (_, i) => addDays(startDate, i));
+    for (const event of events) {
+      if (event.allDay) continue;
+      const eventStart = parseISO(event.start);
+      const eventEnd = parseISO(event.end);
+      for (const date of visibleDates) {
+        if (!isSameDay(eventStart, date) && !isSameDay(eventEnd, date)) continue;
+        const startHour = isSameDay(eventStart, date) ? eventStart.getHours() : 0;
+        const endHour = isSameDay(eventEnd, date) ? Math.ceil(eventEnd.getHours() + eventEnd.getMinutes() / 60) : 24;
+        for (let h = startHour; h < endHour; h++) {
+          occupied.add(h);
+        }
+      }
+    }
+    return occupied;
+  }, [events, startDate, numberOfDays]);
+
+  // Filter hours: hide sleep hours that have no events
+  const HOURS = useMemo(() => {
+    return ALL_HOURS.filter(hour => {
+      const isSleepHour = hour >= sleepStart || hour < sleepEnd;
+      if (!isSleepHour) return true;
+      return hoursWithEvents.has(hour);
+    });
+  }, [sleepStart, sleepEnd, hoursWithEvents]);
+
+  // Find first visible hour for default scroll
+  const firstVisibleHour = HOURS.length > 0 ? HOURS[0] : 0;
 
   const dates = useMemo(() => {
     return Array.from({ length: numberOfDays }, (_, i) => addDays(startDate, i));
@@ -60,33 +98,44 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
     });
   };
 
-  // Scroll to default hour (6am) on mount, on date changes, and after events render.
-  // useLayoutEffect helps ensure the scroll position is applied before the user sees the top.
+  // Scroll to top on mount/date changes since sleep hours are already hidden.
   useLayoutEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
-
-    const target = DEFAULT_SCROLL_HOUR * HOUR_HEIGHT;
-    el.scrollTo({ top: target });
-
-    // Extra attempts to handle async layout / font rendering / motion.
-    const t1 = window.setTimeout(() => el.scrollTo({ top: target }), 0);
-    const t2 = window.setTimeout(() => el.scrollTo({ top: target }), 50);
-
+    el.scrollTo({ top: 0 });
+    const t1 = window.setTimeout(() => el.scrollTo({ top: 0 }), 0);
+    const t2 = window.setTimeout(() => el.scrollTo({ top: 0 }), 50);
     return () => {
       window.clearTimeout(t1);
       window.clearTimeout(t2);
     };
-  }, [startDate, numberOfDays, events.length]);
+  }, [startDate, numberOfDays, events.length, HOURS]);
 
-  // Defensive: if something else resets scroll after paint, re-assert once.
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
-    const target = DEFAULT_SCROLL_HOUR * HOUR_HEIGHT;
-    const raf = requestAnimationFrame(() => el.scrollTo({ top: target }));
+    const raf = requestAnimationFrame(() => el.scrollTo({ top: 0 }));
     return () => cancelAnimationFrame(raf);
   }, [startDate, numberOfDays]);
+
+  // Map an absolute hour (fractional) to a pixel position in the filtered HOURS grid
+  const hourToPixel = (absHour: number) => {
+    // Find which filtered slot this hour falls into
+    let pixelPos = 0;
+    for (let i = 0; i < HOURS.length; i++) {
+      const slotHour = HOURS[i];
+      const nextSlotHour = i + 1 < HOURS.length ? HOURS[i + 1] : slotHour + 1;
+      if (absHour <= slotHour) {
+        pixelPos = i * HOUR_HEIGHT;
+        break;
+      } else if (absHour < nextSlotHour) {
+        pixelPos = (i + (absHour - slotHour)) * HOUR_HEIGHT;
+        break;
+      }
+      pixelPos = (i + 1) * HOUR_HEIGHT;
+    }
+    return pixelPos;
+  };
 
   const getEventPosition = (event: CalendarEvent, date: Date) => {
     const eventStart = parseISO(event.start);
@@ -94,13 +143,14 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
     const dayStart = startOfDay(date);
 
     const displayStart = eventStart < dayStart ? dayStart : eventStart;
-    const startMinutes = differenceInMinutes(displayStart, dayStart);
-    const top = Math.max((startMinutes / 60) * HOUR_HEIGHT, 0);
+    const startHourFrac = differenceInMinutes(displayStart, dayStart) / 60;
+    const top = Math.max(hourToPixel(startHourFrac), 0);
 
     const dayEnd = addDays(dayStart, 1);
     const displayEnd = eventEnd > dayEnd ? dayEnd : eventEnd;
-    const duration = differenceInMinutes(displayEnd, displayStart);
-    const height = Math.max((duration / 60) * HOUR_HEIGHT, 20);
+    const endHourFrac = differenceInMinutes(displayEnd, dayStart) / 60;
+    const bottom = hourToPixel(endHourFrac);
+    const height = Math.max(bottom - top, 20);
 
     return { top, height };
   };
@@ -258,11 +308,12 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
     const now = new Date();
     const todayIndex = dates.findIndex(d => isSameDay(d, now));
     if (todayIndex === -1) return null;
-
-    const dayStart = startOfDay(now);
-    const minutes = differenceInMinutes(now, dayStart);
-    return { index: todayIndex, top: (minutes / 60) * HOUR_HEIGHT };
-  }, [dates]);
+    const currentHourFrac = now.getHours() + now.getMinutes() / 60;
+    // Hide indicator if current time is in a hidden sleep hour
+    const currentHourInt = Math.floor(currentHourFrac);
+    if (!HOURS.includes(currentHourInt)) return null;
+    return { index: todayIndex, top: hourToPixel(currentHourFrac) };
+  }, [dates, HOURS, hourToPixel]);
 
   // Calculate max all-day events height
   const maxAllDayEvents = Math.max(
