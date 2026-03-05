@@ -1,8 +1,9 @@
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, PieChart, ClipboardList, Settings, Timer, Calendar, CheckSquare, Flame, Gem } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUser } from '@/contexts/UserContext';
 
-const navItems = [
+const allNavItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/tasks', icon: CheckSquare, label: 'Tasks' },
   { to: '/habits', icon: Flame, label: 'Habits' },
@@ -14,6 +15,9 @@ const navItems = [
 ];
 
 export function Navigation() {
+  const { capitalTabEnabled } = useUser();
+  const navItems = allNavItems.filter(item => item.to !== '/capital' || capitalTabEnabled);
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border md:relative md:border-t-0 md:border-r md:h-screen md:w-20 md:flex-shrink-0">
       <div className="flex md:flex-col items-center justify-around md:justify-start md:pt-8 md:gap-2 h-16 md:h-full">

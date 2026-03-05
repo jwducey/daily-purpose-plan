@@ -7,13 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
-import { User, Clock, Trash2, LogIn, LogOut } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { User, Clock, Trash2, LogIn, LogOut, Gem } from 'lucide-react';
 import { GoogleCalendarSettings } from '@/components/GoogleCalendarSettings';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Settings() {
-  const { user: localUser, setUser } = useUser();
+  const { user: localUser, setUser, capitalTabEnabled, setCapitalTabEnabled } = useUser();
   const { user: authUser, signOut } = useAuth();
   const { toast } = useToast();
 
@@ -161,6 +162,31 @@ export default function Settings() {
 
           {/* Google Calendar section */}
           <GoogleCalendarSettings />
+
+          {/* Capital tab toggle */}
+          <motion.div 
+            className="p-6 rounded-2xl bg-card shadow-card space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Gem className="w-5 h-5 text-primary" />
+              </div>
+              <h2 className="font-serif text-lg">Capital Tracking</h2>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Enable Capital tab</p>
+                <p className="text-sm text-muted-foreground">Track your eight forms of capital.</p>
+              </div>
+              <Switch
+                checked={capitalTabEnabled}
+                onCheckedChange={setCapitalTabEnabled}
+              />
+            </div>
+          </motion.div>
 
           {/* Danger zone */}
           <motion.div 
