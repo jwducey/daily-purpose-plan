@@ -37,11 +37,15 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
     const sleepHour = 22; // bedtime
     const wakeHour = (sleepHour + dailySleepHours) % 24; // e.g. 22+8=30%24=6
 
-    // Determine which sleep hours have events and must stay visible
+    // Determine which sleep hours have non-sleep events and must stay visible
+    const sleepKeywords = ['sleep', 'bedtime', 'rest', 'nap'];
     const visibleDates = Array.from({ length: numberOfDays }, (_, i) => addDays(startDate, i));
     const occupiedHours = new Set<number>();
     for (const event of events) {
       if (event.allDay) continue;
+      // Skip sleep-related events — they shouldn't force the hour to show
+      const title = (event.summary || '').toLowerCase();
+      if (sleepKeywords.some(kw => title.includes(kw))) continue;
       const eventStart = parseISO(event.start);
       const eventEnd = parseISO(event.end);
       for (const date of visibleDates) {
