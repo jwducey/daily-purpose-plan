@@ -120,6 +120,19 @@ export function useDailyReview() {
     if (!user) return null;
     
     if (todayReview) return todayReview.id;
+
+    // Try to fetch existing review first
+    const { data: existing } = await supabase
+      .from('daily_reviews')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('review_date', today)
+      .maybeSingle();
+
+    if (existing) {
+      setTodayReview(existing);
+      return existing.id;
+    }
     
     const { data, error } = await supabase
       .from('daily_reviews')
