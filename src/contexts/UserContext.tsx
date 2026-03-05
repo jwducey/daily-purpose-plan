@@ -33,6 +33,7 @@ interface UserContextType {
   capitalAssets: CapitalAsset[];
   socialRelationships: SocialRelationship[];
   financialConfig: { yearlyExpenses: number; yearlyROI: number };
+  capitalTabEnabled: boolean;
   setUser: (user: UserProfile | null) => void;
   updateCategory: (categoryId: string, updates: Partial<TimeBudgetCategory>) => void;
   resetCategories: () => void;
@@ -51,6 +52,7 @@ interface UserContextType {
   updateSocialRelationship: (id: string, updates: Partial<Omit<SocialRelationship, 'id'>>) => void;
   removeSocialRelationship: (id: string) => void;
   setFinancialConfig: (config: { yearlyExpenses?: number; yearlyROI?: number }) => void;
+  setCapitalTabEnabled: (enabled: boolean) => void;
   completeOnboarding: (userData: Partial<UserProfile>) => void;
   isLoading: boolean;
 }
@@ -66,6 +68,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [capitalAssets, setCapitalAssets] = useState<CapitalAsset[]>([]);
   const [financialConfig, setFinancialConfigState] = useState<{ yearlyExpenses: number; yearlyROI: number }>({ yearlyExpenses: 0, yearlyROI: 0 });
   const [socialRelationships, setSocialRelationships] = useState<SocialRelationship[]>([]);
+  const [capitalTabEnabled, setCapitalTabEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -123,6 +126,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (savedFinConfig) {
       setFinancialConfigState(JSON.parse(savedFinConfig));
     }
+
+    const savedCapitalTab = localStorage.getItem('lifewealth_capital_tab_enabled');
+    if (savedCapitalTab) {
+      setCapitalTabEnabled(JSON.parse(savedCapitalTab));
+    }
     
     setIsLoading(false);
   }, []);
@@ -162,6 +170,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     localStorage.setItem('lifewealth_financial_config', JSON.stringify(financialConfig));
   }, [financialConfig]);
+
+  useEffect(() => {
+    localStorage.setItem('lifewealth_capital_tab_enabled', JSON.stringify(capitalTabEnabled));
+  }, [capitalTabEnabled]);
 
   const completeOnboarding = (userData: Partial<UserProfile>) => {
     const newUser: UserProfile = {
@@ -305,6 +317,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       capitalAssets,
       socialRelationships,
       financialConfig,
+      capitalTabEnabled,
       setUser, 
       updateCategory,
       resetCategories,
@@ -323,6 +336,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       updateSocialRelationship,
       removeSocialRelationship,
       setFinancialConfig,
+      setCapitalTabEnabled,
       completeOnboarding,
       isLoading 
     }}>
