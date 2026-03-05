@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { UserProvider } from "./contexts/UserContext";
 import { DailyReviewPanel } from "./components/DailyReviewPanel";
+import { DailyReviewOverlay } from "./components/DailyReviewOverlay";
 import Index from "./pages/Index";
 import Budget from "./pages/Budget";
 import Capital from "./pages/Capital";
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           <DailyReviewPanel />
+          <DailyReviewOverlay />
         </BrowserRouter>
       </TooltipProvider>
     </UserProvider>
