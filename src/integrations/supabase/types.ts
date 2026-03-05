@@ -184,6 +184,42 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          age: number
+          birth_date: string | null
+          created_at: string
+          expected_lifespan: number
+          id: string
+          name: string
+          onboarding_complete: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          age?: number
+          birth_date?: string | null
+          created_at?: string
+          expected_lifespan?: number
+          id?: string
+          name?: string
+          onboarding_complete?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          age?: number
+          birth_date?: string | null
+          created_at?: string
+          expected_lifespan?: number
+          id?: string
+          name?: string
+          onboarding_complete?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       review_activities: {
         Row: {
           activity_description: string

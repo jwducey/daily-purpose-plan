@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, TimeBudgetCategory, DEFAULT_CATEGORIES } from '@/types/user';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export interface LifeGoal {
@@ -71,20 +72,143 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [capitalTabEnabled, setCapitalTabEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const savedUser = localStorage.getItem('lifewealth_user');
-    const savedCategories = localStorage.getItem('lifewealth_categories');
-    
-    if (savedUser) {
-      const parsed = JSON.parse(savedUser);
-      setUser({
-        ...parsed,
-        birthDate: new Date(parsed.birthDate),
-        createdAt: new Date(parsed.createdAt),
-        lastLogin: new Date(parsed.lastLogin),
-      });
+  // Load profile from database for authenticated user
+  const loadProfileFromDB = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error loading profile:', error);
+      return null;
     }
-    
+    return data;
+  };
+
+  // Save profile to database
+  const saveProfileToDB = async (userId: string, profileData: {
+    name: string;
+    age: number;
+    expected_lifespan: number;
+    birth_date: string;
+    onboarding_complete: boolean;
+  }) => {
+    const { error } = await supabase
+      .from('profiles')
+      .upsert({
+        user_id: userId,
+        ...profileData,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+
+    if (error) {
+      console.error('Error saving profile:', error);
+    }
+  };
+
+  useEffect(() => {
+    // Listen to auth state changes to load profile from DB
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          // Load profile from database
+          const profile = await loadProfileFromDB(session.user.id);
+          if (profile && profile.onboarding_complete) {
+            const birthDate = profile.birth_date ? new Date(profile.birth_date) : new Date();
+            setUser({
+              id: session.user.id,
+              name: profile.name,
+              email: session.user.email || '',
+              age: profile.age,
+              expectedLifespan: profile.expected_lifespan,
+              birthDate,
+              role: 'user',
+              createdAt: new Date(profile.created_at),
+              lastLogin: new Date(),
+              onboardingComplete: true,
+            });
+          } else {
+            // Check localStorage as fallback for existing users
+            const savedUser = localStorage.getItem('lifewealth_user');
+            if (savedUser) {
+              const parsed = JSON.parse(savedUser);
+              setUser({
+                ...parsed,
+                id: session.user.id,
+                birthDate: new Date(parsed.birthDate),
+                createdAt: new Date(parsed.createdAt),
+                lastLogin: new Date(parsed.lastLogin),
+              });
+              // Migrate localStorage data to DB
+              if (parsed.onboardingComplete) {
+                await saveProfileToDB(session.user.id, {
+                  name: parsed.name,
+                  age: parsed.age,
+                  expected_lifespan: parsed.expectedLifespan,
+                  birth_date: new Date(parsed.birthDate).toISOString(),
+                  onboarding_complete: true,
+                });
+              }
+            } else {
+              // No profile yet - user needs onboarding
+              setUser(null);
+            }
+          }
+        } else {
+          setUser(null);
+        }
+        setIsLoading(false);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        const profile = await loadProfileFromDB(session.user.id);
+        if (profile && profile.onboarding_complete) {
+          const birthDate = profile.birth_date ? new Date(profile.birth_date) : new Date();
+          setUser({
+            id: session.user.id,
+            name: profile.name,
+            email: session.user.email || '',
+            age: profile.age,
+            expectedLifespan: profile.expected_lifespan,
+            birthDate,
+            role: 'user',
+            createdAt: new Date(profile.created_at),
+            lastLogin: new Date(),
+            onboardingComplete: true,
+          });
+        } else {
+          const savedUser = localStorage.getItem('lifewealth_user');
+          if (savedUser) {
+            const parsed = JSON.parse(savedUser);
+            setUser({
+              ...parsed,
+              id: session.user.id,
+              birthDate: new Date(parsed.birthDate),
+              createdAt: new Date(parsed.createdAt),
+              lastLogin: new Date(parsed.lastLogin),
+            });
+            if (parsed.onboardingComplete) {
+              await saveProfileToDB(session.user.id, {
+                name: parsed.name,
+                age: parsed.age,
+                expected_lifespan: parsed.expectedLifespan,
+                birth_date: new Date(parsed.birthDate).toISOString(),
+                onboarding_complete: true,
+              });
+            }
+          }
+        }
+      }
+      setIsLoading(false);
+    });
+
+    // Load localStorage-based settings
+    const savedCategories = localStorage.getItem('lifewealth_categories');
     if (savedCategories) {
       setCategories(JSON.parse(savedCategories));
     } else {
@@ -98,43 +222,30 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
 
     const savedSuggestions = localStorage.getItem('lifewealth_custom_suggestions');
-    if (savedSuggestions) {
-      setCustomSuggestions(JSON.parse(savedSuggestions));
-    }
+    if (savedSuggestions) setCustomSuggestions(JSON.parse(savedSuggestions));
 
     const savedGoals = localStorage.getItem('lifewealth_goals');
-    if (savedGoals) {
-      setGoals(JSON.parse(savedGoals));
-    }
+    if (savedGoals) setGoals(JSON.parse(savedGoals));
 
     const savedCapital = localStorage.getItem('lifewealth_capital_ratings');
-    if (savedCapital) {
-      setCapitalRatings(JSON.parse(savedCapital));
-    }
+    if (savedCapital) setCapitalRatings(JSON.parse(savedCapital));
 
     const savedAssets = localStorage.getItem('lifewealth_capital_assets');
-    if (savedAssets) {
-      setCapitalAssets(JSON.parse(savedAssets));
-    }
+    if (savedAssets) setCapitalAssets(JSON.parse(savedAssets));
 
     const savedRelationships = localStorage.getItem('lifewealth_social_relationships');
-    if (savedRelationships) {
-      setSocialRelationships(JSON.parse(savedRelationships));
-    }
+    if (savedRelationships) setSocialRelationships(JSON.parse(savedRelationships));
 
     const savedFinConfig = localStorage.getItem('lifewealth_financial_config');
-    if (savedFinConfig) {
-      setFinancialConfigState(JSON.parse(savedFinConfig));
-    }
+    if (savedFinConfig) setFinancialConfigState(JSON.parse(savedFinConfig));
 
     const savedCapitalTab = localStorage.getItem('lifewealth_capital_tab_enabled');
-    if (savedCapitalTab) {
-      setCapitalTabEnabled(JSON.parse(savedCapitalTab));
-    }
-    
-    setIsLoading(false);
+    if (savedCapitalTab) setCapitalTabEnabled(JSON.parse(savedCapitalTab));
+
+    return () => subscription.unsubscribe();
   }, []);
 
+  // Keep localStorage in sync for non-profile data
   useEffect(() => {
     if (user) {
       localStorage.setItem('lifewealth_user', JSON.stringify(user));
@@ -175,11 +286,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('lifewealth_capital_tab_enabled', JSON.stringify(capitalTabEnabled));
   }, [capitalTabEnabled]);
 
-  const completeOnboarding = (userData: Partial<UserProfile>) => {
+  const completeOnboarding = async (userData: Partial<UserProfile>) => {
+    const session = (await supabase.auth.getSession()).data.session;
+    const userId = session?.user?.id || `user_${Date.now()}`;
+
     const newUser: UserProfile = {
-      id: `user_${Date.now()}`,
+      id: userId,
       name: userData.name || 'User',
-      email: userData.email || '',
+      email: session?.user?.email || userData.email || '',
       age: userData.age || 30,
       expectedLifespan: userData.expectedLifespan || 80,
       birthDate: userData.birthDate || new Date(new Date().getFullYear() - 30, 0, 1),
@@ -189,6 +303,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       onboardingComplete: true,
     };
     setUser(newUser);
+
+    // Persist to database if authenticated
+    if (session?.user) {
+      await saveProfileToDB(session.user.id, {
+        name: newUser.name,
+        age: newUser.age,
+        expected_lifespan: newUser.expectedLifespan,
+        birth_date: newUser.birthDate.toISOString(),
+        onboarding_complete: true,
+      });
+    }
   };
 
   const resetCategories = () => {
@@ -236,14 +361,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const cat = categories.find(c => c.id === categoryId);
     if (!cat) return;
     setCategories(prev => prev.filter(c => c.id !== categoryId));
-    // Clean up custom suggestions for this category
     setCustomSuggestions(prev => {
       const next = { ...prev };
       delete next[cat.name];
       return next;
     });
     toast.success(`Removed "${cat.name}" category`);
-    // Note: task cleanup happens via the useTasks hook on the backend (life_areas column)
   };
 
   const addCustomSuggestion = (categoryName: string, suggestion: string) => {
