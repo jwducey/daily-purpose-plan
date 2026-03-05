@@ -35,6 +35,8 @@ interface UserContextType {
   socialRelationships: SocialRelationship[];
   financialConfig: { yearlyExpenses: number; yearlyROI: number };
   capitalTabEnabled: boolean;
+  dailyReviewTime: string | null; // HH:mm format, null = disabled
+  dailyReviewCompletedToday: boolean;
   setUser: (user: UserProfile | null) => void;
   updateCategory: (categoryId: string, updates: Partial<TimeBudgetCategory>) => void;
   resetCategories: () => void;
@@ -54,6 +56,8 @@ interface UserContextType {
   removeSocialRelationship: (id: string) => void;
   setFinancialConfig: (config: { yearlyExpenses?: number; yearlyROI?: number }) => void;
   setCapitalTabEnabled: (enabled: boolean) => void;
+  setDailyReviewTime: (time: string | null) => void;
+  markDailyReviewCompleted: () => void;
   completeOnboarding: (userData: Partial<UserProfile>) => void;
   isLoading: boolean;
 }
@@ -70,6 +74,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [financialConfig, setFinancialConfigState] = useState<{ yearlyExpenses: number; yearlyROI: number }>({ yearlyExpenses: 0, yearlyROI: 0 });
   const [socialRelationships, setSocialRelationships] = useState<SocialRelationship[]>([]);
   const [capitalTabEnabled, setCapitalTabEnabled] = useState(false);
+  const [dailyReviewTime, setDailyReviewTimeState] = useState<string | null>(null);
+  const [dailyReviewCompletedToday, setDailyReviewCompletedToday] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Load profile from database for authenticated user
@@ -241,6 +247,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     const savedCapitalTab = localStorage.getItem('lifewealth_capital_tab_enabled');
     if (savedCapitalTab) setCapitalTabEnabled(JSON.parse(savedCapitalTab));
+
+    const savedReviewTime = localStorage.getItem('lifewealth_daily_review_time');
+    if (savedReviewTime) setDailyReviewTimeState(JSON.parse(savedReviewTime));
+
+    const completedDate = localStorage.getItem('lifewealth_review_completed_date');
+    const today = new Date().toISOString().slice(0, 10);
+    setDailyReviewCompletedToday(completedDate === today);
 
     return () => subscription.unsubscribe();
   }, []);
@@ -430,6 +443,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setSocialRelationships(prev => prev.filter(r => r.id !== id));
   };
 
+  const setDailyReviewTime = (time: string | null) => {
+    setDailyReviewTimeState(time);
+    localStorage.setItem('lifewealth_daily_review_time', JSON.stringify(time));
+  };
+
+  const markDailyReviewCompleted = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    localStorage.setItem('lifewealth_review_completed_date', today);
+    setDailyReviewCompletedToday(true);
+  };
+
   return (
     <UserContext.Provider value={{ 
       user, 
@@ -460,6 +484,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       removeSocialRelationship,
       setFinancialConfig,
       setCapitalTabEnabled,
+      dailyReviewTime,
+      dailyReviewCompletedToday,
+      setDailyReviewTime,
+      markDailyReviewCompleted,
       completeOnboarding,
       isLoading 
     }}>

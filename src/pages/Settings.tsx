@@ -8,13 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { User, Clock, Trash2, LogIn, LogOut, Gem } from 'lucide-react';
+import { User, Clock, Trash2, LogIn, LogOut, Gem, ClipboardCheck } from 'lucide-react';
 import { GoogleCalendarSettings } from '@/components/GoogleCalendarSettings';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Settings() {
-  const { user: localUser, setUser, capitalTabEnabled, setCapitalTabEnabled } = useUser();
+  const { user: localUser, setUser, capitalTabEnabled, setCapitalTabEnabled, dailyReviewTime, setDailyReviewTime } = useUser();
   const { user: authUser, signOut } = useAuth();
   const { toast } = useToast();
 
@@ -162,6 +162,47 @@ export default function Settings() {
 
           {/* Google Calendar section */}
           <GoogleCalendarSettings />
+
+          {/* Daily Review Time */}
+          <motion.div 
+            className="p-6 rounded-2xl bg-card shadow-card space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22 }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-life-energy/10">
+                <ClipboardCheck className="w-5 h-5 text-life-energy" />
+              </div>
+              <h2 className="font-serif text-lg">Daily Review</h2>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Enable daily review reminder</p>
+                  <p className="text-sm text-muted-foreground">
+                    A full-screen review will appear at the set time until completed.
+                  </p>
+                </div>
+                <Switch
+                  checked={!!dailyReviewTime}
+                  onCheckedChange={(checked) => setDailyReviewTime(checked ? '21:00' : null)}
+                />
+              </div>
+              {dailyReviewTime && (
+                <div className="space-y-2">
+                  <Label htmlFor="review-time">Review time</Label>
+                  <Input
+                    id="review-time"
+                    type="time"
+                    value={dailyReviewTime}
+                    onChange={(e) => setDailyReviewTime(e.target.value)}
+                    className="w-40"
+                  />
+                </div>
+              )}
+            </div>
+          </motion.div>
 
           {/* Capital tab toggle */}
           <motion.div 
