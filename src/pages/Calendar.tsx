@@ -68,6 +68,10 @@ export default function Calendar() {
   const [createEventDefaultTime, setCreateEventDefaultTime] = useState<string | undefined>();
   const [draggingTask, setDraggingTask] = useState<Task | null>(null);
   const [isCreatingEvent, setIsCreatingEvent] = useState(false);
+  const [miniCalOpen, setMiniCalOpen] = useState(() => {
+    const saved = localStorage.getItem('lifewealth_mini_cal_open');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
 
   const viewConfig = VIEW_OPTIONS.find(v => v.value === viewType) || VIEW_OPTIONS[3];
   const isMonthView = viewType === 'month';
@@ -286,7 +290,7 @@ export default function Calendar() {
           Today
         </Button>
       </div>
-      <Collapsible defaultOpen={true}>
+      <Collapsible open={miniCalOpen} onOpenChange={(open) => { setMiniCalOpen(open); localStorage.setItem('lifewealth_mini_cal_open', JSON.stringify(open)); }}>
         <div className="p-3 border-b border-border">
           <CollapsibleTrigger className="flex items-center gap-2 w-full hover:opacity-80 transition-opacity">
             <ChevronDown className="h-3.5 w-3.5 text-muted-foreground collapsible-chevron" />
