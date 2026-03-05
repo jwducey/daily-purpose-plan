@@ -41,6 +41,7 @@ export function DailyReviewOverlay() {
   const [newActivity, setNewActivity] = useState('');
   const [activityLifeArea, setActivityLifeArea] = useState('');
   const [activityDuration, setActivityDuration] = useState('');
+  const [activityStartTime, setActivityStartTime] = useState('');
   const [activityWasPlanned, setActivityWasPlanned] = useState(false);
   
   // Connection form
@@ -86,10 +87,12 @@ export function DailyReviewOverlay() {
       life_area: activityLifeArea || undefined,
       duration_minutes: activityDuration ? parseInt(activityDuration) : undefined,
       was_planned: activityWasPlanned,
+      start_time: activityStartTime || undefined,
     });
     setNewActivity('');
     setActivityLifeArea('');
     setActivityDuration('');
+    setActivityStartTime('');
     setActivityWasPlanned(false);
   };
 
@@ -278,9 +281,13 @@ export function DailyReviewOverlay() {
                           </Select>
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-xs">Duration (min)</Label>
-                          <Input type="number" placeholder="30" value={activityDuration} onChange={(e) => setActivityDuration(e.target.value)} />
+                          <Label className="text-xs">Start Time</Label>
+                          <Input type="time" value={activityStartTime} onChange={(e) => setActivityStartTime(e.target.value)} />
                         </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Duration (min)</Label>
+                        <Input type="number" placeholder="30" value={activityDuration} onChange={(e) => setActivityDuration(e.target.value)} />
                       </div>
                       <div className="flex items-center justify-between">
                         <Label className="text-sm">Was this planned?</Label>

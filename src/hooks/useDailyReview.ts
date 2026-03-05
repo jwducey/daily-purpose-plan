@@ -29,6 +29,7 @@ export interface ReviewActivity {
   life_area?: string;
   duration_minutes?: number;
   was_planned: boolean;
+  start_time?: string;
 }
 
 export interface ReviewConnection {
@@ -200,8 +201,18 @@ export function useDailyReview() {
     
     // Create Google Calendar event for the activity
     if (activity.duration_minutes && activity.duration_minutes > 0) {
-      const endTime = new Date();
-      const startTime = new Date(endTime.getTime() - activity.duration_minutes * 60 * 1000);
+      let startTime: Date;
+      let endTime: Date;
+
+      if (activity.start_time) {
+        const [h, m] = activity.start_time.split(':').map(Number);
+        startTime = new Date();
+        startTime.setHours(h, m, 0, 0);
+        endTime = new Date(startTime.getTime() + activity.duration_minutes * 60 * 1000);
+      } else {
+        endTime = new Date();
+        startTime = new Date(endTime.getTime() - activity.duration_minutes * 60 * 1000);
+      }
       
       const colorId = getColorIdForLifeArea(activity.life_area);
       
@@ -209,7 +220,7 @@ export function useDailyReview() {
         const { error: calendarError } = await supabase.functions.invoke('google-calendar-create-event', {
           body: {
             summary: activity.activity_description,
-             description: `Daily Review Activity - ${activity.life_area || 'Uncategorized'}${activity.was_planned ? '' : ' (Unplanned)'}`,
+            description: `Daily Review Activity - ${activity.life_area || 'Uncategorized'}${activity.was_planned ? '' : ' (Unplanned)'}`,
             start: startTime.toISOString(),
             end: endTime.toISOString(),
             colorId,
