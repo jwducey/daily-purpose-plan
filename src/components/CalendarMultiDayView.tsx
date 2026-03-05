@@ -30,11 +30,14 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Determine sleep hours from budget category
-  const sleepCategory = categories.find(c => c.name.toLowerCase() === 'sleep');
-  const dailySleepHours = sleepCategory ? Math.round(sleepCategory.weeklyHoursTarget / 7) : 8;
-  // Sleep window centered on midnight: e.g. 8h sleep = 10pm (22) to 6am
-  const sleepStart = 24 - Math.ceil(dailySleepHours / 2); // e.g. 22
-  const sleepEnd = Math.floor(dailySleepHours / 2);        // e.g. 4
+  const { sleepStart, sleepEnd } = useMemo(() => {
+    const sleepCat = categories.find(c => c.name.toLowerCase() === 'sleep');
+    const dailyHours = sleepCat ? Math.round(sleepCat.weeklyHoursTarget / 7) : 8;
+    return {
+      sleepStart: 24 - Math.ceil(dailyHours / 2),
+      sleepEnd: Math.floor(dailyHours / 2),
+    };
+  }, [categories]);
 
   // Determine which hours have events across all visible days
   const hoursWithEvents = useMemo(() => {
@@ -64,9 +67,6 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
       return hoursWithEvents.has(hour);
     });
   }, [sleepStart, sleepEnd, hoursWithEvents]);
-
-  // Find first visible hour for default scroll
-  const firstVisibleHour = HOURS.length > 0 ? HOURS[0] : 0;
 
   const dates = useMemo(() => {
     return Array.from({ length: numberOfDays }, (_, i) => addDays(startDate, i));
