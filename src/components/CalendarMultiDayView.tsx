@@ -18,8 +18,7 @@ interface CalendarMultiDayViewProps {
   onSlotClick?: (date: Date, time: string) => void;
 }
 
-// Full 24-hour calendar
-const ALL_HOURS = Array.from({ length: 24 }, (_, i) => i);
+// All 24 hours for reference
 const HOUR_HEIGHT = 48; // pixels per hour
 
 export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventUpdated, onEventDeleted, onDropTask, onSlotClick }: CalendarMultiDayViewProps) {
@@ -31,19 +30,19 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
 
   // Determine awake hours from sleep budget category
   const HOURS = useMemo(() => {
+    const allHours = Array.from({ length: 24 }, (_, i) => i);
     const sleepCat = categories.find(c => c.name.toLowerCase() === 'sleep');
     const dailySleepHours = sleepCat ? Math.round(sleepCat.weeklyHoursTarget / 7) : 8;
-    // Assume bedtime is ~10pm (22:00), wake = 22 + sleepHours - 24
-    const sleepHour = 22; // bedtime
-    const wakeHour = (sleepHour + dailySleepHours) % 24; // e.g. 22+8=30%24=6
+    // Assume bedtime is ~10pm (22:00), wake = bedtime + sleepHours wrapped around midnight
+    const bedtime = 22;
+    const wakeTime = (bedtime + dailySleepHours) % 24; // e.g. 22+8=30%24=6
 
-    // Determine which sleep hours have non-sleep events and must stay visible
+    // Find non-sleep events occupying sleep hours
     const sleepKeywords = ['sleep', 'bedtime', 'rest', 'nap'];
     const visibleDates = Array.from({ length: numberOfDays }, (_, i) => addDays(startDate, i));
     const occupiedHours = new Set<number>();
     for (const event of events) {
       if (event.allDay) continue;
-      // Skip sleep-related events — they shouldn't force the hour to show
       const title = (event.summary || '').toLowerCase();
       if (sleepKeywords.some(kw => title.includes(kw))) continue;
       const eventStart = parseISO(event.start);
@@ -56,10 +55,11 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
       }
     }
 
-    return ALL_HOURS.filter(hour => {
-      // Awake hours always show
-      if (hour >= wakeHour && hour < sleepHour) return true;
-      // Sleep hours only show if they have events
+    return allHours.filter(hour => {
+      // Is this hour during awake time? (wakeTime to bedtime)
+      const isAwake = hour >= wakeTime && hour < bedtime;
+      if (isAwake) return true;
+      // It's a sleep hour — only show if a non-sleep event occupies it
       return occupiedHours.has(hour);
     });
   }, [categories, events, startDate, numberOfDays]);
