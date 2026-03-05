@@ -29,44 +29,36 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
   const { categories } = useUser();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Determine sleep hours from budget category
-  const { sleepStart, sleepEnd } = useMemo(() => {
+  // Determine awake hours from sleep budget category
+  const HOURS = useMemo(() => {
     const sleepCat = categories.find(c => c.name.toLowerCase() === 'sleep');
-    const dailyHours = sleepCat ? Math.round(sleepCat.weeklyHoursTarget / 7) : 8;
-    return {
-      sleepStart: 24 - Math.ceil(dailyHours / 2),
-      sleepEnd: Math.floor(dailyHours / 2),
-    };
-  }, [categories]);
+    const dailySleepHours = sleepCat ? Math.round(sleepCat.weeklyHoursTarget / 7) : 8;
+    // Assume bedtime is ~10pm (22:00), wake = 22 + sleepHours - 24
+    const sleepHour = 22; // bedtime
+    const wakeHour = (sleepHour + dailySleepHours) % 24; // e.g. 22+8=30%24=6
 
-  // Determine which hours have events across all visible days
-  const hoursWithEvents = useMemo(() => {
-    const occupied = new Set<number>();
+    // Determine which sleep hours have events and must stay visible
     const visibleDates = Array.from({ length: numberOfDays }, (_, i) => addDays(startDate, i));
+    const occupiedHours = new Set<number>();
     for (const event of events) {
       if (event.allDay) continue;
       const eventStart = parseISO(event.start);
       const eventEnd = parseISO(event.end);
       for (const date of visibleDates) {
         if (!isSameDay(eventStart, date) && !isSameDay(eventEnd, date)) continue;
-        const startHour = isSameDay(eventStart, date) ? eventStart.getHours() : 0;
-        const endHour = isSameDay(eventEnd, date) ? Math.ceil(eventEnd.getHours() + eventEnd.getMinutes() / 60) : 24;
-        for (let h = startHour; h < endHour; h++) {
-          occupied.add(h);
-        }
+        const sH = isSameDay(eventStart, date) ? eventStart.getHours() : 0;
+        const eH = isSameDay(eventEnd, date) ? Math.ceil(eventEnd.getHours() + eventEnd.getMinutes() / 60) : 24;
+        for (let h = sH; h < eH; h++) occupiedHours.add(h);
       }
     }
-    return occupied;
-  }, [events, startDate, numberOfDays]);
 
-  // Filter hours: hide sleep hours that have no events
-  const HOURS = useMemo(() => {
     return ALL_HOURS.filter(hour => {
-      const isSleepHour = hour >= sleepStart || hour < sleepEnd;
-      if (!isSleepHour) return true;
-      return hoursWithEvents.has(hour);
+      // Awake hours always show
+      if (hour >= wakeHour && hour < sleepHour) return true;
+      // Sleep hours only show if they have events
+      return occupiedHours.has(hour);
     });
-  }, [sleepStart, sleepEnd, hoursWithEvents]);
+  }, [categories, events, startDate, numberOfDays]);
 
   const dates = useMemo(() => {
     return Array.from({ length: numberOfDays }, (_, i) => addDays(startDate, i));
