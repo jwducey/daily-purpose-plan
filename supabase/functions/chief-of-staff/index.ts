@@ -7,7 +7,12 @@ const corsHeaders = {
 
 const TIME_ESTIMATES = [15, 30, 60, 120, 240, 480];
 
-const systemPrompt = `You are a Chief of Staff AI assistant helping users manage their tasks using the Getting Things Done (GTD) methodology.
+const buildSystemPrompt = (categoryNames: string[]) => {
+  const categoriesList = categoryNames.length > 0 
+    ? categoryNames.join(', ')
+    : 'sleep, health, work, family, community, wealth, impact, legacy, contribution, spiritual, emotional, play';
+
+  return `You are a Chief of Staff AI assistant helping users manage their tasks using the Getting Things Done (GTD) methodology.
 
 Your role is to:
 1. Parse natural language task input from users
@@ -20,11 +25,11 @@ Guidelines for task extraction:
 - Title: Clear, actionable task title starting with a verb when possible
 - Time estimate: Choose the closest value from [15, 30, 60, 120, 240, 480] minutes
 - Life areas: An array of one or more areas this task belongs to. A task can span multiple areas (e.g. volleyball = ["health", "family", "play"]). Use lowercase area names.
-  Common areas: sleep, health, work, family, community, wealth, impact, legacy, contribution, spiritual, emotional, play
-  But the user may have custom areas too - use whatever makes sense.
+  IMPORTANT: You MUST ONLY use life areas from this exact list: [${categoriesList}]. Do NOT invent new categories.
 - Priority: 1 (urgent/important), 2 (important), 3 (normal), 4 (low)
 
 Be conversational and helpful. After adding tasks, summarize what you added and offer to help prioritize or schedule them.`;
+};
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -32,7 +37,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, type } = await req.json();
+    const { messages, type, categories: categoryNames = [] } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -42,7 +47,7 @@ serve(async (req) => {
     const body: any = {
       model: "google/gemini-3-flash-preview",
       messages: [
-        { role: "system", content: systemPrompt },
+        { role: "system", content: buildSystemPrompt(categoryNames) },
         ...messages,
       ],
     };
