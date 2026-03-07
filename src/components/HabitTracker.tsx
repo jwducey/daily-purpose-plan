@@ -122,12 +122,12 @@ export function HabitTracker() {
 
       {/* Day headers */}
       {habits.length > 0 && (
-        <div className="grid gap-3" style={{ gridTemplateColumns: `1fr repeat(${DAYS_TO_SHOW}, 44px) 60px` }}>
+        <div className="grid gap-1.5 sm:gap-3" style={{ gridTemplateColumns: `minmax(0, 1fr) repeat(${DAYS_TO_SHOW}, minmax(32px, 44px)) minmax(40px, 60px)` }}>
           <div />
           {days.map(day => (
             <div key={day.toISOString()} className="text-center">
               <div className="text-[10px] font-medium text-muted-foreground uppercase">
-                {format(day, 'EEE')}
+                {format(day, 'EEE')[0]}<span className="hidden sm:inline">{format(day, 'EEE').slice(1)}</span>
               </div>
               <div className={cn(
                 'text-xs font-semibold',
@@ -138,7 +138,8 @@ export function HabitTracker() {
             </div>
           ))}
           <div className="text-center text-[10px] font-medium text-muted-foreground">
-            STREAK
+            <span className="hidden sm:inline">STREAK</span>
+            <span className="sm:hidden">🔥</span>
           </div>
         </div>
       )}
@@ -156,10 +157,10 @@ export function HabitTracker() {
                 exit={{ opacity: 0, x: -100 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <Card className="p-3 hover:shadow-md transition-shadow group">
+                <Card className="p-2 sm:p-3 hover:shadow-md transition-shadow group">
                   <div
-                    className="grid gap-3 items-center"
-                    style={{ gridTemplateColumns: `1fr repeat(${DAYS_TO_SHOW}, 44px) 60px` }}
+                    className="grid gap-1.5 sm:gap-3 items-center"
+                    style={{ gridTemplateColumns: `minmax(0, 1fr) repeat(${DAYS_TO_SHOW}, minmax(32px, 44px)) minmax(40px, 60px)` }}
                   >
                     {/* Habit info */}
                     <div className="flex items-center gap-2 min-w-0">
@@ -183,7 +184,7 @@ export function HabitTracker() {
                             whileTap={{ scale: 0.8 }}
                             onClick={() => toggleCompletion(habit.id, dateStr)}
                             className={cn(
-                              'w-9 h-9 rounded-xl flex items-center justify-center transition-all text-sm font-bold',
+                              'w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center transition-all text-xs sm:text-sm font-bold',
                               completed
                                 ? 'text-white shadow-md'
                                 : 'bg-muted/50 hover:bg-muted text-muted-foreground/30 border border-border'
