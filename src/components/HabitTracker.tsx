@@ -122,12 +122,12 @@ export function HabitTracker() {
 
       {/* Day headers */}
       {habits.length > 0 && (
-        <div className="grid gap-3" style={{ gridTemplateColumns: `1fr repeat(${DAYS_TO_SHOW}, 44px) 60px` }}>
+        <div className="grid gap-1.5 sm:gap-3" style={{ gridTemplateColumns: `minmax(0, 1fr) repeat(${DAYS_TO_SHOW}, minmax(32px, 44px)) minmax(40px, 60px)` }}>
           <div />
           {days.map(day => (
             <div key={day.toISOString()} className="text-center">
               <div className="text-[10px] font-medium text-muted-foreground uppercase">
-                {format(day, 'EEE')}
+                {format(day, 'EEE')[0]}<span className="hidden sm:inline">{format(day, 'EEE').slice(1)}</span>
               </div>
               <div className={cn(
                 'text-xs font-semibold',
@@ -138,7 +138,8 @@ export function HabitTracker() {
             </div>
           ))}
           <div className="text-center text-[10px] font-medium text-muted-foreground">
-            STREAK
+            <span className="hidden sm:inline">STREAK</span>
+            <span className="sm:hidden">🔥</span>
           </div>
         </div>
       )}
