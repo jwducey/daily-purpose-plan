@@ -184,7 +184,7 @@ export function HabitTracker() {
                             whileTap={{ scale: 0.8 }}
                             onClick={() => toggleCompletion(habit.id, dateStr)}
                             className={cn(
-                              'w-9 h-9 rounded-xl flex items-center justify-center transition-all text-sm font-bold',
+                              'w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center transition-all text-xs sm:text-sm font-bold',
                               completed
                                 ? 'text-white shadow-md'
                                 : 'bg-muted/50 hover:bg-muted text-muted-foreground/30 border border-border'
