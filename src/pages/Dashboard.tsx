@@ -88,10 +88,49 @@ export default function Dashboard() {
               transition={{ delay: 0.3, duration: 0.4 }}
             >
               <h3 className="font-serif text-lg mb-3">Weekly Insight</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                You've allocated <span className="font-medium text-foreground">{topCategories[0]?.name}</span> as 
-                your biggest time investment this week. Is this aligned with your long-term goals?
-              </p>
+              {(() => {
+                const TOTAL_WEEKLY_HOURS = 168;
+                const awakeCats = categories.filter(c => c.name.toLowerCase() !== 'sleep');
+                const sleepCat = categories.find(c => c.name.toLowerCase() === 'sleep');
+                const sleepHours = sleepCat?.weeklyHoursTarget ?? 0;
+                const awakeHours = TOTAL_WEEKLY_HOURS - sleepHours;
+                const awakeAllocated = awakeCats.reduce((s, c) => s + c.weeklyHoursTarget, 0);
+                const unallocated = awakeHours - awakeAllocated;
+                const topAwake = [...awakeCats].sort((a, b) => b.weeklyHoursTarget - a.weeklyHoursTarget);
+                const zeroCategories = awakeCats.filter(c => c.weeklyHoursTarget === 0);
+                const lowCategories = awakeCats.filter(c => c.weeklyHoursTarget > 0 && c.weeklyHoursTarget <= 3);
+
+                return (
+                  <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
+                    <p>
+                      Of your <span className="font-medium text-foreground">{awakeHours}h</span> awake hours, 
+                      you've allocated <span className="font-medium text-foreground">{awakeAllocated}h</span>.
+                      {unallocated > 0 && (
+                        <span className="text-life-energy font-medium"> {unallocated}h unaccounted for.</span>
+                      )}
+                    </p>
+
+                    {topAwake[0] && (
+                      <p>
+                        Your biggest investment: <span className="font-medium text-foreground">{topAwake[0].name}</span> at {topAwake[0].weeklyHoursTarget}h
+                        {topAwake[1] && <>, followed by <span className="font-medium text-foreground">{topAwake[1].name}</span> at {topAwake[1].weeklyHoursTarget}h</>}.
+                      </p>
+                    )}
+
+                    {zeroCategories.length > 0 && (
+                      <p className="text-destructive/80">
+                        ⚠ No time allocated to: {zeroCategories.map(c => c.name).join(', ')}.
+                      </p>
+                    )}
+
+                    {lowCategories.length > 0 && (
+                      <p>
+                        Low investment ({'\u2264'}3h): {lowCategories.map(c => `${c.name} (${c.weeklyHoursTarget}h)`).join(', ')}.
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
               <Link 
                 to="/review" 
                 className="inline-flex items-center gap-1 mt-4 text-sm font-medium text-life-energy hover:underline"
