@@ -108,6 +108,10 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
     );
   };
 
+  // Helper: check if area is selected (case-insensitive for backward compat)
+  const isAreaSelected = (catName: string) => 
+    selectedAreas.some(a => a.toLowerCase() === catName.toLowerCase());
+
   if (!isExpanded) {
     return (
       <Button

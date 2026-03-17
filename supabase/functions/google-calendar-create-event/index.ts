@@ -177,8 +177,9 @@ serve(async (req) => {
     }
 
     // Add color if provided (Google Calendar colorId: 1-11)
-    if (colorId && colorId >= '1' && colorId <= '11') {
-      eventData.colorId = colorId;
+    const colorIdNum = colorId ? parseInt(String(colorId), 10) : NaN;
+    if (!isNaN(colorIdNum) && colorIdNum >= 1 && colorIdNum <= 11) {
+      eventData.colorId = String(colorIdNum);
     }
 
     const calendarResponse = await fetch(
