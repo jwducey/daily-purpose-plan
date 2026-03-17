@@ -163,6 +163,7 @@ export function useHabits() {
     habits,
     loading,
     addHabit,
+    updateHabit,
     deleteHabit,
     toggleCompletion,
     getStreak,
