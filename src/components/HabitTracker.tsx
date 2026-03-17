@@ -6,9 +6,8 @@ import { Plus, Flame, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { EmojiPicker } from '@/components/EmojiPicker';
 import { cn } from '@/lib/utils';
-
-const EMOJI_OPTIONS = ['✅', '💪', '📚', '🧘', '💧', '🏃', '🎯', '💤', '🥗', '✍️', '🎵', '🧠'];
 const COLOR_OPTIONS = [
   '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
   '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#6366f1',
@@ -81,19 +80,9 @@ export function HabitTracker() {
               />
               <div className="space-y-2">
                 <span className="text-xs font-medium text-muted-foreground">Icon</span>
-                <div className="flex flex-wrap gap-2">
-                  {EMOJI_OPTIONS.map(e => (
-                    <button
-                      key={e}
-                      onClick={() => setNewIcon(e)}
-                      className={cn(
-                        'w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-all',
-                        newIcon === e ? 'bg-primary/20 ring-2 ring-primary scale-110' : 'bg-muted hover:bg-muted/80'
-                      )}
-                    >
-                      {e}
-                    </button>
-                  ))}
+                <div className="flex items-center gap-3">
+                  <EmojiPicker value={newIcon} onChange={setNewIcon} />
+                  <span className="text-xs text-muted-foreground">Click to search all emojis</span>
                 </div>
               </div>
               <div className="space-y-2">
