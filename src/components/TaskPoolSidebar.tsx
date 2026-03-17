@@ -80,10 +80,8 @@ export function TaskPoolSidebar({
           areas.forEach(area => {
             const matchedCat = categories.find(c => c.name.toLowerCase() === area.toLowerCase());
             const key = matchedCat ? matchedCat.name : area;
-        } else {
-          areas.forEach(area => {
-            if (!groups[area]) groups[area] = [];
-            groups[area].push(task);
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(task);
           });
         }
       });

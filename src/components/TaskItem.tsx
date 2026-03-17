@@ -315,8 +315,7 @@ export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskIte
             <div className="flex flex-col gap-1">
               <p className="text-xs text-muted-foreground px-2 py-1">Select areas</p>
               {categories.map((cat) => {
-                const areaKey = cat.name.toLowerCase();
-                const isSelected = (task.life_areas || []).includes(areaKey);
+                const isSelected = (task.life_areas || []).some(a => a.toLowerCase() === cat.name.toLowerCase());
                 return (
                   <button
                     key={cat.id}
@@ -324,7 +323,7 @@ export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskIte
                       "flex items-center gap-2 px-2 py-1.5 rounded-md text-sm hover:bg-muted transition-colors text-left",
                       isSelected && "bg-muted"
                     )}
-                    onClick={() => toggleLifeArea(areaKey)}
+                    onClick={() => toggleLifeArea(cat.name)}
                   >
                     <CheckboxPrimitive checked={isSelected} className="h-3.5 w-3.5" />
                     <span 
