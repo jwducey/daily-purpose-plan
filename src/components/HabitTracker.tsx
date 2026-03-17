@@ -80,19 +80,9 @@ export function HabitTracker() {
               />
               <div className="space-y-2">
                 <span className="text-xs font-medium text-muted-foreground">Icon</span>
-                <div className="flex flex-wrap gap-2">
-                  {EMOJI_OPTIONS.map(e => (
-                    <button
-                      key={e}
-                      onClick={() => setNewIcon(e)}
-                      className={cn(
-                        'w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-all',
-                        newIcon === e ? 'bg-primary/20 ring-2 ring-primary scale-110' : 'bg-muted hover:bg-muted/80'
-                      )}
-                    >
-                      {e}
-                    </button>
-                  ))}
+                <div className="flex items-center gap-3">
+                  <EmojiPicker value={newIcon} onChange={setNewIcon} />
+                  <span className="text-xs text-muted-foreground">Click to search all emojis</span>
                 </div>
               </div>
               <div className="space-y-2">
