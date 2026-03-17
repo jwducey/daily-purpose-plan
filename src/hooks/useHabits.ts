@@ -87,6 +87,15 @@ export function useHabits() {
     await fetchHabits();
   };
 
+  const updateHabit = async (habitId: string, updates: { name?: string; icon?: string; color?: string }) => {
+    const { error } = await supabase.from('habits').update(updates).eq('id', habitId);
+    if (error) {
+      toast({ title: 'Error updating habit', variant: 'destructive' });
+      return;
+    }
+    await fetchHabits();
+  };
+
   const deleteHabit = async (habitId: string) => {
     const { error } = await supabase.from('habits').delete().eq('id', habitId);
     if (error) {
@@ -154,6 +163,7 @@ export function useHabits() {
     habits,
     loading,
     addHabit,
+    updateHabit,
     deleteHabit,
     toggleCompletion,
     getStreak,
