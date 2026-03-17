@@ -121,7 +121,7 @@ export function TaskPoolSidebar({
 
   const getGroupLabel = (key: string) => {
     if (groupBy === 'area') {
-      const cat = categories.find(c => c.name.toLowerCase() === key);
+      const cat = categories.find(c => c.name.toLowerCase() === key.toLowerCase());
       return cat?.name || (key === 'unassigned' ? 'Unassigned' : key);
     }
     if (groupBy === 'priority') {
