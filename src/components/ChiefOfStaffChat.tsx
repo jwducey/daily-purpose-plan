@@ -76,7 +76,7 @@ export function ChiefOfStaffChat() {
         { role: 'user', content: userMessage }
       ];
 
-      const categoryNames = categories.map(c => c.name.toLowerCase());
+      const categoryNames = categories.map(c => c.name);
 
       const { data, error } = await supabase.functions.invoke('chief-of-staff', {
         body: { messages: chatMessages, type: 'chat', categories: categoryNames }
