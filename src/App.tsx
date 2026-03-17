@@ -22,6 +22,16 @@ const DailyReviewOverlay = lazy(() => import("./components/DailyReviewOverlay").
 
 const queryClient = new QueryClient();
 
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="space-y-4 w-64">
+      <Skeleton className="h-8 w-full" />
+      <Skeleton className="h-4 w-3/4" />
+      <Skeleton className="h-4 w-1/2" />
+    </div>
+  </div>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <UserProvider>
@@ -29,21 +39,23 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/tasks" element={<Tasks />} />
-            <Route path="/habits" element={<Habits />} />
-            <Route path="/budget" element={<Budget />} />
-            <Route path="/capital" element={<Capital />} />
-            <Route path="/review" element={<Review />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/settings" element={<Settings />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <DailyReviewPanel />
-          <DailyReviewOverlay />
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/tasks" element={<Tasks />} />
+              <Route path="/habits" element={<Habits />} />
+              <Route path="/budget" element={<Budget />} />
+              <Route path="/capital" element={<Capital />} />
+              <Route path="/review" element={<Review />} />
+              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/settings" element={<Settings />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <DailyReviewPanel />
+            <DailyReviewOverlay />
+          </Suspense>
         </BrowserRouter>
       </TooltipProvider>
     </UserProvider>
