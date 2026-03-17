@@ -1,21 +1,24 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { UserProvider } from "./contexts/UserContext";
-import { DailyReviewPanel } from "./components/DailyReviewPanel";
-import { DailyReviewOverlay } from "./components/DailyReviewOverlay";
-import Index from "./pages/Index";
-import Budget from "./pages/Budget";
-import Capital from "./pages/Capital";
-import Review from "./pages/Review";
-import Settings from "./pages/Settings";
-import Calendar from "./pages/Calendar";
-import Tasks from "./pages/Tasks";
-import Habits from "./pages/Habits";
-import Auth from "./pages/Auth";
-import NotFound from "./pages/NotFound";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const Index = lazy(() => import("./pages/Index"));
+const Budget = lazy(() => import("./pages/Budget"));
+const Capital = lazy(() => import("./pages/Capital"));
+const Review = lazy(() => import("./pages/Review"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Calendar = lazy(() => import("./pages/Calendar"));
+const Tasks = lazy(() => import("./pages/Tasks"));
+const Habits = lazy(() => import("./pages/Habits"));
+const Auth = lazy(() => import("./pages/Auth"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const DailyReviewPanel = lazy(() => import("./components/DailyReviewPanel").then(m => ({ default: m.DailyReviewPanel })));
+const DailyReviewOverlay = lazy(() => import("./components/DailyReviewOverlay").then(m => ({ default: m.DailyReviewOverlay })));
 
 const queryClient = new QueryClient();
 
