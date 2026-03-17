@@ -6,9 +6,8 @@ import { Plus, Flame, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { EmojiPicker } from '@/components/EmojiPicker';
 import { cn } from '@/lib/utils';
-
-const EMOJI_OPTIONS = ['✅', '💪', '📚', '🧘', '💧', '🏃', '🎯', '💤', '🥗', '✍️', '🎵', '🧠'];
 const COLOR_OPTIONS = [
   '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
   '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#6366f1',
