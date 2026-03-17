@@ -43,7 +43,7 @@ export function TaskPoolSidebar({
   const [searchQuery, setSearchQuery] = useState('');
   const [groupBy, setGroupBy] = useState<GroupBy>('area');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
-    new Set(categories.map(c => c.name.toLowerCase()))
+    new Set(categories.map(c => c.name))
   );
 
   const filteredTasks = useMemo(() => {
