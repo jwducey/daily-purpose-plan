@@ -43,7 +43,7 @@ export function TaskPoolSidebar({
   const [searchQuery, setSearchQuery] = useState('');
   const [groupBy, setGroupBy] = useState<GroupBy>('area');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
-    new Set(categories.map(c => c.name.toLowerCase()))
+    new Set(categories.map(c => c.name))
   );
 
   const filteredTasks = useMemo(() => {
@@ -68,7 +68,7 @@ export function TaskPoolSidebar({
     if (groupBy === 'area') {
       const groups: Record<string, Task[]> = {};
       categories.forEach(c => {
-        groups[c.name.toLowerCase()] = [];
+        groups[c.name] = [];
       });
       groups['unassigned'] = [];
       
@@ -78,8 +78,10 @@ export function TaskPoolSidebar({
           groups['unassigned'].push(task);
         } else {
           areas.forEach(area => {
-            if (!groups[area]) groups[area] = [];
-            groups[area].push(task);
+            const matchedCat = categories.find(c => c.name.toLowerCase() === area.toLowerCase());
+            const key = matchedCat ? matchedCat.name : area;
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(task);
           });
         }
       });
@@ -119,7 +121,7 @@ export function TaskPoolSidebar({
 
   const getGroupLabel = (key: string) => {
     if (groupBy === 'area') {
-      const cat = categories.find(c => c.name.toLowerCase() === key);
+      const cat = categories.find(c => c.name.toLowerCase() === key.toLowerCase());
       return cat?.name || (key === 'unassigned' ? 'Unassigned' : key);
     }
     if (groupBy === 'priority') {
@@ -133,7 +135,7 @@ export function TaskPoolSidebar({
 
   const getGroupColor = (key: string) => {
     if (groupBy === 'area') {
-      const cat = categories.find(c => c.name.toLowerCase() === key);
+      const cat = categories.find(c => c.name.toLowerCase() === key.toLowerCase());
       if (cat) return GOOGLE_CALENDAR_COLORS[cat.googleColorId]?.hex;
     }
     return undefined;

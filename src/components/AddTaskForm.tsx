@@ -108,6 +108,10 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
     );
   };
 
+  // Helper: check if area is selected (case-insensitive for backward compat)
+  const isAreaSelected = (catName: string) => 
+    selectedAreas.some(a => a.toLowerCase() === catName.toLowerCase());
+
   if (!isExpanded) {
     return (
       <Button
@@ -256,12 +260,12 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
                   key={cat.id}
                   className={cn(
                     "flex items-center gap-2 px-2 py-1.5 rounded-md text-sm hover:bg-muted transition-colors text-left",
-                    selectedAreas.includes(cat.name.toLowerCase()) && "bg-muted"
+                    isAreaSelected(cat.name) && "bg-muted"
                   )}
-                  onClick={() => toggleArea(cat.name.toLowerCase())}
+                  onClick={() => toggleArea(cat.name)}
                 >
                   <Checkbox
-                    checked={selectedAreas.includes(cat.name.toLowerCase())}
+                    checked={isAreaSelected(cat.name)}
                     className="h-3.5 w-3.5"
                   />
                   <div 
