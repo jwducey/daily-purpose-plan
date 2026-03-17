@@ -115,62 +115,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    // Listen to auth state changes to load profile from DB
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          // Load profile from database
-          const profile = await loadProfileFromDB(session.user.id);
-          if (profile && profile.onboarding_complete) {
-            const birthDate = profile.birth_date ? new Date(profile.birth_date) : new Date();
-            setUser({
-              id: session.user.id,
-              name: profile.name,
-              email: session.user.email || '',
-              age: profile.age,
-              expectedLifespan: profile.expected_lifespan,
-              birthDate,
-              role: 'user',
-              createdAt: new Date(profile.created_at),
-              lastLogin: new Date(),
-              onboardingComplete: true,
-            });
-          } else {
-            // Check localStorage as fallback for existing users
-            const savedUser = localStorage.getItem('lifewealth_user');
-            if (savedUser) {
-              const parsed = JSON.parse(savedUser);
-              setUser({
-                ...parsed,
-                id: session.user.id,
-                birthDate: new Date(parsed.birthDate),
-                createdAt: new Date(parsed.createdAt),
-                lastLogin: new Date(parsed.lastLogin),
-              });
-              // Migrate localStorage data to DB
-              if (parsed.onboardingComplete) {
-                await saveProfileToDB(session.user.id, {
-                  name: parsed.name,
-                  age: parsed.age,
-                  expected_lifespan: parsed.expectedLifespan,
-                  birth_date: new Date(parsed.birthDate).toISOString(),
-                  onboarding_complete: true,
-                });
-              }
-            } else {
-              // No profile yet - user needs onboarding
-              setUser(null);
-            }
-          }
-        } else {
-          setUser(null);
-        }
-        setIsLoading(false);
-      }
-    );
+    let initialSessionHandled = false;
 
-    // Check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    const handleSession = async (session: any) => {
       if (session?.user) {
         const profile = await loadProfileFromDB(session.user.id);
         if (profile && profile.onboarding_complete) {
@@ -207,10 +154,28 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 onboarding_complete: true,
               });
             }
+          } else {
+            setUser(null);
           }
         }
+      } else {
+        setUser(null);
       }
       setIsLoading(false);
+    };
+
+    // Listen to auth state changes - skip if initial session already handled
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!initialSessionHandled) return; // let getSession handle the first one
+        await handleSession(session);
+      }
+    );
+
+    // Check for existing session (single call, no duplicate)
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      initialSessionHandled = true;
+      await handleSession(session);
     });
 
     // Load localStorage-based settings
