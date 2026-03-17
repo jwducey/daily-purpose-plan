@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useHabits } from '@/hooks/useHabits';
 import { format, subDays } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Flame, Trash2, X } from 'lucide-react';
+import { Plus, Flame, Trash2, X, Pencil, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { EmojiPicker } from '@/components/EmojiPicker';
 import { cn } from '@/lib/utils';
+
 const COLOR_OPTIONS = [
   '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
   '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#6366f1',
@@ -16,11 +17,15 @@ const COLOR_OPTIONS = [
 const DAYS_TO_SHOW = 7;
 
 export function HabitTracker() {
-  const { habits, loading, addHabit, deleteHabit, toggleCompletion, getStreak, isCompletedOn } = useHabits();
+  const { habits, loading, addHabit, updateHabit, deleteHabit, toggleCompletion, getStreak, isCompletedOn } = useHabits();
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState('');
   const [newIcon, setNewIcon] = useState('✅');
   const [newColor, setNewColor] = useState('#3b82f6');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editIcon, setEditIcon] = useState('');
+  const [editColor, setEditColor] = useState('');
 
   const today = new Date();
   const days = Array.from({ length: DAYS_TO_SHOW }, (_, i) => subDays(today, DAYS_TO_SHOW - 1 - i));
@@ -32,6 +37,23 @@ export function HabitTracker() {
     setNewIcon('✅');
     setNewColor('#3b82f6');
     setShowAdd(false);
+  };
+
+  const startEditing = (habit: { id: string; name: string; icon: string; color: string }) => {
+    setEditingId(habit.id);
+    setEditName(habit.name);
+    setEditIcon(habit.icon);
+    setEditColor(habit.color);
+  };
+
+  const saveEdit = async () => {
+    if (!editingId || !editName.trim()) return;
+    await updateHabit(editingId, { name: editName.trim(), icon: editIcon, color: editColor });
+    setEditingId(null);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
   };
 
   if (loading) {
@@ -138,6 +160,8 @@ export function HabitTracker() {
         <AnimatePresence>
           {habits.map((habit, index) => {
             const streak = getStreak(habit.id);
+            const isEditing = editingId === habit.id;
+
             return (
               <motion.div
                 key={habit.id}
@@ -146,71 +170,115 @@ export function HabitTracker() {
                 exit={{ opacity: 0, x: -100 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <Card className="p-2 sm:p-3 hover:shadow-md transition-shadow group">
-                  <div
-                    className="grid gap-1.5 sm:gap-3 items-center"
-                    style={{ gridTemplateColumns: `minmax(0, 1fr) repeat(${DAYS_TO_SHOW}, minmax(32px, 44px)) minmax(40px, 60px)` }}
-                  >
-                    {/* Habit info */}
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-xl flex-shrink-0">{habit.icon}</span>
-                      <span className="text-sm font-medium truncate text-foreground">{habit.name}</span>
-                      <button
-                        onClick={() => deleteHabit(habit.id)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity ml-auto flex-shrink-0"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
-                      </button>
+                {isEditing ? (
+                  <Card className="p-3 sm:p-4 space-y-3 border-2 border-primary/30 bg-primary/5">
+                    <div className="flex items-center gap-2">
+                      <EmojiPicker value={editIcon} onChange={setEditIcon} />
+                      <Input
+                        value={editName}
+                        onChange={e => setEditName(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') saveEdit();
+                          if (e.key === 'Escape') cancelEdit();
+                        }}
+                        className="flex-1"
+                        autoFocus
+                      />
                     </div>
-
-                    {/* Day checkboxes */}
-                    {days.map(day => {
-                      const dateStr = format(day, 'yyyy-MM-dd');
-                      const completed = isCompletedOn(habit.id, dateStr);
-                      return (
-                        <div key={dateStr} className="flex justify-center">
-                          <motion.button
-                            whileTap={{ scale: 0.8 }}
-                            onClick={() => toggleCompletion(habit.id, dateStr)}
+                    <div className="space-y-2">
+                      <span className="text-xs font-medium text-muted-foreground">Color</span>
+                      <div className="flex flex-wrap gap-2">
+                        {COLOR_OPTIONS.map(c => (
+                          <button
+                            key={c}
+                            onClick={() => setEditColor(c)}
                             className={cn(
-                              'w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center transition-all text-xs sm:text-sm font-bold',
-                              completed
-                                ? 'text-white shadow-md'
-                                : 'bg-muted/50 hover:bg-muted text-muted-foreground/30 border border-border'
+                              'w-7 h-7 rounded-full transition-all',
+                              editColor === c ? 'ring-2 ring-offset-2 ring-foreground scale-110' : ''
                             )}
-                            style={completed ? {
-                              backgroundColor: habit.color,
-                              boxShadow: `0 2px 8px ${habit.color}40`,
-                            } : undefined}
-                          >
-                            {completed ? '✓' : ''}
-                          </motion.button>
-                        </div>
-                      );
-                    })}
-
-                    {/* Streak */}
-                    <div className="flex items-center justify-center">
-                      {streak > 0 ? (
-                        <motion.div
-                          key={streak}
-                          initial={{ scale: 0.5 }}
-                          animate={{ scale: 1 }}
-                          className="flex items-center gap-1 px-2 py-1 rounded-full"
-                          style={{
-                            backgroundColor: `${habit.color}15`,
-                            color: habit.color,
-                          }}
-                        >
-                          <Flame className="w-3.5 h-3.5" />
-                          <span className="text-xs font-bold">{streak}</span>
-                        </motion.div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
+                            style={{ backgroundColor: c }}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </Card>
+                    <div className="flex gap-2">
+                      <Button onClick={saveEdit} size="sm" className="gap-1.5 flex-1" disabled={!editName.trim()}>
+                        <Check className="w-4 h-4" /> Save
+                      </Button>
+                      <Button onClick={cancelEdit} size="sm" variant="outline" className="gap-1.5">
+                        <X className="w-4 h-4" /> Cancel
+                      </Button>
+                    </div>
+                  </Card>
+                ) : (
+                  <Card className="p-2 sm:p-3 hover:shadow-md transition-shadow group">
+                    <div
+                      className="grid gap-1.5 sm:gap-3 items-center"
+                      style={{ gridTemplateColumns: `minmax(0, 1fr) repeat(${DAYS_TO_SHOW}, minmax(32px, 44px)) minmax(40px, 60px)` }}
+                    >
+                      {/* Habit info */}
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-xl flex-shrink-0">{habit.icon}</span>
+                        <span className="text-sm font-medium truncate text-foreground">{habit.name}</span>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity ml-auto flex-shrink-0 flex items-center gap-1">
+                          <button onClick={() => startEditing(habit)}>
+                            <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                          </button>
+                          <button onClick={() => deleteHabit(habit.id)}>
+                            <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Day checkboxes */}
+                      {days.map(day => {
+                        const dateStr = format(day, 'yyyy-MM-dd');
+                        const completed = isCompletedOn(habit.id, dateStr);
+                        return (
+                          <div key={dateStr} className="flex justify-center">
+                            <motion.button
+                              whileTap={{ scale: 0.8 }}
+                              onClick={() => toggleCompletion(habit.id, dateStr)}
+                              className={cn(
+                                'w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center transition-all text-xs sm:text-sm font-bold',
+                                completed
+                                  ? 'text-white shadow-md'
+                                  : 'bg-muted/50 hover:bg-muted text-muted-foreground/30 border border-border'
+                              )}
+                              style={completed ? {
+                                backgroundColor: habit.color,
+                                boxShadow: `0 2px 8px ${habit.color}40`,
+                              } : undefined}
+                            >
+                              {completed ? '✓' : ''}
+                            </motion.button>
+                          </div>
+                        );
+                      })}
+
+                      {/* Streak */}
+                      <div className="flex items-center justify-center">
+                        {streak > 0 ? (
+                          <motion.div
+                            key={streak}
+                            initial={{ scale: 0.5 }}
+                            animate={{ scale: 1 }}
+                            className="flex items-center gap-1 px-2 py-1 rounded-full"
+                            style={{
+                              backgroundColor: `${habit.color}15`,
+                              color: habit.color,
+                            }}
+                          >
+                            <Flame className="w-3.5 h-3.5" />
+                            <span className="text-xs font-bold">{streak}</span>
+                          </motion.div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                )}
               </motion.div>
             );
           })}
