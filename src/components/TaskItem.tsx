@@ -87,8 +87,8 @@ export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskIte
 
   const toggleLifeArea = async (areaName: string) => {
     const current = task.life_areas || [];
-    const updated = current.includes(areaName)
-      ? current.filter(a => a !== areaName)
+    const updated = current.some(a => a.toLowerCase() === areaName.toLowerCase())
+      ? current.filter(a => a.toLowerCase() !== areaName.toLowerCase())
       : [...current, areaName];
     await onUpdate(task.id, { life_areas: updated.length > 0 ? updated : null });
   };
