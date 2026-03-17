@@ -65,7 +65,7 @@ export function DraggableTaskBlock({
 
   const taskAreas = useMemo(() => 
     (task.life_areas || []).map(area => {
-      const cat = categories.find(c => c.name.toLowerCase() === area);
+      const cat = categories.find(c => c.name.toLowerCase() === area.toLowerCase());
       return cat ? { name: cat.name, colorId: cat.googleColorId } : { name: area, colorId: '1' };
     }),
     [task.life_areas, categories]

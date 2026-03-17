@@ -68,7 +68,7 @@ export function TaskPoolSidebar({
     if (groupBy === 'area') {
       const groups: Record<string, Task[]> = {};
       categories.forEach(c => {
-        groups[c.name.toLowerCase()] = [];
+        groups[c.name] = [];
       });
       groups['unassigned'] = [];
       
@@ -76,6 +76,10 @@ export function TaskPoolSidebar({
         const areas = task.life_areas || [];
         if (areas.length === 0) {
           groups['unassigned'].push(task);
+        } else {
+          areas.forEach(area => {
+            const matchedCat = categories.find(c => c.name.toLowerCase() === area.toLowerCase());
+            const key = matchedCat ? matchedCat.name : area;
         } else {
           areas.forEach(area => {
             if (!groups[area]) groups[area] = [];
