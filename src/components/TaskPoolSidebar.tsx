@@ -135,7 +135,7 @@ export function TaskPoolSidebar({
 
   const getGroupColor = (key: string) => {
     if (groupBy === 'area') {
-      const cat = categories.find(c => c.name.toLowerCase() === key);
+      const cat = categories.find(c => c.name.toLowerCase() === key.toLowerCase());
       if (cat) return GOOGLE_CALENDAR_COLORS[cat.googleColorId]?.hex;
     }
     return undefined;
