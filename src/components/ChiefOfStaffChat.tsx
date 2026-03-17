@@ -137,7 +137,7 @@ export function ChiefOfStaffChat() {
 
   const getLifeAreaColor = (areas: string[]) => {
     if (areas.length === 0) return undefined;
-    const cat = categories.find(c => c.name.toLowerCase() === areas[0]);
+    const cat = categories.find(c => c.name.toLowerCase() === areas[0].toLowerCase());
     return cat ? GOOGLE_CALENDAR_COLORS[cat.googleColorId]?.hex : undefined;
   };
 
