@@ -300,7 +300,7 @@ export function WeeklyPlannerCalendar({
                     return (
                       <motion.div
                         key={event.id}
-                        className="absolute rounded px-1.5 py-1 bg-muted/80 border border-border text-xs overflow-hidden cursor-pointer hover:bg-muted transition-colors"
+                        className="absolute rounded px-1.5 py-1 border border-border/20 text-xs overflow-hidden cursor-pointer hover:brightness-110 transition-all"
                         style={{ 
                           top, 
                           height, 
@@ -308,17 +308,18 @@ export function WeeklyPlannerCalendar({
                           width: `calc(${widthPercent}% - 4px)`,
                           left: `calc(${leftPercent}% + 2px)`,
                           zIndex: column + 1,
+                          ...getEventColor(event),
                         }}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         whileHover={{ zIndex: 20 }}
                         onClick={() => handleEventClick(event)}
                       >
-                        <div className="font-medium truncate text-muted-foreground">
+                        <div className="font-medium truncate text-white/90">
                           {event.summary}
                         </div>
                         {height > 30 && (
-                          <div className="text-muted-foreground/70 truncate">
+                          <div className="text-white/70 truncate">
                             {format(parseISO(event.start), 'h:mm a')}
                           </div>
                         )}
