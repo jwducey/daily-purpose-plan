@@ -204,14 +204,21 @@ export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskIte
               )}
 
               {taskAreas.map(area => (
-                <Badge key={area.name} variant="outline" className="text-xs">
+                <Badge 
+                  key={area.name} 
+                  variant="outline" 
+                  className={cn("text-xs", area.orphaned && "border-dashed border-destructive/50 text-destructive cursor-pointer")}
+                  onClick={area.orphaned ? () => removeLifeArea(area.name) : undefined}
+                  title={area.orphaned ? `"${area.name}" is not a current life area — click to remove` : undefined}
+                >
                   <span 
                     className="h-2 w-2 rounded-full mr-1 inline-block"
                     style={{ backgroundColor: GOOGLE_CALENDAR_COLORS[area.colorId]?.hex }}
                   />
                   {area.name}
+                  {area.orphaned && <X className="h-3 w-3 ml-1" />}
                 </Badge>
-              ))}
+              ))
               
               {task.project && (
                 <Badge variant="secondary" className="text-xs">
