@@ -19,13 +19,14 @@ import {
   Calendar,
   Sparkles,
   PanelRightClose,
-  PanelRight
+  PanelRight,
+  Repeat
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { isToday, isTomorrow, isThisWeek, parseISO } from 'date-fns';
 
-type FilterType = 'all' | 'today' | 'upcoming' | 'completed';
+type FilterType = 'all' | 'today' | 'upcoming' | 'completed' | 'recurring';
 
 export default function Tasks() {
   const { user } = useAuth();
@@ -56,6 +57,9 @@ export default function Tasks() {
         break;
       case 'completed':
         filtered = unscheduledTasks.filter(t => t.completed);
+        break;
+      case 'recurring':
+        filtered = unscheduledTasks.filter(t => !t.completed && t.is_recurring);
         break;
       default:
         filtered = unscheduledTasks.filter(t => !t.completed);
@@ -154,6 +158,10 @@ export default function Tasks() {
                       <CheckCircle2 className="h-4 w-4" />
                       Done
                     </TabsTrigger>
+                    <TabsTrigger value="recurring" className="gap-2">
+                      <Repeat className="h-4 w-4" />
+                      Recurring
+                    </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value={filter} className="mt-0">
@@ -174,6 +182,8 @@ export default function Tasks() {
                               ? 'No tasks due today'
                               : filter === 'upcoming'
                               ? 'No upcoming tasks'
+                              : filter === 'recurring'
+                              ? 'No recurring tasks'
                               : 'All caught up!'
                             }
                           </h3>
