@@ -19,13 +19,14 @@ import {
   Calendar,
   Sparkles,
   PanelRightClose,
-  PanelRight
+  PanelRight,
+  Repeat
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { isToday, isTomorrow, isThisWeek, parseISO } from 'date-fns';
 
-type FilterType = 'all' | 'today' | 'upcoming' | 'completed';
+type FilterType = 'all' | 'today' | 'upcoming' | 'completed' | 'recurring';
 
 export default function Tasks() {
   const { user } = useAuth();
