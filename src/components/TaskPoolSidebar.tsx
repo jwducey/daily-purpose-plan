@@ -242,7 +242,27 @@ export function TaskPoolSidebar({
         </div>
       </div>
 
-      {suggestedTasks.length > 0 && (
+      {misalignedTasks.length > 0 && (
+        <div className="p-3 mx-4 mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+            <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+              {misalignedTasks.length} task{misalignedTasks.length !== 1 ? 's have' : ' has'} life areas that don't match current categories
+            </span>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full text-xs gap-1.5 border-amber-500/30 hover:bg-amber-500/20"
+            onClick={handleRealign}
+            disabled={isRealigning}
+          >
+            <Wand2 className="h-3.5 w-3.5" />
+            {isRealigning ? 'Realigning...' : 'Auto-fix task areas'}
+          </Button>
+        </div>
+      )}
+
         <div className="p-4 border-b bg-primary/5">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles className="h-4 w-4 text-primary" />
