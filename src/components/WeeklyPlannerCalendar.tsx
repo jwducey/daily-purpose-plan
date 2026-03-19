@@ -329,6 +329,7 @@ export function WeeklyPlannerCalendar({
         onOpenChange={setEditDialogOpen}
         onEventUpdated={handleEventUpdated}
         onEventDeleted={handleEventDeleted}
+        allEvents={events}
       />
     </div>
   );
