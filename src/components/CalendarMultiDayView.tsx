@@ -242,25 +242,22 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
   };
 
   const getEventColor = (event: CalendarEvent) => {
-    // 1) Best: match by Google colorId to a budget category
-    if (event.colorId) {
-      const matchingCategory = categories.find(cat => cat.googleColorId === event.colorId);
-      if (matchingCategory) {
-        return { backgroundColor: `hsl(var(--category-${matchingCategory.color}))` };
-      }
+    // 1) Best: match by Google colorId to get the hex color
+    if (event.colorId && GOOGLE_CALENDAR_COLORS[event.colorId]) {
+      return { backgroundColor: GOOGLE_CALENDAR_COLORS[event.colorId].hex };
     }
 
     // 2) Next: infer life area from description/summary and map to budget category
     const inferred = extractLifeAreaFromDescription(event.description) || event.summary;
     if (inferred) {
       const byName = categories.find(cat => cat.name.toLowerCase() === inferred.toLowerCase());
-      if (byName) {
-        return { backgroundColor: `hsl(var(--category-${byName.color}))` };
+      if (byName && GOOGLE_CALENDAR_COLORS[byName.googleColorId]) {
+        return { backgroundColor: GOOGLE_CALENDAR_COLORS[byName.googleColorId].hex };
       }
     }
 
-    // 3) Safe theme fallback (no raw hex)
-    return { backgroundColor: 'hsl(var(--time-passing))' };
+    // 3) Safe theme fallback
+    return { backgroundColor: 'hsl(var(--muted))' };
   };
 
   const handleEventClick = (event: CalendarEvent) => {
