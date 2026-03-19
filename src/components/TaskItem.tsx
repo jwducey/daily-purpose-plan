@@ -218,8 +218,8 @@ export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskIte
                   {area.name}
                   {area.orphaned && <X className="h-3 w-3 ml-1" />}
                 </Badge>
-              ))
-              
+              ))}
+
               {task.project && (
                 <Badge variant="secondary" className="text-xs">
                   {task.project}
