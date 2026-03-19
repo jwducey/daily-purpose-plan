@@ -482,6 +482,7 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
         onOpenChange={setEditDialogOpen}
         onEventUpdated={handleEventUpdated}
         onEventDeleted={handleEventDeleted}
+        allEvents={events}
       />
     </div>
   );

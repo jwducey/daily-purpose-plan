@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CalendarEvent } from '@/hooks/useGoogleCalendar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,6 +41,7 @@ interface EditEventDialogProps {
   onOpenChange: (open: boolean) => void;
   onEventUpdated: () => void;
   onEventDeleted: () => void;
+  allEvents?: CalendarEvent[];
 }
 
 export function EditEventDialog({ 
@@ -48,7 +49,8 @@ export function EditEventDialog({
   open, 
   onOpenChange, 
   onEventUpdated,
-  onEventDeleted 
+  onEventDeleted,
+  allEvents = [],
 }: EditEventDialogProps) {
   const { categories } = useUser();
   const [summary, setSummary] = useState('');
@@ -61,6 +63,11 @@ export function EditEventDialog({
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showBatchConfirm, setShowBatchConfirm] = useState(false);
+  const [matchingEventCount, setMatchingEventCount] = useState(0);
+
+  // Store original life area to detect changes
+  const originalLifeAreaRef = useRef<string>('');
 
   const selectedCategory = categories.find(c => c.id === lifeArea);
   const colorId = selectedCategory?.googleColorId;
@@ -71,12 +78,13 @@ export function EditEventDialog({
       setDescription(event.description || '');
       
       // Try to match colorId to a category
+      let matchedArea = '';
       if (event.colorId) {
         const matchingCategory = categories.find(c => c.googleColorId === event.colorId);
-        setLifeArea(matchingCategory?.id || '');
-      } else {
-        setLifeArea('');
+        matchedArea = matchingCategory?.id || '';
       }
+      setLifeArea(matchedArea);
+      originalLifeAreaRef.current = matchedArea;
       
       if (!event.allDay) {
         const start = parseISO(event.start);
@@ -94,7 +102,18 @@ export function EditEventDialog({
     }
   }, [event, categories]);
 
-  const handleUpdate = async () => {
+  const lifeAreaChanged = lifeArea !== originalLifeAreaRef.current;
+
+  const getMatchingEvents = () => {
+    if (!event) return [];
+    const normalizedTitle = (event.summary || '').trim().toLowerCase();
+    return allEvents.filter(e => 
+      e.id !== event.id && 
+      (e.summary || '').trim().toLowerCase() === normalizedTitle
+    );
+  };
+
+  const updateSingleEvent = async () => {
     if (!event || !summary.trim()) return;
 
     setIsUpdating(true);
@@ -116,6 +135,80 @@ export function EditEventDialog({
       if (error) throw error;
 
       toast.success('Event updated');
+      onEventUpdated();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error updating event:', error);
+      toast.error('Failed to update event');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const updateMatchingEvents = async (matchingEvents: CalendarEvent[]) => {
+    let successCount = 0;
+    for (const e of matchingEvents) {
+      try {
+        const { error } = await supabase.functions.invoke('google-calendar-update-event', {
+          body: {
+            eventId: e.id,
+            colorId: colorId || undefined,
+          },
+        });
+        if (!error) successCount++;
+      } catch (err) {
+        console.error(`Failed to update event ${e.id}:`, err);
+      }
+    }
+    return successCount;
+  };
+
+  const handleSave = async () => {
+    if (!event || !summary.trim()) return;
+
+    // Check if life area changed and there are matching events
+    if (lifeAreaChanged) {
+      const matching = getMatchingEvents();
+      if (matching.length > 0) {
+        setMatchingEventCount(matching.length);
+        setShowBatchConfirm(true);
+        return;
+      }
+    }
+
+    await updateSingleEvent();
+  };
+
+  const handleBatchConfirm = async (updateAll: boolean) => {
+    setShowBatchConfirm(false);
+    setIsUpdating(true);
+
+    try {
+      // Always update the current event first
+      const startDateTime = new Date(`${startDate}T${startTime}`).toISOString();
+      const endDateTime = new Date(`${endDate}T${endTime}`).toISOString();
+
+      const { error } = await supabase.functions.invoke('google-calendar-update-event', {
+        body: {
+          eventId: event!.id,
+          summary: summary.trim(),
+          description: description.trim() || undefined,
+          start: startDateTime,
+          end: endDateTime,
+          colorId: colorId || undefined,
+        },
+      });
+
+      if (error) throw error;
+
+      if (updateAll) {
+        const matching = getMatchingEvents();
+        const count = await updateMatchingEvents(matching);
+        toast.success(`Updated ${count + 1} events`);
+      } else {
+        toast.success('Event updated');
+      }
+
       onEventUpdated();
       onOpenChange(false);
     } catch (error) {
@@ -270,7 +363,7 @@ export function EditEventDialog({
               <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isUpdating}>
                 Cancel
               </Button>
-              <Button onClick={handleUpdate} disabled={isUpdating || !summary.trim()}>
+              <Button onClick={handleSave} disabled={isUpdating || !summary.trim()}>
                 {isUpdating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Save
               </Button>
@@ -279,6 +372,7 @@ export function EditEventDialog({
         </DialogContent>
       </Dialog>
 
+      {/* Delete confirmation */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -296,6 +390,28 @@ export function EditEventDialog({
             >
               {isDeleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Batch update life area confirmation */}
+      <AlertDialog open={showBatchConfirm} onOpenChange={setShowBatchConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Update Life Area for All "{event.summary}" Events?</AlertDialogTitle>
+            <AlertDialogDescription>
+              There {matchingEventCount === 1 ? 'is' : 'are'} {matchingEventCount} other event{matchingEventCount !== 1 ? 's' : ''} with the same name. 
+              Would you like to update the life area for all of them too?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex gap-2 sm:gap-0">
+            <AlertDialogCancel onClick={() => handleBatchConfirm(false)} disabled={isUpdating}>
+              Just This One
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleBatchConfirm(true)} disabled={isUpdating}>
+              {isUpdating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Update All ({matchingEventCount + 1})
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
