@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { EditEventDialog } from './EditEventDialog';
 import { useUser } from '@/contexts/UserContext';
+import { GOOGLE_CALENDAR_COLORS } from '@/types/user';
 import { Loader2 } from 'lucide-react';
 
 interface CalendarMultiDayViewProps {
