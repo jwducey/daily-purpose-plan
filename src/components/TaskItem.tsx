@@ -87,9 +87,19 @@ export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskIte
 
   const toggleLifeArea = async (areaName: string) => {
     const current = task.life_areas || [];
-    const updated = current.some(a => a.toLowerCase() === areaName.toLowerCase())
-      ? current.filter(a => a.toLowerCase() !== areaName.toLowerCase())
-      : [...current, areaName];
+    // Remove any orphaned areas that don't match current categories
+    const validAreas = current.filter(a => 
+      categories.some(c => c.name.toLowerCase() === a.toLowerCase())
+    );
+    const updated = validAreas.some(a => a.toLowerCase() === areaName.toLowerCase())
+      ? validAreas.filter(a => a.toLowerCase() !== areaName.toLowerCase())
+      : [...validAreas, areaName];
+    await onUpdate(task.id, { life_areas: updated.length > 0 ? updated : null });
+  };
+
+  const removeLifeArea = async (areaName: string) => {
+    const current = task.life_areas || [];
+    const updated = current.filter(a => a.toLowerCase() !== areaName.toLowerCase());
     await onUpdate(task.id, { life_areas: updated.length > 0 ? updated : null });
   };
 
