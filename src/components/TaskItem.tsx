@@ -119,7 +119,9 @@ export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskIte
 
   const taskAreas = (task.life_areas || []).map(area => {
     const cat = categories.find(c => c.name.toLowerCase() === area.toLowerCase());
-    return cat ? { name: cat.name, colorId: cat.googleColorId } : { name: area, colorId: '1' };
+    return cat 
+      ? { name: cat.name, colorId: cat.googleColorId, orphaned: false } 
+      : { name: area, colorId: '8', orphaned: true };
   });
 
   const isOverdue = task.due_date && isPast(parseISO(task.due_date)) && !isToday(parseISO(task.due_date)) && !task.completed;
