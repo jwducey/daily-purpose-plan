@@ -263,6 +263,7 @@ export function TaskPoolSidebar({
         </div>
       )}
 
+      {suggestedTasks.length > 0 && (
         <div className="p-4 border-b bg-primary/5">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles className="h-4 w-4 text-primary" />
