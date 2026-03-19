@@ -67,10 +67,32 @@ export function DraggableTaskBlock({
   const taskAreas = useMemo(() => 
     (task.life_areas || []).map(area => {
       const cat = categories.find(c => c.name.toLowerCase() === area.toLowerCase());
-      return cat ? { name: cat.name, colorId: cat.googleColorId } : { name: area, colorId: '1' };
+      return cat 
+        ? { name: cat.name, colorId: cat.googleColorId, orphaned: false } 
+        : { name: area, colorId: '8', orphaned: true };
     }),
     [task.life_areas, categories]
   );
+
+  const removeLifeArea = async (areaName: string) => {
+    if (!onUpdate) return;
+    const current = task.life_areas || [];
+    const updated = current.filter(a => a.toLowerCase() !== areaName.toLowerCase());
+    await onUpdate(task.id, { life_areas: updated.length > 0 ? updated : [] });
+  };
+
+  const toggleLifeArea = async (areaName: string) => {
+    if (!onUpdate) return;
+    const current = task.life_areas || [];
+    // Remove orphaned areas automatically
+    const validAreas = current.filter(a => 
+      categories.some(c => c.name.toLowerCase() === a.toLowerCase())
+    );
+    const updated = validAreas.some(a => a.toLowerCase() === areaName.toLowerCase())
+      ? validAreas.filter(a => a.toLowerCase() !== areaName.toLowerCase())
+      : [...validAreas, areaName];
+    await onUpdate(task.id, { life_areas: updated.length > 0 ? updated : [] });
+  };
 
   const timeEstimate = useMemo(() =>
     TIME_ESTIMATES.find(t => t.value === task.time_estimate_minutes),
