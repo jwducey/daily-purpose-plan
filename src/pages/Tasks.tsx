@@ -182,6 +182,8 @@ export default function Tasks() {
                               ? 'No tasks due today'
                               : filter === 'upcoming'
                               ? 'No upcoming tasks'
+                              : filter === 'recurring'
+                              ? 'No recurring tasks'
                               : 'All caught up!'
                             }
                           </h3>
