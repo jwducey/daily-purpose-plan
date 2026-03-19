@@ -46,17 +46,14 @@ export function WeeklyPlannerCalendar({
   };
 
   const getEventColor = (event: CalendarEvent) => {
-    if (event.colorId) {
-      const matchingCategory = categories.find(cat => cat.googleColorId === event.colorId);
-      if (matchingCategory) {
-        return { backgroundColor: `hsl(var(--category-${matchingCategory.color}))` };
-      }
+    if (event.colorId && GOOGLE_CALENDAR_COLORS[event.colorId]) {
+      return { backgroundColor: GOOGLE_CALENDAR_COLORS[event.colorId].hex };
     }
     const inferred = extractLifeAreaFromDescription(event.description) || event.summary;
     if (inferred) {
       const byName = categories.find(cat => cat.name.toLowerCase() === inferred.toLowerCase());
-      if (byName) {
-        return { backgroundColor: `hsl(var(--category-${byName.color}))` };
+      if (byName && GOOGLE_CALENDAR_COLORS[byName.googleColorId]) {
+        return { backgroundColor: GOOGLE_CALENDAR_COLORS[byName.googleColorId].hex };
       }
     }
     return { backgroundColor: 'hsl(var(--muted))' };
