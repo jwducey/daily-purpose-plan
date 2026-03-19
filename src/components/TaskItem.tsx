@@ -353,6 +353,23 @@ export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskIte
                   </button>
                 );
               })}
+              {/* Show orphaned areas with remove option */}
+              {taskAreas.filter(a => a.orphaned).length > 0 && (
+                <>
+                  <div className="border-t my-1" />
+                  <p className="text-xs text-destructive px-2 py-1">Unrecognized areas:</p>
+                  {taskAreas.filter(a => a.orphaned).map(area => (
+                    <button
+                      key={area.name}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm hover:bg-destructive/10 transition-colors text-left text-destructive"
+                      onClick={() => removeLifeArea(area.name)}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      <span className="truncate">{area.name}</span>
+                    </button>
+                  ))}
+                </>
+              )}
             </div>
           </PopoverContent>
         </Popover>
