@@ -340,10 +340,16 @@ export function DraggableTaskBlock({
           {taskAreas.map(area => (
             <span 
               key={area.name}
-              className="inline-flex items-center px-1.5 py-0.5 rounded-full text-white text-[10px]"
-              style={{ backgroundColor: GOOGLE_CALENDAR_COLORS[area.colorId]?.hex }}
+              className={cn(
+                "inline-flex items-center px-1.5 py-0.5 rounded-full text-white text-[10px]",
+                area.orphaned && "border border-dashed border-destructive/50 text-destructive bg-transparent cursor-pointer"
+              )}
+              style={area.orphaned ? undefined : { backgroundColor: GOOGLE_CALENDAR_COLORS[area.colorId]?.hex }}
+              onClick={area.orphaned ? (e) => { e.stopPropagation(); removeLifeArea(area.name); } : undefined}
+              title={area.orphaned ? `"${area.name}" is not a current life area — click to remove` : undefined}
             >
               {area.name}
+              {area.orphaned && <X className="h-3 w-3 ml-0.5" />}
             </span>
           ))}
 
