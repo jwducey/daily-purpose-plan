@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Popover,
   PopoverContent,
@@ -66,10 +67,32 @@ export function DraggableTaskBlock({
   const taskAreas = useMemo(() => 
     (task.life_areas || []).map(area => {
       const cat = categories.find(c => c.name.toLowerCase() === area.toLowerCase());
-      return cat ? { name: cat.name, colorId: cat.googleColorId } : { name: area, colorId: '1' };
+      return cat 
+        ? { name: cat.name, colorId: cat.googleColorId, orphaned: false } 
+        : { name: area, colorId: '8', orphaned: true };
     }),
     [task.life_areas, categories]
   );
+
+  const removeLifeArea = async (areaName: string) => {
+    if (!onUpdate) return;
+    const current = task.life_areas || [];
+    const updated = current.filter(a => a.toLowerCase() !== areaName.toLowerCase());
+    await onUpdate(task.id, { life_areas: updated.length > 0 ? updated : [] });
+  };
+
+  const toggleLifeArea = async (areaName: string) => {
+    if (!onUpdate) return;
+    const current = task.life_areas || [];
+    // Remove orphaned areas automatically
+    const validAreas = current.filter(a => 
+      categories.some(c => c.name.toLowerCase() === a.toLowerCase())
+    );
+    const updated = validAreas.some(a => a.toLowerCase() === areaName.toLowerCase())
+      ? validAreas.filter(a => a.toLowerCase() !== areaName.toLowerCase())
+      : [...validAreas, areaName];
+    await onUpdate(task.id, { life_areas: updated.length > 0 ? updated : [] });
+  };
 
   const timeEstimate = useMemo(() =>
     TIME_ESTIMATES.find(t => t.value === task.time_estimate_minutes),
@@ -279,6 +302,39 @@ export function DraggableTaskBlock({
                 </Button>
               )}
 
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="icon" variant="ghost" className="h-6 w-6">
+                    <span className="text-[10px]">🏷</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-2" align="end">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-xs text-muted-foreground px-2 py-1">Life Areas</p>
+                    {categories.map((cat) => {
+                      const isSelected = (task.life_areas || []).some(a => a.toLowerCase() === cat.name.toLowerCase());
+                      return (
+                        <button
+                          key={cat.id}
+                          className={cn(
+                            "flex items-center gap-2 px-2 py-1.5 rounded-md text-sm hover:bg-muted transition-colors text-left",
+                            isSelected && "bg-muted"
+                          )}
+                          onClick={() => toggleLifeArea(cat.name)}
+                        >
+                          <Checkbox checked={isSelected} className="h-3.5 w-3.5" />
+                          <span 
+                            className="w-3 h-3 rounded-full shrink-0"
+                            style={{ backgroundColor: GOOGLE_CALENDAR_COLORS[cat.googleColorId]?.hex }}
+                          />
+                          <span className="truncate">{cat.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
               <Button 
                 size="icon" 
                 variant="ghost" 
@@ -317,10 +373,16 @@ export function DraggableTaskBlock({
           {taskAreas.map(area => (
             <span 
               key={area.name}
-              className="inline-flex items-center px-1.5 py-0.5 rounded-full text-white text-[10px]"
-              style={{ backgroundColor: GOOGLE_CALENDAR_COLORS[area.colorId]?.hex }}
+              className={cn(
+                "inline-flex items-center px-1.5 py-0.5 rounded-full text-white text-[10px]",
+                area.orphaned && "border border-dashed border-destructive/50 text-destructive bg-transparent cursor-pointer"
+              )}
+              style={area.orphaned ? undefined : { backgroundColor: GOOGLE_CALENDAR_COLORS[area.colorId]?.hex }}
+              onClick={area.orphaned ? (e) => { e.stopPropagation(); removeLifeArea(area.name); } : undefined}
+              title={area.orphaned ? `"${area.name}" is not a current life area — click to remove` : undefined}
             >
               {area.name}
+              {area.orphaned && <X className="h-3 w-3 ml-0.5" />}
             </span>
           ))}
 

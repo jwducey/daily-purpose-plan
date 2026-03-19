@@ -87,9 +87,19 @@ export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskIte
 
   const toggleLifeArea = async (areaName: string) => {
     const current = task.life_areas || [];
-    const updated = current.some(a => a.toLowerCase() === areaName.toLowerCase())
-      ? current.filter(a => a.toLowerCase() !== areaName.toLowerCase())
-      : [...current, areaName];
+    // Remove any orphaned areas that don't match current categories
+    const validAreas = current.filter(a => 
+      categories.some(c => c.name.toLowerCase() === a.toLowerCase())
+    );
+    const updated = validAreas.some(a => a.toLowerCase() === areaName.toLowerCase())
+      ? validAreas.filter(a => a.toLowerCase() !== areaName.toLowerCase())
+      : [...validAreas, areaName];
+    await onUpdate(task.id, { life_areas: updated.length > 0 ? updated : null });
+  };
+
+  const removeLifeArea = async (areaName: string) => {
+    const current = task.life_areas || [];
+    const updated = current.filter(a => a.toLowerCase() !== areaName.toLowerCase());
     await onUpdate(task.id, { life_areas: updated.length > 0 ? updated : null });
   };
 
@@ -109,7 +119,9 @@ export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskIte
 
   const taskAreas = (task.life_areas || []).map(area => {
     const cat = categories.find(c => c.name.toLowerCase() === area.toLowerCase());
-    return cat ? { name: cat.name, colorId: cat.googleColorId } : { name: area, colorId: '1' };
+    return cat 
+      ? { name: cat.name, colorId: cat.googleColorId, orphaned: false } 
+      : { name: area, colorId: '8', orphaned: true };
   });
 
   const isOverdue = task.due_date && isPast(parseISO(task.due_date)) && !isToday(parseISO(task.due_date)) && !task.completed;
@@ -192,15 +204,22 @@ export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskIte
               )}
 
               {taskAreas.map(area => (
-                <Badge key={area.name} variant="outline" className="text-xs">
+                <Badge 
+                  key={area.name} 
+                  variant="outline" 
+                  className={cn("text-xs", area.orphaned && "border-dashed border-destructive/50 text-destructive cursor-pointer")}
+                  onClick={area.orphaned ? () => removeLifeArea(area.name) : undefined}
+                  title={area.orphaned ? `"${area.name}" is not a current life area — click to remove` : undefined}
+                >
                   <span 
                     className="h-2 w-2 rounded-full mr-1 inline-block"
                     style={{ backgroundColor: GOOGLE_CALENDAR_COLORS[area.colorId]?.hex }}
                   />
                   {area.name}
+                  {area.orphaned && <X className="h-3 w-3 ml-1" />}
                 </Badge>
               ))}
-              
+
               {task.project && (
                 <Badge variant="secondary" className="text-xs">
                   {task.project}
@@ -334,6 +353,23 @@ export function TaskItem({ task, onToggleComplete, onUpdate, onDelete }: TaskIte
                   </button>
                 );
               })}
+              {/* Show orphaned areas with remove option */}
+              {taskAreas.filter(a => a.orphaned).length > 0 && (
+                <>
+                  <div className="border-t my-1" />
+                  <p className="text-xs text-destructive px-2 py-1">Unrecognized areas:</p>
+                  {taskAreas.filter(a => a.orphaned).map(area => (
+                    <button
+                      key={area.name}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm hover:bg-destructive/10 transition-colors text-left text-destructive"
+                      onClick={() => removeLifeArea(area.name)}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      <span className="truncate">{area.name}</span>
+                    </button>
+                  ))}
+                </>
+              )}
             </div>
           </PopoverContent>
         </Popover>
