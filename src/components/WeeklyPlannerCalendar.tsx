@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { EditEventDialog } from './EditEventDialog';
+import { useUser } from '@/contexts/UserContext';
 
 interface WeeklyPlannerCalendarProps {
   events: CalendarEvent[];
@@ -32,6 +33,33 @@ export function WeeklyPlannerCalendar({
   const [dragOverSlot, setDragOverSlot] = useState<{ dayIndex: number; hour: number } | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const { categories } = useUser();
+
+  const extractLifeAreaFromDescription = (description?: string) => {
+    if (!description) return null;
+    const lifeAreaMatch = description.match(/Life Area:\s*([^\n\r]+)/i);
+    if (lifeAreaMatch?.[1]) return lifeAreaMatch[1].trim();
+    const dailyReviewMatch = description.match(/Daily Review Activity\s*-\s*([^\n\r(]+)/i);
+    if (dailyReviewMatch?.[1]) return dailyReviewMatch[1].trim();
+    return null;
+  };
+
+  const getEventColor = (event: CalendarEvent) => {
+    if (event.colorId) {
+      const matchingCategory = categories.find(cat => cat.googleColorId === event.colorId);
+      if (matchingCategory) {
+        return { backgroundColor: `hsl(var(--category-${matchingCategory.color}))` };
+      }
+    }
+    const inferred = extractLifeAreaFromDescription(event.description) || event.summary;
+    if (inferred) {
+      const byName = categories.find(cat => cat.name.toLowerCase() === inferred.toLowerCase());
+      if (byName) {
+        return { backgroundColor: `hsl(var(--category-${byName.color}))` };
+      }
+    }
+    return { backgroundColor: 'hsl(var(--muted))' };
+  };
 
   const dates = useMemo(() => {
     const start = startOfWeek(weekStartDate);
@@ -272,7 +300,7 @@ export function WeeklyPlannerCalendar({
                     return (
                       <motion.div
                         key={event.id}
-                        className="absolute rounded px-1.5 py-1 bg-muted/80 border border-border text-xs overflow-hidden cursor-pointer hover:bg-muted transition-colors"
+                        className="absolute rounded px-1.5 py-1 border border-border/20 text-xs overflow-hidden cursor-pointer hover:brightness-110 transition-all"
                         style={{ 
                           top, 
                           height, 
@@ -280,17 +308,18 @@ export function WeeklyPlannerCalendar({
                           width: `calc(${widthPercent}% - 4px)`,
                           left: `calc(${leftPercent}% + 2px)`,
                           zIndex: column + 1,
+                          ...getEventColor(event),
                         }}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         whileHover={{ zIndex: 20 }}
                         onClick={() => handleEventClick(event)}
                       >
-                        <div className="font-medium truncate text-muted-foreground">
+                        <div className="font-medium truncate text-white/90">
                           {event.summary}
                         </div>
                         {height > 30 && (
-                          <div className="text-muted-foreground/70 truncate">
+                          <div className="text-white/70 truncate">
                             {format(parseISO(event.start), 'h:mm a')}
                           </div>
                         )}
