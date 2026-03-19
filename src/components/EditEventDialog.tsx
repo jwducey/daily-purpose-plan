@@ -203,20 +203,27 @@ export function EditEventDialog({
 
       if (error) throw error;
 
+      // Close dialog immediately and refresh calendar
+      onEventUpdated();
+      onOpenChange(false);
+      setIsUpdating(false);
+
       if (updateAll) {
         const matching = getMatchingEvents();
-        const count = await updateMatchingEvents(matching);
-        toast.success(`Updated ${count + 1} events`);
+        toast.info(`Updating ${matching.length} other events in the background...`);
+        // Fire-and-forget: batch update runs in background
+        updateMatchingEvents(matching).then((count) => {
+          toast.success(`Updated ${count} other event${count !== 1 ? 's' : ''}`);
+          onEventUpdated(); // Refresh calendar again when done
+        }).catch(() => {
+          toast.error('Some background updates failed');
+        });
       } else {
         toast.success('Event updated');
       }
-
-      onEventUpdated();
-      onOpenChange(false);
     } catch (error) {
       console.error('Error updating event:', error);
       toast.error('Failed to update event');
-    } finally {
       setIsUpdating(false);
     }
   };
