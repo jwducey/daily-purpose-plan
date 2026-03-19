@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { EditEventDialog } from './EditEventDialog';
 import { useUser } from '@/contexts/UserContext';
+import { GOOGLE_CALENDAR_COLORS } from '@/types/user';
 
 interface WeeklyPlannerCalendarProps {
   events: CalendarEvent[];
