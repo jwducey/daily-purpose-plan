@@ -217,40 +217,6 @@ export default function Tasks() {
                       <AddTaskForm onAdd={createTask} />
                     )}
 
-                    {filter === 'all' && completedTasks.length > 0 && (
-                      <div className="mt-6">
-                        <button
-                          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                          onClick={() => setShowCompleted(!showCompleted)}
-                        >
-                          {showCompleted ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          )}
-                          Completed ({completedTasks.length})
-                        </button>
-                        
-                        {showCompleted && (
-                          <div className="space-y-2 mt-2">
-                            {completedTasks.map((task) => (
-                              <motion.div
-                                key={task.id}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                              >
-                                <TaskItem
-                                  task={task}
-                                  onToggleComplete={toggleComplete}
-                                  onUpdate={updateTask}
-                                  onDelete={deleteTask}
-                                />
-                              </motion.div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </TabsContent>
                 </Tabs>
               )}
