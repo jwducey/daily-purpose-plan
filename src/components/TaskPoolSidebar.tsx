@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Task, CreateTaskInput, UpdateTaskInput } from '@/hooks/useTasks';
 import { useUser } from '@/contexts/UserContext';
 import { DraggableTaskBlock } from './DraggableTaskBlock';
@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Clock, Sparkles, ChevronDown, ChevronRight } from 'lucide-react';
+import { Search, Clock, Sparkles, ChevronDown, ChevronRight, AlertTriangle, Wand2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GOOGLE_CALENDAR_COLORS } from '@/types/user';
+import { toast } from 'sonner';
 import {
   Collapsible,
   CollapsibleContent,
@@ -45,6 +46,49 @@ export function TaskPoolSidebar({
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
     new Set(categories.map(c => c.name))
   );
+  const [isRealigning, setIsRealigning] = useState(false);
+
+  const categoryNames = useMemo(() => categories.map(c => c.name), [categories]);
+  const categoryNamesLower = useMemo(() => categories.map(c => c.name.toLowerCase()), [categories]);
+
+  // Detect misaligned tasks: tasks with life_areas that don't match any current category
+  const misalignedTasks = useMemo(() => {
+    return tasks.filter(t => {
+      if (!t.life_areas || t.life_areas.length === 0) return false;
+      return t.life_areas.some(area => 
+        !categoryNamesLower.includes(area.toLowerCase())
+      );
+    });
+  }, [tasks, categoryNamesLower]);
+
+  const handleRealign = useCallback(async () => {
+    if (!onUpdateTask || misalignedTasks.length === 0) return;
+    setIsRealigning(true);
+    
+    let fixedCount = 0;
+    for (const task of misalignedTasks) {
+      const currentAreas = task.life_areas || [];
+      const newAreas = currentAreas.filter(area => 
+        categoryNamesLower.includes(area.toLowerCase())
+      ).map(area => {
+        // Normalize casing to match current category name
+        const idx = categoryNamesLower.indexOf(area.toLowerCase());
+        return idx >= 0 ? categoryNames[idx] : area;
+      });
+      
+      const areasChanged = 
+        newAreas.length !== currentAreas.length || 
+        !currentAreas.every((a, i) => newAreas[i] === a);
+      
+      if (areasChanged) {
+        const success = await onUpdateTask(task.id, { life_areas: newAreas.length > 0 ? newAreas : [] });
+        if (success) fixedCount++;
+      }
+    }
+    
+    setIsRealigning(false);
+    toast.success(`Realigned ${fixedCount} task${fixedCount !== 1 ? 's' : ''} to current life areas`);
+  }, [misalignedTasks, onUpdateTask, categoryNames, categoryNamesLower]);
 
   const filteredTasks = useMemo(() => {
     let filtered = tasks.filter(t => !t.completed);
