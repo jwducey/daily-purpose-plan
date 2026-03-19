@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { EditEventDialog } from './EditEventDialog';
+import { useUser } from '@/contexts/UserContext';
 
 interface WeeklyPlannerCalendarProps {
   events: CalendarEvent[];
