@@ -158,6 +158,10 @@ export default function Tasks() {
                       <CheckCircle2 className="h-4 w-4" />
                       Done
                     </TabsTrigger>
+                    <TabsTrigger value="recurring" className="gap-2">
+                      <Repeat className="h-4 w-4" />
+                      Recurring
+                    </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value={filter} className="mt-0">
