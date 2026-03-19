@@ -302,6 +302,39 @@ export function DraggableTaskBlock({
                 </Button>
               )}
 
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="icon" variant="ghost" className="h-6 w-6">
+                    <span className="text-[10px]">🏷</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-2" align="end">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-xs text-muted-foreground px-2 py-1">Life Areas</p>
+                    {categories.map((cat) => {
+                      const isSelected = (task.life_areas || []).some(a => a.toLowerCase() === cat.name.toLowerCase());
+                      return (
+                        <button
+                          key={cat.id}
+                          className={cn(
+                            "flex items-center gap-2 px-2 py-1.5 rounded-md text-sm hover:bg-muted transition-colors text-left",
+                            isSelected && "bg-muted"
+                          )}
+                          onClick={() => toggleLifeArea(cat.name)}
+                        >
+                          <Checkbox checked={isSelected} className="h-3.5 w-3.5" />
+                          <span 
+                            className="w-3 h-3 rounded-full shrink-0"
+                            style={{ backgroundColor: GOOGLE_CALENDAR_COLORS[cat.googleColorId]?.hex }}
+                          />
+                          <span className="truncate">{cat.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
               <Button 
                 size="icon" 
                 variant="ghost" 
