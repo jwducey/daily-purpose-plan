@@ -146,21 +146,23 @@ export function EditEventDialog({
   };
 
   const updateMatchingEvents = async (matchingEvents: CalendarEvent[]) => {
-    let successCount = 0;
-    for (const e of matchingEvents) {
-      try {
-        const { error } = await supabase.functions.invoke('google-calendar-update-event', {
-          body: {
-            eventId: e.id,
-            colorId: colorId || undefined,
-          },
-        });
-        if (!error) successCount++;
-      } catch (err) {
-        console.error(`Failed to update event ${e.id}:`, err);
+    const eventIds = matchingEvents.map(e => e.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('google-calendar-batch-update', {
+        body: {
+          eventIds,
+          colorId: colorId || undefined,
+        },
+      });
+      if (error) {
+        console.error('Batch update error:', error);
+        return 0;
       }
+      return data?.updated || 0;
+    } catch (err) {
+      console.error('Batch update failed:', err);
+      return 0;
     }
-    return successCount;
   };
 
   const handleSave = async () => {
