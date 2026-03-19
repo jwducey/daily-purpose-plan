@@ -33,6 +33,33 @@ export function WeeklyPlannerCalendar({
   const [dragOverSlot, setDragOverSlot] = useState<{ dayIndex: number; hour: number } | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const { categories } = useUser();
+
+  const extractLifeAreaFromDescription = (description?: string) => {
+    if (!description) return null;
+    const lifeAreaMatch = description.match(/Life Area:\s*([^\n\r]+)/i);
+    if (lifeAreaMatch?.[1]) return lifeAreaMatch[1].trim();
+    const dailyReviewMatch = description.match(/Daily Review Activity\s*-\s*([^\n\r(]+)/i);
+    if (dailyReviewMatch?.[1]) return dailyReviewMatch[1].trim();
+    return null;
+  };
+
+  const getEventColor = (event: CalendarEvent) => {
+    if (event.colorId) {
+      const matchingCategory = categories.find(cat => cat.googleColorId === event.colorId);
+      if (matchingCategory) {
+        return { backgroundColor: `hsl(var(--category-${matchingCategory.color}))` };
+      }
+    }
+    const inferred = extractLifeAreaFromDescription(event.description) || event.summary;
+    if (inferred) {
+      const byName = categories.find(cat => cat.name.toLowerCase() === inferred.toLowerCase());
+      if (byName) {
+        return { backgroundColor: `hsl(var(--category-${byName.color}))` };
+      }
+    }
+    return { backgroundColor: 'hsl(var(--muted))' };
+  };
 
   const dates = useMemo(() => {
     const start = startOfWeek(weekStartDate);
