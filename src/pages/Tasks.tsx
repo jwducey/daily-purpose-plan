@@ -58,6 +58,9 @@ export default function Tasks() {
       case 'completed':
         filtered = unscheduledTasks.filter(t => t.completed);
         break;
+      case 'recurring':
+        filtered = unscheduledTasks.filter(t => !t.completed && t.is_recurring);
+        break;
       default:
         filtered = unscheduledTasks.filter(t => !t.completed);
     }
