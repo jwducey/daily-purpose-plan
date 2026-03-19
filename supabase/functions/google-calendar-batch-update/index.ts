@@ -122,25 +122,37 @@ serve(async (req) => {
       eventData.colorId = String(colorIdNum);
     }
 
-    // Fire all updates concurrently
-    const results = await Promise.allSettled(
-      eventIds.map((id: string) =>
-        fetch(
-          `https://www.googleapis.com/calendar/v3/calendars/primary/events/${id}`,
-          {
-            method: "PATCH",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(eventData),
-          }
-        ).then(async (r) => {
-          if (!r.ok) throw new Error(await r.text());
-          return r.json();
-        })
-      )
-    );
+    // Process in small batches to avoid Google API rate limits
+    const BATCH_SIZE = 5;
+    const DELAY_MS = 200;
+    const results: PromiseSettledResult<any>[] = [];
+
+    for (let i = 0; i < eventIds.length; i += BATCH_SIZE) {
+      const chunk = eventIds.slice(i, i + BATCH_SIZE);
+      const chunkResults = await Promise.allSettled(
+        chunk.map((id: string) =>
+          fetch(
+            `https://www.googleapis.com/calendar/v3/calendars/primary/events/${id}`,
+            {
+              method: "PATCH",
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(eventData),
+            }
+          ).then(async (r) => {
+            if (!r.ok) throw new Error(await r.text());
+            return r.json();
+          })
+        )
+      );
+      results.push(...chunkResults);
+      // Small delay between batches to respect rate limits
+      if (i + BATCH_SIZE < eventIds.length) {
+        await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+      }
+    }
 
     const successCount = results.filter((r) => r.status === "fulfilled").length;
     const failCount = results.filter((r) => r.status === "rejected").length;
