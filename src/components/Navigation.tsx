@@ -19,7 +19,7 @@ export function Navigation() {
   const navItems = allNavItems.filter(item => item.to !== '/capital' || capitalTabEnabled);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border md:relative md:border-t-0 md:border-r md:h-screen md:w-20 md:flex-shrink-0">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border md:sticky md:top-0 md:border-t-0 md:border-r md:h-screen md:w-20 md:flex-shrink-0">
       <div className="flex md:flex-col items-center justify-around md:justify-start md:pt-8 md:gap-2 h-16 md:h-full">
         {/* Logo - desktop only */}
         <div className="hidden md:flex items-center justify-center mb-8">
