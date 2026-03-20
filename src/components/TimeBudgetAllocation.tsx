@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { CategorySlider } from './CategorySlider';
+import { useTasks } from '@/hooks/useTasks';
 import { WeekBudgetBar } from './WeekBudgetBar';
 import { motion } from 'framer-motion';
 import { Clock, AlertCircle, CheckCircle2, Layers, Sparkles, Plus, RotateCcw } from 'lucide-react';
