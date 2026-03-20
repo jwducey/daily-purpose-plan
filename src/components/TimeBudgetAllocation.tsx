@@ -110,6 +110,7 @@ export function TimeBudgetAllocation() {
                   onValueChange={(value) => updateCategory(category.id, { weeklyHoursTarget: value })}
                   onColorChange={(colorId) => updateCategory(category.id, { googleColorId: colorId })}
                   onDelete={() => deleteCategory(category.id)}
+                  onAddTask={createTask}
                   maxTotal={TOTAL_WEEKLY_HOURS}
                 />
               </motion.div>
