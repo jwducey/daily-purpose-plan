@@ -26,3 +26,9 @@ verify_jwt = false
 
 [functions.scheduling-suggestions]
 verify_jwt = false
+
+[functions.task-suggestions]
+verify_jwt = false
+
+[functions.google-calendar-batch-update]
+verify_jwt = false
