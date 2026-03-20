@@ -13,6 +13,7 @@ const MAJOR_THRESHOLD = 30;
 
 export function TimeBudgetAllocation() {
   const { categories, updateCategory, addCategory, deleteCategory, resetCategories } = useUser();
+  const { createTask } = useTasks();
   const [newCategoryName, setNewCategoryName] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
 
