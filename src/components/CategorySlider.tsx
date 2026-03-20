@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Slider } from '@/components/ui/slider';
 import { LifeAreaGoals } from './LifeAreaGoals';
 import { TimeBudgetCategory, GOOGLE_CALENDAR_COLORS } from '@/types/user';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { 
   Moon, Heart, Briefcase, Users, Globe, TrendingUp, 
   Target, Award, Gift, Sun, Smile, Gamepad2,
-  LucideIcon, Palette, ChevronDown, ChevronRight, Plus, X, Lightbulb, Trash2
+  LucideIcon, Palette, ChevronDown, ChevronRight, Plus, X, Lightbulb, Trash2, Loader2, Sparkles, Clock, Check
 } from 'lucide-react';
 import {
   Popover,
@@ -21,6 +21,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/contexts/UserContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const iconMap: Record<string, LucideIcon> = {
   'moon': Moon,
@@ -37,11 +39,17 @@ const iconMap: Record<string, LucideIcon> = {
   'gamepad-2': Gamepad2,
 };
 
+interface TaskSuggestion {
+  title: string;
+  minutes: number;
+}
+
 interface CategorySliderProps {
   category: TimeBudgetCategory;
   onValueChange: (value: number) => void;
   onColorChange: (colorId: string) => void;
   onDelete: () => void;
+  onAddTask?: (input: { title: string; life_areas?: string[]; time_estimate_minutes?: number }) => Promise<any>;
   maxTotal?: number;
 }
 
@@ -50,6 +58,7 @@ export function CategorySlider({
   onValueChange, 
   onColorChange,
   onDelete,
+  onAddTask,
   maxTotal = 168 
 }: CategorySliderProps) {
   const Icon = iconMap[category.icon] || Target;
@@ -58,6 +67,9 @@ export function CategorySlider({
   const { customSuggestions, addCustomSuggestion, removeCustomSuggestion } = useUser();
   const [ideasOpen, setIdeasOpen] = useState(false);
   const [newIdea, setNewIdea] = useState('');
+  const [aiSuggestions, setAiSuggestions] = useState<TaskSuggestion[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [addedTasks, setAddedTasks] = useState<Set<string>>(new Set());
 
   const ideas = customSuggestions[category.name] || [];
 
@@ -67,6 +79,51 @@ export function CategorySlider({
       addCustomSuggestion(category.name, trimmed);
       setNewIdea('');
     }
+  };
+
+  const fetchSuggestions = useCallback(async () => {
+    setLoadingSuggestions(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const response = await supabase.functions.invoke('task-suggestions', {
+        body: { lifeArea: category.name },
+      });
+
+      if (response.error) throw response.error;
+      setAiSuggestions(response.data.suggestions || []);
+      setAddedTasks(new Set());
+    } catch (err) {
+      console.error('Failed to fetch suggestions:', err);
+      toast.error('Failed to generate suggestions');
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }, [category.name]);
+
+  const handleAddSuggestion = async (suggestion: TaskSuggestion) => {
+    if (!onAddTask) return;
+    const result = await onAddTask({
+      title: suggestion.title,
+      life_areas: [category.name],
+      time_estimate_minutes: suggestion.minutes,
+    });
+    if (result) {
+      setAddedTasks(prev => new Set(prev).add(suggestion.title));
+    }
+  };
+
+  const handleIdeasToggle = (open: boolean) => {
+    setIdeasOpen(open);
+    if (open && aiSuggestions.length === 0 && !loadingSuggestions) {
+      fetchSuggestions();
+    }
+  };
+
+  const minutesLabel = (mins: number) => {
+    if (mins >= 60) return `${mins / 60}h`;
+    return `${mins}m`;
   };
 
   return (
@@ -84,7 +141,6 @@ export function CategorySlider({
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {/* Delete button */}
           <Button 
             variant="ghost" 
             size="sm" 
@@ -165,32 +221,95 @@ export function CategorySlider({
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Custom ideas dropdown */}
-      <Collapsible open={ideasOpen} onOpenChange={setIdeasOpen}>
+      {/* AI-Powered Ideas */}
+      <Collapsible open={ideasOpen} onOpenChange={handleIdeasToggle}>
         <CollapsibleTrigger className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
           {ideasOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-          <Lightbulb className="h-3 w-3" />
-          <span>Ideas ({ideas.length})</span>
+          <Sparkles className="h-3 w-3" />
+          <span>Task Ideas</span>
+          {aiSuggestions.length > 0 && (
+            <span className="text-[10px] text-muted-foreground">({aiSuggestions.length})</span>
+          )}
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className="mt-2 space-y-1.5 pl-2">
-            {ideas.map((idea) => (
-              <div key={idea} className="flex items-center justify-between gap-2 text-xs py-1 px-2 rounded bg-muted/50">
-                <span className="truncate">{idea}</span>
-                <button
-                  onClick={() => removeCustomSuggestion(category.name, idea)}
-                  className="text-muted-foreground hover:text-destructive shrink-0"
-                >
-                  <X className="h-3 w-3" />
-                </button>
+            {loadingSuggestions ? (
+              <div className="flex items-center gap-2 py-3 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>Generating ideas based on your tasks...</span>
               </div>
-            ))}
+            ) : (
+              <>
+                {aiSuggestions.map((suggestion) => {
+                  const isAdded = addedTasks.has(suggestion.title);
+                  return (
+                    <div key={suggestion.title} className="flex items-center justify-between gap-2 text-xs py-1.5 px-2.5 rounded-md bg-muted/40 hover:bg-muted/70 transition-colors">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="truncate">{suggestion.title}</span>
+                        <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground shrink-0">
+                          <Clock className="h-2.5 w-2.5" />
+                          {minutesLabel(suggestion.minutes)}
+                        </span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={isAdded ? "ghost" : "outline"}
+                        className={cn("h-6 px-2 text-[10px] shrink-0", isAdded && "text-emerald-600")}
+                        onClick={() => handleAddSuggestion(suggestion)}
+                        disabled={isAdded}
+                      >
+                        {isAdded ? (
+                          <><Check className="h-2.5 w-2.5 mr-0.5" /> Added</>
+                        ) : (
+                          <><Plus className="h-2.5 w-2.5 mr-0.5" /> Add</>
+                        )}
+                      </Button>
+                    </div>
+                  );
+                })}
+
+                {aiSuggestions.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-[10px] text-muted-foreground w-full"
+                    onClick={fetchSuggestions}
+                    disabled={loadingSuggestions}
+                  >
+                    <Sparkles className="h-2.5 w-2.5 mr-1" />
+                    Generate more ideas
+                  </Button>
+                )}
+              </>
+            )}
+
+            {/* Custom ideas */}
+            {ideas.length > 0 && (
+              <div className="pt-1.5 border-t border-border/50">
+                <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
+                  <Lightbulb className="h-2.5 w-2.5" />
+                  Your custom ideas
+                </p>
+                {ideas.map((idea) => (
+                  <div key={idea} className="flex items-center justify-between gap-2 text-xs py-1 px-2 rounded bg-muted/50">
+                    <span className="truncate">{idea}</span>
+                    <button
+                      onClick={() => removeCustomSuggestion(category.name, idea)}
+                      className="text-muted-foreground hover:text-destructive shrink-0"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="flex gap-1.5">
               <Input
                 value={newIdea}
                 onChange={(e) => setNewIdea(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddIdea()}
-                placeholder="Add an idea..."
+                placeholder="Add a custom idea..."
                 className="h-7 text-xs"
               />
               <Button size="sm" variant="outline" className="h-7 px-2 shrink-0" onClick={handleAddIdea} disabled={!newIdea.trim()}>

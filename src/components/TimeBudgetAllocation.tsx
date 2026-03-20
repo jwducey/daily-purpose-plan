@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { CategorySlider } from './CategorySlider';
+import { useTasks } from '@/hooks/useTasks';
 import { WeekBudgetBar } from './WeekBudgetBar';
 import { motion } from 'framer-motion';
 import { Clock, AlertCircle, CheckCircle2, Layers, Sparkles, Plus, RotateCcw } from 'lucide-react';
@@ -12,6 +13,7 @@ const MAJOR_THRESHOLD = 30;
 
 export function TimeBudgetAllocation() {
   const { categories, updateCategory, addCategory, deleteCategory, resetCategories } = useUser();
+  const { createTask } = useTasks();
   const [newCategoryName, setNewCategoryName] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -108,6 +110,7 @@ export function TimeBudgetAllocation() {
                   onValueChange={(value) => updateCategory(category.id, { weeklyHoursTarget: value })}
                   onColorChange={(colorId) => updateCategory(category.id, { googleColorId: colorId })}
                   onDelete={() => deleteCategory(category.id)}
+                  onAddTask={createTask}
                   maxTotal={TOTAL_WEEKLY_HOURS}
                 />
               </motion.div>
@@ -146,6 +149,7 @@ export function TimeBudgetAllocation() {
                   onValueChange={(value) => updateCategory(category.id, { weeklyHoursTarget: value })}
                   onColorChange={(colorId) => updateCategory(category.id, { googleColorId: colorId })}
                   onDelete={() => deleteCategory(category.id)}
+                  onAddTask={createTask}
                   maxTotal={Math.max(remainingAfterMajor, category.weeklyHoursTarget)}
                 />
               </motion.div>
