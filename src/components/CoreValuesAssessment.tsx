@@ -96,7 +96,7 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
             notes: h.notes,
           })));
         }
-      } else {
+      } else if (!providedValues?.length) {
         const saved = localStorage.getItem('core-values-shortlist');
         if (saved) values = JSON.parse(saved);
       }
