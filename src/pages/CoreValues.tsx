@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { Heart, ChevronDown, ChevronUp, CheckCircle2, ArrowRight, Plus, Wind, Layers, Target, PenLine, Moon, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { Heart, ChevronDown, ChevronUp, CheckCircle2, ArrowRight, Plus, Wind, Layers, Target, PenLine, Moon, ShieldCheck, ArrowLeft, BookOpen } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -87,6 +87,20 @@ const CORE_VALUES_BY_CATEGORY: Record<string, string[]> = {
   ],
 };
 
+const VIRTUES_LIST = [
+  'Acceptance', 'Assertiveness', 'Authenticity', 'Beauty', 'Caring', 'Cleanliness',
+  'Commitment', 'Compassion', 'Confidence', 'Consideration', 'Contentment', 'Cooperation',
+  'Courage', 'Creativity', 'Detachment', 'Determination', 'Dignity', 'Encouragement',
+  'Enthusiasm', 'Ethical', 'Excellence', 'Fairness', 'Faith', 'Flexibility', 'Forgiveness',
+  'Friendliness', 'Generosity', 'Gentleness', 'Graciousness', 'Gratitude', 'Harmonious',
+  'Helpfulness', 'Honesty', 'Honor', 'Hope', 'Humility', 'Idealism', 'Integrity',
+  'Imaginative', 'Joyfulness', 'Justice', 'Kindness', 'Love', 'Loyalty', 'Moderation',
+  'Modesty', 'Optimistic', 'Orderliness', 'Passionate', 'Patience', 'Peace', 'Perseverance',
+  'Preparedness', 'Purposefulness', 'Reliability', 'Respect', 'Responsibility', 'Reverence',
+  'Self-discipline', 'Service', 'Sincerity', 'Tact', 'Temperate', 'Tenacious', 'Thankfulness',
+  'Tolerance', 'Trust', 'Truthfulness', 'Understanding', 'Unity', 'Visionary', 'Wisdom', 'Wonder',
+];
+
 const CATEGORY_COLORS: Record<string, string> = {
   'Integrity': 'bg-blue-500/20 border-blue-500/40 text-black',
   'Feelings': 'bg-pink-500/20 border-pink-500/40 text-black',
@@ -161,6 +175,12 @@ const STEPS = [
     title: 'Live Your Values',
     subtitle: 'Put them into practice daily',
     icon: ShieldCheck,
+  },
+  {
+    number: 8,
+    title: 'Virtues to Study',
+    subtitle: 'Select virtues for ongoing practice',
+    icon: BookOpen,
   },
 ];
 
@@ -330,7 +350,7 @@ const CoreValues = () => {
     if (!completedSteps.includes(step)) {
       setCompletedSteps(prev => [...prev, step]);
     }
-    if (step < 7) {
+    if (step < 8) {
       setCurrentStep(step + 1);
     }
   };
@@ -726,6 +746,7 @@ const CoreValues = () => {
   };
 
   const [step4Picks, setStep4Picks] = useState<string[]>([]);
+  const [step4Unpicked, setStep4Unpicked] = useState<string[]>([]);
 
   const toggleStep4Pick = (value: string) => {
     setStep4Picks(prev =>
@@ -804,6 +825,8 @@ const CoreValues = () => {
             </p>
             <Button
               onClick={() => {
+                const unpickedValues = selectedValues.filter(v => !step4Picks.includes(v));
+                setStep4Unpicked(unpickedValues);
                 setSelectedValues(step4Picks);
                 completeStep(4);
               }}
@@ -930,6 +953,105 @@ const CoreValues = () => {
     </Card>
   );
 
+  const [selectedVirtues, setSelectedVirtues] = useState<string[]>([]);
+
+  const toggleVirtue = (virtue: string) => {
+    setSelectedVirtues(prev =>
+      prev.includes(virtue) ? prev.filter(v => v !== virtue) : [...prev, virtue]
+    );
+  };
+
+  const renderStep8 = () => {
+    const allVirtuesCandidates = new Set<string>();
+    step4Unpicked.forEach(v => allVirtuesCandidates.add(v));
+    VIRTUES_LIST.forEach(v => allVirtuesCandidates.add(v));
+    selectedValues.forEach(v => allVirtuesCandidates.delete(v));
+    const virtuesList = Array.from(allVirtuesCandidates).sort();
+
+    const fromShortlist = virtuesList.filter(v => step4Unpicked.includes(v));
+    const additional = virtuesList.filter(v => !step4Unpicked.includes(v));
+
+    return (
+      <Card className="border-border/50 bg-card/50">
+        <CardContent className="pt-8 pb-8">
+          <div className="max-w-2xl mx-auto space-y-6">
+            <h2 className="text-xl font-bold text-foreground">Virtues to Study & Practice</h2>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              Like Benjamin Franklin's 13 virtues, select the virtues you'd like to study and cultivate. These complement your core values — qualities you admire and want to develop further.
+            </p>
+
+            {selectedVirtues.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Your Virtues ({selectedVirtues.length})</p>
+                <div className="flex flex-wrap gap-2 bg-primary/5 border border-primary/20 rounded-xl p-4">
+                  {selectedVirtues.map(virtue => (
+                    <motion.button
+                      key={virtue}
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => toggleVirtue(virtue)}
+                      className="px-3 py-1.5 rounded-full text-sm font-medium border cursor-pointer transition-all shadow-md bg-life-energy text-primary-foreground border-life-energy/80 ring-2 ring-life-energy/40"
+                    >
+                      {virtue} ✓
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {fromShortlist.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">From your earlier shortlist:</p>
+                <div className="flex flex-wrap gap-2">
+                  {fromShortlist.filter(v => !selectedVirtues.includes(v)).map(virtue => {
+                    const category = getCategoryForValue(virtue);
+                    return (
+                      <motion.button
+                        key={virtue}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => toggleVirtue(virtue)}
+                        className={cn('px-3 py-1.5 rounded-full text-sm font-medium border cursor-pointer transition-all opacity-70 hover:opacity-100', SELECTED_COLORS[category] || 'bg-muted border-muted-foreground/30 text-foreground')}
+                      >
+                        {virtue}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-muted-foreground">Additional virtues:</p>
+              <div className="flex flex-wrap gap-2">
+                {additional.filter(v => !selectedVirtues.includes(v)).map(virtue => (
+                  <motion.button
+                    key={virtue}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => toggleVirtue(virtue)}
+                    className="px-3 py-1.5 rounded-full text-sm font-medium border cursor-pointer transition-all opacity-60 hover:opacity-100 bg-muted/50 border-muted-foreground/30 text-foreground hover:bg-muted"
+                  >
+                    {virtue}
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground italic">
+              Inspired by <a href="https://www.virtuesforlife.com/virtues-list/" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Virtues for Life</a> and Benjamin Franklin's practice of studying one virtue per week.
+            </p>
+
+            {selectedVirtues.length >= 1 && (
+              <Button onClick={() => completeStep(8)} className="bg-life-energy hover:bg-life-energy/90 text-primary-foreground">
+                <CheckCircle2 className="w-4 h-4 mr-2" /> Complete Virtues Selection
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   const stepRenderers: Record<number, () => JSX.Element> = {
     1: renderStep1,
     2: renderStep2,
@@ -938,6 +1060,7 @@ const CoreValues = () => {
     5: renderStep5,
     6: renderStep6,
     7: renderStep7,
+    8: renderStep8,
   };
 
   return (
@@ -954,7 +1077,7 @@ const CoreValues = () => {
               <h1 className="text-3xl font-bold text-foreground">Core Values</h1>
             </div>
             <p className="text-muted-foreground mt-2">
-              A 7-step journey to discover what matters most to you.
+              An 8-step journey to discover what matters most to you.
               <span className="ml-2 text-xs italic">
                 Based on <a href="https://scottjeffrey.com/personal-core-values/" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Scott Jeffrey's framework</a>
               </span>
