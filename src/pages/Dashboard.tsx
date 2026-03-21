@@ -214,6 +214,10 @@ export default function Dashboard() {
                     );
                   })}
                 </div>
+              )}
+            </motion.section>
+          )}
+
           {/* Core Values Widget */}
           {coreValues.length > 0 && (
             <motion.section
