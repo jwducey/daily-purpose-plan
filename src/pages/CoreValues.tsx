@@ -299,6 +299,12 @@ const CoreValues = () => {
     return 'Integrity';
   };
 
+  // Returns category respecting manual grouping overrides (for Step 3)
+  const getGroupedCategory = (value: string): string => {
+    if (groupingOverrides[value]) return groupingOverrides[value];
+    return getCategoryForValue(value);
+  };
+
   const completeStep = (step: number) => {
     if (!completedSteps.includes(step)) {
       setCompletedSteps(prev => [...prev, step]);
