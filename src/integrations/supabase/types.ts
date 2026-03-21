@@ -55,6 +55,7 @@ export type Database = {
           selected_values: string[]
           updated_at: string
           user_id: string
+          values_statements: Json
         }
         Insert: {
           created_at?: string
@@ -63,6 +64,7 @@ export type Database = {
           selected_values?: string[]
           updated_at?: string
           user_id: string
+          values_statements?: Json
         }
         Update: {
           created_at?: string
@@ -71,6 +73,7 @@ export type Database = {
           selected_values?: string[]
           updated_at?: string
           user_id?: string
+          values_statements?: Json
         }
         Relationships: []
       }

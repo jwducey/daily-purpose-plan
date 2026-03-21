@@ -1,0 +1,1 @@
+ALTER TABLE public.core_values_shortlist ADD COLUMN IF NOT EXISTS values_statements jsonb NOT NULL DEFAULT '{}'::jsonb;

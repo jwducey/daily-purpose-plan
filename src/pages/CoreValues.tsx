@@ -204,8 +204,8 @@ const CoreValues = () => {
   const [draggedValue, setDraggedValue] = useState<string | null>(null);
   const [dragOverGroupId, setDragOverGroupId] = useState<string | null>(null);
   const [dropPosition, setDropPosition] = useState<{ groupId: string; index: number } | null>(null);
+  const [valuesStatements, setValuesStatements] = useState<Record<string, string>>({});
 
-  // Load from DB
   useEffect(() => {
     const load = async () => {
       if (!user) {
@@ -228,6 +228,9 @@ const CoreValues = () => {
       if (data) {
         setSelectedValues(data.selected_values || []);
         setCustomValues((data.custom_values as Record<string, string[]>) || {});
+        if ((data as any).values_statements) {
+          setValuesStatements((data as any).values_statements as Record<string, string>);
+        }
       } else {
         const saved = localStorage.getItem('core-values-shortlist');
         const savedCustom = localStorage.getItem('core-values-custom');
@@ -251,10 +254,11 @@ const CoreValues = () => {
   }, [currentStep, completedSteps, loaded]);
 
   // Save to DB (debounced)
-  const saveToDb = useCallback(async (values: string[], custom: Record<string, string[]>) => {
+  const saveToDb = useCallback(async (values: string[], custom: Record<string, string[]>, statements: Record<string, string>) => {
     if (!user) {
       localStorage.setItem('core-values-shortlist', JSON.stringify(values));
       localStorage.setItem('core-values-custom', JSON.stringify(custom));
+      localStorage.setItem('core-values-statements', JSON.stringify(statements));
       return;
     }
     const { error } = await supabase
@@ -263,8 +267,9 @@ const CoreValues = () => {
         user_id: user.id,
         selected_values: values,
         custom_values: custom as any,
+        values_statements: statements as any,
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' });
+      } as any, { onConflict: 'user_id' });
     if (error) {
       console.error('Failed to save core values:', error);
       toast.error('Failed to save your values');
@@ -273,9 +278,9 @@ const CoreValues = () => {
 
   useEffect(() => {
     if (!loaded) return;
-    const timeout = setTimeout(() => saveToDb(selectedValues, customValues), 500);
+    const timeout = setTimeout(() => saveToDb(selectedValues, customValues, valuesStatements), 500);
     return () => clearTimeout(timeout);
-  }, [selectedValues, customValues, loaded, saveToDb]);
+  }, [selectedValues, customValues, valuesStatements, loaded, saveToDb]);
 
   const toggleValue = (value: string) => {
     setSelectedValues(prev =>
@@ -845,16 +850,6 @@ const CoreValues = () => {
       </Card>
     );
   };
-  const [valuesStatements, setValuesStatements] = useState<Record<string, string>>(() => {
-    const saved = localStorage.getItem('core-values-statements');
-    return saved ? JSON.parse(saved) : {};
-  });
-
-  useEffect(() => {
-    if (Object.keys(valuesStatements).length > 0) {
-      localStorage.setItem('core-values-statements', JSON.stringify(valuesStatements));
-    }
-  }, [valuesStatements]);
 
   const renderStep5 = () => (
     <Card className="border-border/50 bg-card/50">
