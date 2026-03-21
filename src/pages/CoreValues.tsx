@@ -346,12 +346,17 @@ const CoreValues = () => {
     }
   }, [currentStep, themeGroups, buildThemeGroups]);
 
+  const [journeyComplete, setJourneyComplete] = useState(false);
+
   const completeStep = (step: number) => {
     if (!completedSteps.includes(step)) {
       setCompletedSteps(prev => [...prev, step]);
     }
     if (step < 8) {
       setCurrentStep(step + 1);
+    } else if (step === 8) {
+      setJourneyComplete(true);
+      toast.success('Congratulations! Your core values and virtues journey is complete.');
     }
   };
 
