@@ -152,15 +152,36 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
         toast.error('Failed to save assessment');
         return;
       }
+
+      // Create tasks from action items
+      const actionEntries = Object.entries(actions).filter(([_, text]) => text.trim());
+      if (actionEntries.length > 0) {
+        const tasks = actionEntries.map(([value, text]) => ({
+          user_id: user.id,
+          title: text.trim(),
+          description: `Values improvement action for "${value}" — from ${format(today, 'MMMM yyyy')} assessment`,
+          life_areas: ['Personal Growth'],
+          priority: 2,
+        }));
+        const { error: taskError } = await supabase
+          .from('tasks')
+          .insert(tasks);
+        if (taskError) {
+          console.error('Failed to create tasks:', taskError);
+        } else {
+          toast.success(`${actionEntries.length} action${actionEntries.length > 1 ? 's' : ''} added to your Tasks`);
+        }
+      }
     }
 
-    // Also save to localStorage as backup
+    // localStorage backup
     const localHistory = JSON.parse(localStorage.getItem('core-values-assessment-history') || '[]');
     localHistory.unshift({ assessment_date: assessmentDate, scores, notes });
     localStorage.setItem('core-values-assessment-history', JSON.stringify(localHistory.slice(0, 12)));
 
     setAlreadyCompleted(true);
     setShowAssessment(false);
+    setActions({});
     toast.success('Assessment saved! Review your progress anytime on the Values page.');
   };
 
