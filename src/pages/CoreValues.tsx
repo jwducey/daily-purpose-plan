@@ -1362,6 +1362,13 @@ const CoreValues = () => {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Assessment Component */}
+              <CoreValuesAssessment
+                forceOpen={triggerAssessment}
+                onForceOpenHandled={() => setTriggerAssessment(false)}
+                providedValues={selectedValues}
+              />
             </motion.div>
           ) : (
             <>
