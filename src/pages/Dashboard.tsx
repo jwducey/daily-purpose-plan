@@ -1,20 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { MortalityCountdown } from '@/components/MortalityCountdown';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { Navigation } from '@/components/Navigation';
 import { motion } from 'framer-motion';
-import { PieChart, ArrowRight, Target, Heart } from 'lucide-react';
+import { PieChart, ArrowRight, Target, Heart, Palette } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+
+const VALUE_COLOR_PRESETS = [
+  '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
+  '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6', '#6366f1',
+  '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e',
+  '#64748b', '#78716c',
+];
 
 export default function Dashboard() {
   const { user, categories, goals } = useUser();
   const [coreValues, setCoreValues] = useState<string[]>([]);
   const [valuesStatements, setValuesStatements] = useState<Record<string, string>>({});
+  const [valuesColors, setValuesColors] = useState<Record<string, string>>({});
+  const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null);
+  const colorPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadValues = async () => {
+      // Load colors from localStorage
+      const savedColors = localStorage.getItem('core-values-colors');
+      if (savedColors) setValuesColors(JSON.parse(savedColors));
+
       if (user) {
         const { data } = await supabase
           .from('core_values_shortlist')
@@ -34,6 +48,24 @@ export default function Dashboard() {
     };
     loadValues();
   }, [user]);
+
+  // Close color picker on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (colorPickerRef.current && !colorPickerRef.current.contains(e.target as Node)) {
+        setColorPickerOpen(null);
+      }
+    };
+    if (colorPickerOpen) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [colorPickerOpen]);
+
+  const updateValueColor = (value: string, color: string) => {
+    const updated = { ...valuesColors, [value]: color };
+    setValuesColors(updated);
+    localStorage.setItem('core-values-colors', JSON.stringify(updated));
+    setColorPickerOpen(null);
+  };
 
   if (!user) return null;
 
@@ -240,19 +272,48 @@ export default function Dashboard() {
               </div>
 
               <div className="space-y-4">
-                {coreValues.map((value) => (
-                  <div key={value} className="flex items-start gap-3">
-                    <span className="mt-1 h-2 w-2 rounded-full bg-life-energy shrink-0" />
-                    <div>
-                      <span className="text-sm font-medium text-foreground">{value}</span>
-                      {valuesStatements[value] && (
-                        <p className="text-xs text-muted-foreground mt-0.5 italic">
-                          "{valuesStatements[value]}"
-                        </p>
-                      )}
+                {coreValues.map((value) => {
+                  const valueColor = valuesColors[value];
+                  return (
+                    <div key={value} className="flex items-start gap-3 group">
+                      <div className="relative mt-0.5 shrink-0">
+                        <button
+                          onClick={() => setColorPickerOpen(colorPickerOpen === value ? null : value)}
+                          className="h-4 w-4 rounded-full border border-border/50 hover:scale-125 transition-transform cursor-pointer flex items-center justify-center"
+                          style={{ backgroundColor: valueColor || 'hsl(var(--life-energy))' }}
+                          title="Change color"
+                        >
+                          <Palette className="w-2.5 h-2.5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </button>
+                        {colorPickerOpen === value && (
+                          <div ref={colorPickerRef} className="absolute left-6 top-0 z-50 bg-popover border border-border rounded-lg p-2 shadow-lg">
+                            <div className="grid grid-cols-6 gap-1.5 w-fit">
+                              {VALUE_COLOR_PRESETS.map((color) => (
+                                <button
+                                  key={color}
+                                  onClick={() => updateValueColor(value, color)}
+                                  className="h-5 w-5 rounded-full border-2 transition-transform hover:scale-110"
+                                  style={{
+                                    backgroundColor: color,
+                                    borderColor: valuesColors[value] === color ? 'hsl(var(--foreground))' : 'transparent',
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium" style={{ color: valueColor || 'hsl(var(--foreground))' }}>{value}</span>
+                        {valuesStatements[value] && (
+                          <p className="text-xs mt-0.5 italic" style={{ color: valueColor ? `${valueColor}99` : 'hsl(var(--muted-foreground))' }}>
+                            "{valuesStatements[value]}"
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </motion.section>
           )}

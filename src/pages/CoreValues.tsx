@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { Heart, ChevronDown, ChevronUp, CheckCircle2, ArrowRight, Plus, Wind, Layers, Target, PenLine, Moon, ShieldCheck, ArrowLeft, BookOpen } from 'lucide-react';
+import { Heart, ChevronDown, ChevronUp, CheckCircle2, ArrowRight, Plus, Wind, Layers, Target, PenLine, Moon, ShieldCheck, ArrowLeft, BookOpen, Palette } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -133,6 +133,13 @@ const SELECTED_COLORS: Record<string, string> = {
   'Health': 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/30',
 };
 
+const VALUE_COLOR_PRESETS = [
+  '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
+  '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6', '#6366f1',
+  '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e',
+  '#64748b', '#78716c',
+];
+
 const STEPS = [
   {
     number: 1,
@@ -205,9 +212,32 @@ const CoreValues = () => {
   const [dragOverGroupId, setDragOverGroupId] = useState<string | null>(null);
   const [dropPosition, setDropPosition] = useState<{ groupId: string; index: number } | null>(null);
   const [valuesStatements, setValuesStatements] = useState<Record<string, string>>({});
+  const [valuesColors, setValuesColors] = useState<Record<string, string>>({});
+  const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null);
+  const colorPickerRef = useRef<HTMLDivElement>(null);
+
+  // Close color picker on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (colorPickerRef.current && !colorPickerRef.current.contains(e.target as Node)) {
+        setColorPickerOpen(null);
+      }
+    };
+    if (colorPickerOpen) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [colorPickerOpen]);
+
+  const updateValueColor = (value: string, color: string) => {
+    const updated = { ...valuesColors, [value]: color };
+    setValuesColors(updated);
+    localStorage.setItem('core-values-colors', JSON.stringify(updated));
+    setColorPickerOpen(null);
+  };
 
   useEffect(() => {
     const load = async () => {
+      const savedColors = localStorage.getItem('core-values-colors');
+      if (savedColors) setValuesColors(JSON.parse(savedColors));
       if (!user) {
         const saved = localStorage.getItem('core-values-shortlist');
         const savedCustom = localStorage.getItem('core-values-custom');
@@ -1186,19 +1216,48 @@ const CoreValues = () => {
               <Card className="border-border/50 bg-card/50">
                 <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Heart className="w-4 h-4 text-life-energy" /> Core Values & Statements</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  {selectedValues.map(v => (
-                    <div key={v} className="flex items-start gap-3">
-                      <span className="mt-1.5 h-2 w-2 rounded-full bg-life-energy shrink-0" />
-                      <div>
-                        <span className="text-sm font-semibold text-foreground">{v}</span>
-                        {valuesStatements[v] ? (
-                          <p className="text-sm text-muted-foreground mt-0.5 italic">"{valuesStatements[v]}"</p>
-                        ) : (
-                          <p className="text-xs text-muted-foreground/50 mt-0.5">No statement written yet</p>
-                        )}
+                  {selectedValues.map(v => {
+                    const vc = valuesColors[v];
+                    return (
+                      <div key={v} className="flex items-start gap-3 group">
+                        <div className="relative mt-0.5 shrink-0">
+                          <button
+                            onClick={() => setColorPickerOpen(colorPickerOpen === v ? null : v)}
+                            className="h-4 w-4 rounded-full border border-border/50 hover:scale-125 transition-transform cursor-pointer flex items-center justify-center"
+                            style={{ backgroundColor: vc || 'hsl(var(--life-energy))' }}
+                            title="Change color"
+                          >
+                            <Palette className="w-2.5 h-2.5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </button>
+                          {colorPickerOpen === v && (
+                            <div ref={colorPickerRef} className="absolute left-6 top-0 z-50 bg-popover border border-border rounded-lg p-2 shadow-lg">
+                              <div className="grid grid-cols-6 gap-1.5 w-fit">
+                                {VALUE_COLOR_PRESETS.map((color) => (
+                                  <button
+                                    key={color}
+                                    onClick={() => updateValueColor(v, color)}
+                                    className="h-5 w-5 rounded-full border-2 transition-transform hover:scale-110"
+                                    style={{
+                                      backgroundColor: color,
+                                      borderColor: valuesColors[v] === color ? 'hsl(var(--foreground))' : 'transparent',
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <span className="text-sm font-semibold" style={{ color: vc || 'hsl(var(--foreground))' }}>{v}</span>
+                          {valuesStatements[v] ? (
+                            <p className="text-sm mt-0.5 italic" style={{ color: vc ? `${vc}99` : 'hsl(var(--muted-foreground))' }}>"{valuesStatements[v]}"</p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground/50 mt-0.5">No statement written yet</p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </CardContent>
               </Card>
 
@@ -1248,6 +1307,7 @@ const CoreValues = () => {
                           setSelectedValues([]);
                           setCustomValues({});
                           setValuesStatements({});
+                          setValuesColors({});
                           setCompletedSteps([]);
                           setCurrentStep(1);
                           setJourneyComplete(false);
@@ -1256,6 +1316,7 @@ const CoreValues = () => {
                           setResetConfirmStep(0);
                           localStorage.removeItem('core-values-step');
                           localStorage.removeItem('core-values-completed-steps');
+                          localStorage.removeItem('core-values-colors');
                           toast.success('Journey reset. Starting fresh!');
                         }}>
                           Reset Everything
