@@ -214,6 +214,8 @@ const CoreValues = () => {
   const [valuesStatements, setValuesStatements] = useState<Record<string, string>>({});
   const [valuesColors, setValuesColors] = useState<Record<string, string>>({});
   const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null);
+  const [draggedRankValue, setDraggedRankValue] = useState<string | null>(null);
+  const [dragOverRankIdx, setDragOverRankIdx] = useState<number | null>(null);
   const colorPickerRef = useRef<HTMLDivElement>(null);
 
   // Close color picker on outside click
