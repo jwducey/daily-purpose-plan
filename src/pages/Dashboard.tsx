@@ -271,12 +271,13 @@ export default function Dashboard() {
                 </Link>
               </div>
 
-              <div className="space-y-4">
-                {coreValues.map((value) => {
+              <div className="space-y-3">
+                {coreValues.map((value, idx) => {
                   const valueColor = valuesColors[value];
                   return (
-                    <div key={value} className="flex items-start gap-3 group">
-                      <div className="relative mt-0.5 shrink-0">
+                    <div key={value} className="flex items-center gap-3 group">
+                      <span className="text-xs font-bold text-muted-foreground/50 w-5 text-right shrink-0">#{idx + 1}</span>
+                      <div className="relative shrink-0">
                         <button
                           onClick={() => setColorPickerOpen(colorPickerOpen === value ? null : value)}
                           className="h-4 w-4 rounded-full border border-border/50 hover:scale-125 transition-transform cursor-pointer flex items-center justify-center"
@@ -303,10 +304,10 @@ export default function Dashboard() {
                           </div>
                         )}
                       </div>
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <span className="text-sm font-medium" style={{ color: valueColor || 'hsl(var(--foreground))' }}>{value}</span>
                         {valuesStatements[value] && (
-                          <p className="text-xs mt-0.5 italic" style={{ color: valueColor ? `${valueColor}99` : 'hsl(var(--muted-foreground))' }}>
+                          <p className="text-xs mt-0.5 italic truncate" style={{ color: valueColor ? `${valueColor}99` : 'hsl(var(--muted-foreground))' }}>
                             "{valuesStatements[value]}"
                           </p>
                         )}

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { Heart, ChevronDown, ChevronUp, CheckCircle2, ArrowRight, Plus, Wind, Layers, Target, PenLine, Moon, ShieldCheck, ArrowLeft, BookOpen, Palette } from 'lucide-react';
+import { Heart, ChevronDown, ChevronUp, CheckCircle2, ArrowRight, Plus, Wind, Layers, Target, PenLine, Moon, ShieldCheck, ArrowLeft, BookOpen, Palette, GripVertical } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -214,6 +214,8 @@ const CoreValues = () => {
   const [valuesStatements, setValuesStatements] = useState<Record<string, string>>({});
   const [valuesColors, setValuesColors] = useState<Record<string, string>>({});
   const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null);
+  const [draggedRankValue, setDraggedRankValue] = useState<string | null>(null);
+  const [dragOverRankIdx, setDragOverRankIdx] = useState<number | null>(null);
   const colorPickerRef = useRef<HTMLDivElement>(null);
 
   // Close color picker on outside click
@@ -1212,17 +1214,48 @@ const CoreValues = () => {
                 </CardContent>
               </Card>
 
-              {/* Core Values with Statements */}
+              {/* Core Values with Statements — Drag to reorder */}
               <Card className="border-border/50 bg-card/50">
-                <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Heart className="w-4 h-4 text-life-energy" /> Core Values & Statements</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                  {selectedValues.map(v => {
+                <CardHeader>
+                  <CardTitle className="text-sm flex items-center gap-2"><Heart className="w-4 h-4 text-life-energy" /> Core Values & Statements</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">Drag to stack-rank. #1 is your top priority.</p>
+                </CardHeader>
+                <CardContent className="space-y-1">
+                  {selectedValues.map((v, idx) => {
                     const vc = valuesColors[v];
                     return (
-                      <div key={v} className="flex items-start gap-3 group">
-                        <div className="relative mt-0.5 shrink-0">
+                      <div
+                        key={v}
+                        draggable
+                        onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setDraggedRankValue(v); }}
+                        onDragEnd={() => setDraggedRankValue(null)}
+                        onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverRankIdx(idx); }}
+                        onDragLeave={() => setDragOverRankIdx(null)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (draggedRankValue && draggedRankValue !== v) {
+                            const fromIdx = selectedValues.indexOf(draggedRankValue);
+                            const newArr = [...selectedValues];
+                            newArr.splice(fromIdx, 1);
+                            newArr.splice(idx, 0, draggedRankValue);
+                            setSelectedValues(newArr);
+                          }
+                          setDraggedRankValue(null);
+                          setDragOverRankIdx(null);
+                        }}
+                        className={cn(
+                          'flex items-center gap-3 group p-3 rounded-lg cursor-grab active:cursor-grabbing transition-all border',
+                          draggedRankValue === v ? 'opacity-40 border-dashed border-muted-foreground/30 bg-muted/20' : 'border-transparent hover:bg-muted/30',
+                          dragOverRankIdx === idx && draggedRankValue !== v ? 'border-life-energy/50 bg-life-energy/5' : ''
+                        )}
+                      >
+                        <div className="flex items-center gap-2 shrink-0">
+                          <GripVertical className="w-4 h-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
+                          <span className="text-xs font-bold text-muted-foreground/50 w-5 text-right">#{idx + 1}</span>
+                        </div>
+                        <div className="relative shrink-0">
                           <button
-                            onClick={() => setColorPickerOpen(colorPickerOpen === v ? null : v)}
+                            onClick={(e) => { e.stopPropagation(); setColorPickerOpen(colorPickerOpen === v ? null : v); }}
                             className="h-4 w-4 rounded-full border border-border/50 hover:scale-125 transition-transform cursor-pointer flex items-center justify-center"
                             style={{ backgroundColor: vc || 'hsl(var(--life-energy))' }}
                             title="Change color"
@@ -1235,7 +1268,7 @@ const CoreValues = () => {
                                 {VALUE_COLOR_PRESETS.map((color) => (
                                   <button
                                     key={color}
-                                    onClick={() => updateValueColor(v, color)}
+                                    onClick={(e) => { e.stopPropagation(); updateValueColor(v, color); }}
                                     className="h-5 w-5 rounded-full border-2 transition-transform hover:scale-110"
                                     style={{
                                       backgroundColor: color,
@@ -1247,10 +1280,10 @@ const CoreValues = () => {
                             </div>
                           )}
                         </div>
-                        <div>
+                        <div className="min-w-0 flex-1">
                           <span className="text-sm font-semibold" style={{ color: vc || 'hsl(var(--foreground))' }}>{v}</span>
                           {valuesStatements[v] ? (
-                            <p className="text-sm mt-0.5 italic" style={{ color: vc ? `${vc}99` : 'hsl(var(--muted-foreground))' }}>"{valuesStatements[v]}"</p>
+                            <p className="text-sm mt-0.5 italic truncate" style={{ color: vc ? `${vc}99` : 'hsl(var(--muted-foreground))' }}>"{valuesStatements[v]}"</p>
                           ) : (
                             <p className="text-xs text-muted-foreground/50 mt-0.5">No statement written yet</p>
                           )}
