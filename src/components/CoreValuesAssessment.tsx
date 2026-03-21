@@ -414,6 +414,17 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
                   </CardContent>
                 </Card>
 
+                {/* Action items summary */}
+                {Object.values(actions).filter(a => a.trim()).length > 0 && (
+                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
+                    <div className="flex items-center gap-2 text-sm font-medium mb-1">
+                      <ListTodo className="w-4 h-4 text-primary" />
+                      {Object.values(actions).filter(a => a.trim()).length} action{Object.values(actions).filter(a => a.trim()).length > 1 ? 's' : ''} will be added to your Tasks
+                    </div>
+                    <p className="text-xs text-muted-foreground">These will appear in your Tasks inbox when you save.</p>
+                  </div>
+                )}
+
                 {/* Actions */}
                 <div className="flex gap-3 justify-center pb-8">
                   <Button variant="outline" onClick={handleDismiss}>
