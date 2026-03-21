@@ -179,10 +179,11 @@ const CoreValues = () => {
   const [newValueText, setNewValueText] = useState('');
   const [loaded, setLoaded] = useState(false);
   const [beginnerReady, setBeginnerReady] = useState(false);
-  // Manual grouping overrides: value -> theme
-  const [groupingOverrides, setGroupingOverrides] = useState<Record<string, string>>({});
+  // Theme groups for Step 3: each group is an ordered array of values (first = definer)
+  const [themeGroups, setThemeGroups] = useState<{ id: string; color: string; values: string[] }[] | null>(null);
   const [draggedValue, setDraggedValue] = useState<string | null>(null);
-  const [dragOverTheme, setDragOverTheme] = useState<string | null>(null);
+  const [dragOverGroupId, setDragOverGroupId] = useState<string | null>(null);
+  const [dropPosition, setDropPosition] = useState<{ groupId: string; index: number } | null>(null);
 
   // Load from DB
   useEffect(() => {
