@@ -63,17 +63,19 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
       let values: string[] = providedValues || [];
       let statements: Record<string, string> = {};
 
-      if (!providedValues?.length && user) {
-        const { data } = await supabase
-          .from('core_values_shortlist')
-          .select('selected_values, values_statements')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        if (data?.selected_values?.length) {
-          values = data.selected_values;
-        }
-        if ((data as any)?.values_statements) {
-          statements = (data as any).values_statements as Record<string, string>;
+      if (user) {
+        if (!providedValues?.length) {
+          const { data } = await supabase
+            .from('core_values_shortlist')
+            .select('selected_values, values_statements')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          if (data?.selected_values?.length) {
+            values = data.selected_values;
+          }
+          if ((data as any)?.values_statements) {
+            statements = (data as any).values_statements as Record<string, string>;
+          }
         }
 
         const lastDay = format(lastDayOfMonth(today), 'yyyy-MM-dd');
