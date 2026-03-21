@@ -278,9 +278,9 @@ const CoreValues = () => {
 
   useEffect(() => {
     if (!loaded) return;
-    const timeout = setTimeout(() => saveToDb(selectedValues, customValues), 500);
+    const timeout = setTimeout(() => saveToDb(selectedValues, customValues, valuesStatements), 500);
     return () => clearTimeout(timeout);
-  }, [selectedValues, customValues, loaded, saveToDb]);
+  }, [selectedValues, customValues, valuesStatements, loaded, saveToDb]);
 
   const toggleValue = (value: string) => {
     setSelectedValues(prev =>
