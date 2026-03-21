@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { PieChart, ArrowRight, Target, Heart, Palette } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { CoreValuesAssessment } from '@/components/CoreValuesAssessment';
 
 const VALUE_COLOR_PRESETS = [
   '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
@@ -316,6 +317,9 @@ export default function Dashboard() {
                   );
                 })}
               </div>
+
+              {/* Monthly Assessment Widget */}
+              <CoreValuesAssessment />
             </motion.section>
           )}
         </div>
