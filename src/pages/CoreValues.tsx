@@ -840,6 +840,7 @@ const CoreValues = () => {
       </Card>
     );
   };
+  const [valuesStatements, setValuesStatements] = useState<Record<string, string>>({});
 
   const renderStep5 = () => (
     <Card className="border-border/50 bg-card/50">
@@ -857,17 +858,21 @@ const CoreValues = () => {
               <li>• Integrity: "To be honest and transparent in every interaction."</li>
             </ul>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {selectedValues.map(value => {
               const category = getCategoryForValue(value);
               return (
                 <div key={value} className="flex items-start gap-3">
-                  <span className={cn('px-3 py-1 rounded-full text-xs font-medium border whitespace-nowrap mt-1.5', SELECTED_COLORS[category])}>
+                  <span className={cn('px-3 py-1 rounded-full text-xs font-medium border whitespace-nowrap mt-2', SELECTED_COLORS[category])}>
                     {value}
                   </span>
-                  <p className="text-sm text-muted-foreground italic flex-1">
-                    Write your personal statement for this value.
-                  </p>
+                  <Textarea
+                    value={valuesStatements[value] || ''}
+                    onChange={(e) => setValuesStatements(prev => ({ ...prev, [value]: e.target.value }))}
+                    placeholder={`What does ${value} mean to you? e.g. "To live with..."`}
+                    className="flex-1 min-h-[60px] text-sm resize-none"
+                    rows={2}
+                  />
                 </div>
               );
             })}
