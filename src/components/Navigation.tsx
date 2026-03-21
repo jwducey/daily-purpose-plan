@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, PieChart, ClipboardList, Settings, Timer, Calendar, CheckSquare, Flame, Gem } from 'lucide-react';
+import { LayoutDashboard, PieChart, ClipboardList, Settings, Timer, Calendar, CheckSquare, Flame, Gem, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/contexts/UserContext';
 
@@ -10,6 +10,7 @@ const allNavItems = [
   { to: '/budget', icon: PieChart, label: 'Budget' },
   { to: '/capital', icon: Gem, label: 'Capital' },
   { to: '/calendar', icon: Calendar, label: 'Calendar' },
+  { to: '/values', icon: Heart, label: 'Values' },
   { to: '/review', icon: ClipboardList, label: 'Review' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
