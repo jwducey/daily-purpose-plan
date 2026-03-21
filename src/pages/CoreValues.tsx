@@ -301,22 +301,21 @@ const CoreValues = () => {
   };
 
   // Build initial theme groups from selected values when entering Step 3
+  // Always include the category name as the first (definer) value
   const buildThemeGroups = useCallback(() => {
     const grouped: Record<string, string[]> = {};
     selectedValues.forEach(value => {
       const category = getCategoryForValue(value);
       if (!grouped[category]) grouped[category] = [];
-      // Category names go first, values after
-      if (Object.keys(CORE_VALUES_BY_CATEGORY).includes(value)) {
-        grouped[category].unshift(value);
-      } else {
+      // Skip category names — we'll add them as definer below
+      if (!Object.keys(CORE_VALUES_BY_CATEGORY).includes(value)) {
         grouped[category].push(value);
       }
     });
     return Object.entries(grouped).map(([cat, values]) => ({
       id: cat,
       color: cat,
-      values,
+      values: [cat, ...values], // Category name always first as definer
     }));
   }, [selectedValues, customValues]);
 
@@ -682,8 +681,8 @@ const CoreValues = () => {
                     );
                   })}
                   {group.values.length > 1 && (
-                    <span className="text-[10px] text-muted-foreground/50 ml-1 select-none">
-                      ← definer
+                    <span className="text-[10px] text-muted-foreground/50 ml-auto select-none">
+                      most → least important
                     </span>
                   )}
                 </div>
