@@ -214,6 +214,25 @@ const CoreValues = () => {
   const [valuesStatements, setValuesStatements] = useState<Record<string, string>>({});
   const [valuesColors, setValuesColors] = useState<Record<string, string>>({});
   const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null);
+  const colorPickerRef = useRef<HTMLDivElement>(null);
+
+  // Close color picker on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (colorPickerRef.current && !colorPickerRef.current.contains(e.target as Node)) {
+        setColorPickerOpen(null);
+      }
+    };
+    if (colorPickerOpen) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [colorPickerOpen]);
+
+  const updateValueColor = (value: string, color: string) => {
+    const updated = { ...valuesColors, [value]: color };
+    setValuesColors(updated);
+    localStorage.setItem('core-values-colors', JSON.stringify(updated));
+    setColorPickerOpen(null);
+  };
 
   useEffect(() => {
     const load = async () => {
