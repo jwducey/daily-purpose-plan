@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { Heart, ChevronDown, ChevronUp, CheckCircle2, ArrowRight, Plus, Wind, Layers, Target, PenLine, Moon, ShieldCheck, ArrowLeft, BookOpen } from 'lucide-react';
+import { Heart, ChevronDown, ChevronUp, CheckCircle2, ArrowRight, Plus, Wind, Layers, Target, PenLine, Moon, ShieldCheck, ArrowLeft, BookOpen, Palette } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -132,6 +132,13 @@ const SELECTED_COLORS: Record<string, string> = {
   'Order': 'bg-slate-500 border-slate-400 text-white shadow-slate-500/30',
   'Health': 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/30',
 };
+
+const VALUE_COLOR_PRESETS = [
+  '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
+  '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6', '#6366f1',
+  '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e',
+  '#64748b', '#78716c',
+];
 
 const STEPS = [
   {
