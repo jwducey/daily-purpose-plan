@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { Heart, ChevronDown, ChevronUp, Info, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Heart, ChevronDown, ChevronUp, Info, CheckCircle2, ArrowRight, Plus } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const CORE_VALUES_BY_CATEGORY: Record<string, string[]> = {
@@ -145,16 +146,26 @@ const CoreValues = () => {
     const saved = localStorage.getItem('core-values-shortlist');
     return saved ? JSON.parse(saved) : [];
   });
+  const [customValues, setCustomValues] = useState<Record<string, string[]>>(() => {
+    const saved = localStorage.getItem('core-values-custom');
+    return saved ? JSON.parse(saved) : {};
+  });
   const [showInstructions, setShowInstructions] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
     Object.keys(CORE_VALUES_BY_CATEGORY).forEach(cat => initial[cat] = true);
     return initial;
   });
+  const [addingTo, setAddingTo] = useState<string | null>(null);
+  const [newValueText, setNewValueText] = useState('');
 
   useEffect(() => {
     localStorage.setItem('core-values-shortlist', JSON.stringify(selectedValues));
   }, [selectedValues]);
+
+  useEffect(() => {
+    localStorage.setItem('core-values-custom', JSON.stringify(customValues));
+  }, [customValues]);
 
   const toggleValue = (value: string) => {
     setSelectedValues(prev =>
@@ -166,7 +177,35 @@ const CoreValues = () => {
     setExpandedCategories(prev => ({ ...prev, [category]: !prev[category] }));
   };
 
-  const totalValues = Object.values(CORE_VALUES_BY_CATEGORY).flat().length;
+  const addCustomValue = (category: string) => {
+    const trimmed = newValueText.trim();
+    if (!trimmed) return;
+    const allValues = [...Object.values(CORE_VALUES_BY_CATEGORY).flat(), ...Object.values(customValues).flat()];
+    if (allValues.some(v => v.toLowerCase() === trimmed.toLowerCase())) return;
+    setCustomValues(prev => ({
+      ...prev,
+      [category]: [...(prev[category] || []), trimmed],
+    }));
+    setSelectedValues(prev => [...prev, trimmed]);
+    setNewValueText('');
+    setAddingTo(null);
+  };
+
+  const getValuesForCategory = (category: string) => {
+    return [...(CORE_VALUES_BY_CATEGORY[category] || []), ...(customValues[category] || [])];
+  };
+
+  const getCategoryForValue = (value: string): string => {
+    for (const [cat, vals] of Object.entries(CORE_VALUES_BY_CATEGORY)) {
+      if (vals.includes(value)) return cat;
+    }
+    for (const [cat, vals] of Object.entries(customValues)) {
+      if (vals.includes(value)) return cat;
+    }
+    return 'Integrity';
+  };
+
+  const totalValues = Object.values(CORE_VALUES_BY_CATEGORY).flat().length + Object.values(customValues).flat().length;
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -271,7 +310,7 @@ const CoreValues = () => {
               <CardContent className="pt-0">
                 <div className="flex flex-wrap gap-2">
                   {selectedValues.map(value => {
-                    const category = Object.entries(CORE_VALUES_BY_CATEGORY).find(([, vals]) => vals.includes(value))?.[0] || 'Integrity';
+                    const category = getCategoryForValue(value);
                     return (
                       <motion.button
                         key={value}
@@ -296,7 +335,8 @@ const CoreValues = () => {
 
           {/* Values by Category */}
           <div className="space-y-4">
-            {Object.entries(CORE_VALUES_BY_CATEGORY).map(([category, values]) => {
+            {Object.keys(CORE_VALUES_BY_CATEGORY).map(category => {
+              const values = getValuesForCategory(category);
               const selectedInCategory = values.filter(v => selectedValues.includes(v)).length;
               const isExpanded = expandedCategories[category];
 
@@ -334,7 +374,7 @@ const CoreValues = () => {
                         transition={{ duration: 0.15 }}
                       >
                         <CardContent className="pt-0 pb-4">
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-2 items-center">
                             {values.map(value => {
                               const isSelected = selectedValues.includes(value);
                               return (
@@ -353,6 +393,32 @@ const CoreValues = () => {
                                 </motion.button>
                               );
                             })}
+                            {/* Add custom value */}
+                            {addingTo === category ? (
+                              <form
+                                className="inline-flex items-center gap-1"
+                                onSubmit={(e) => { e.preventDefault(); addCustomValue(category); }}
+                              >
+                                <Input
+                                  autoFocus
+                                  value={newValueText}
+                                  onChange={(e) => setNewValueText(e.target.value)}
+                                  onBlur={() => { if (!newValueText.trim()) { setAddingTo(null); setNewValueText(''); } }}
+                                  placeholder="Type a value..."
+                                  className="h-8 w-36 text-sm rounded-full px-3"
+                                />
+                                <Button type="submit" size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-full">
+                                  <CheckCircle2 className="w-4 h-4 text-life-energy" />
+                                </Button>
+                              </form>
+                            ) : (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setAddingTo(category); setNewValueText(''); }}
+                                className="px-3 py-1.5 rounded-full text-sm font-medium border border-dashed border-muted-foreground/40 text-muted-foreground hover:border-foreground hover:text-foreground transition-all flex items-center gap-1"
+                              >
+                                <Plus className="w-3.5 h-3.5" /> Add
+                              </button>
+                            )}
                           </div>
                         </CardContent>
                       </motion.div>
