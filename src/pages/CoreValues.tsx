@@ -536,7 +536,7 @@ const CoreValues = () => {
       </div>
 
       {/* Complete Step 2 */}
-      {selectedValues.length >= 3 && (
+      {selectedValues.length >= 10 && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-center pt-4">
           <Button
             onClick={() => completeStep(2)}
