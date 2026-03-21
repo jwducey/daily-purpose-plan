@@ -82,19 +82,19 @@ const CORE_VALUES_BY_CATEGORY: Record<string, string[]> = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  'Integrity': 'bg-blue-500/20 border-blue-500/40 text-blue-300',
-  'Feelings': 'bg-pink-500/20 border-pink-500/40 text-pink-300',
-  'Achievement': 'bg-amber-500/20 border-amber-500/40 text-amber-300',
-  'Intelligence': 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300',
-  'Strength': 'bg-red-500/20 border-red-500/40 text-red-300',
-  'Spirituality': 'bg-purple-500/20 border-purple-500/40 text-purple-300',
-  'Creativity': 'bg-orange-500/20 border-orange-500/40 text-orange-300',
-  'Enjoyment': 'bg-green-500/20 border-green-500/40 text-green-300',
-  'Presence': 'bg-teal-500/20 border-teal-500/40 text-teal-300',
-  'Freedom': 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300',
-  'Courage': 'bg-rose-500/20 border-rose-500/40 text-rose-300',
-  'Order': 'bg-slate-500/20 border-slate-500/40 text-slate-300',
-  'Health': 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300',
+  'Integrity': 'bg-blue-500/20 border-blue-500/40 text-black',
+  'Feelings': 'bg-pink-500/20 border-pink-500/40 text-black',
+  'Achievement': 'bg-amber-500/20 border-amber-500/40 text-black',
+  'Intelligence': 'bg-cyan-500/20 border-cyan-500/40 text-black',
+  'Strength': 'bg-red-500/20 border-red-500/40 text-black',
+  'Spirituality': 'bg-purple-500/20 border-purple-500/40 text-black',
+  'Creativity': 'bg-orange-500/20 border-orange-500/40 text-black',
+  'Enjoyment': 'bg-green-500/20 border-green-500/40 text-black',
+  'Presence': 'bg-teal-500/20 border-teal-500/40 text-black',
+  'Freedom': 'bg-indigo-500/20 border-indigo-500/40 text-black',
+  'Courage': 'bg-rose-500/20 border-rose-500/40 text-black',
+  'Order': 'bg-slate-500/20 border-slate-500/40 text-black',
+  'Health': 'bg-emerald-500/20 border-emerald-500/40 text-black',
 };
 
 const SELECTED_COLORS: Record<string, string> = {
