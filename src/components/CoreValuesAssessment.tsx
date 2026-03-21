@@ -60,19 +60,21 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
       }
 
       let values: string[] = providedValues || [];
+      let statements: Record<string, string> = {};
 
       if (!providedValues?.length && user) {
-        // Load values from DB
         const { data } = await supabase
           .from('core_values_shortlist')
-          .select('selected_values')
+          .select('selected_values, values_statements')
           .eq('user_id', user.id)
           .maybeSingle();
         if (data?.selected_values?.length) {
           values = data.selected_values;
         }
+        if ((data as any)?.values_statements) {
+          statements = (data as any).values_statements as Record<string, string>;
+        }
 
-        // Check if already completed this month
         const lastDay = format(lastDayOfMonth(today), 'yyyy-MM-dd');
         const { data: existing } = await supabase
           .from('core_values_assessments')
@@ -84,7 +86,6 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
           setAlreadyCompleted(true);
         }
 
-        // Load history
         const { data: historyData } = await supabase
           .from('core_values_assessments')
           .select('assessment_date, scores, notes')
@@ -102,6 +103,13 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
         const saved = localStorage.getItem('core-values-shortlist');
         if (saved) values = JSON.parse(saved);
       }
+
+      // Load statements from localStorage as fallback
+      if (Object.keys(statements).length === 0) {
+        const localStatements = localStorage.getItem('core-values-statements');
+        if (localStatements) statements = JSON.parse(localStatements);
+      }
+      setValuesStatements(statements);
 
       setCoreValues(values);
 
