@@ -254,10 +254,11 @@ const CoreValues = () => {
   }, [currentStep, completedSteps, loaded]);
 
   // Save to DB (debounced)
-  const saveToDb = useCallback(async (values: string[], custom: Record<string, string[]>) => {
+  const saveToDb = useCallback(async (values: string[], custom: Record<string, string[]>, statements: Record<string, string>) => {
     if (!user) {
       localStorage.setItem('core-values-shortlist', JSON.stringify(values));
       localStorage.setItem('core-values-custom', JSON.stringify(custom));
+      localStorage.setItem('core-values-statements', JSON.stringify(statements));
       return;
     }
     const { error } = await supabase
