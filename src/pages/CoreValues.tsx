@@ -228,6 +228,9 @@ const CoreValues = () => {
       if (data) {
         setSelectedValues(data.selected_values || []);
         setCustomValues((data.custom_values as Record<string, string[]>) || {});
+        if ((data as any).values_statements) {
+          setValuesStatements((data as any).values_statements as Record<string, string>);
+        }
       } else {
         const saved = localStorage.getItem('core-values-shortlist');
         const savedCustom = localStorage.getItem('core-values-custom');
