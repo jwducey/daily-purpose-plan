@@ -300,11 +300,32 @@ const CoreValues = () => {
     return 'Integrity';
   };
 
-  // Returns category respecting manual grouping overrides (for Step 3)
-  const getGroupedCategory = (value: string): string => {
-    if (groupingOverrides[value]) return groupingOverrides[value];
-    return getCategoryForValue(value);
-  };
+  // Build initial theme groups from selected values when entering Step 3
+  const buildThemeGroups = useCallback(() => {
+    const grouped: Record<string, string[]> = {};
+    selectedValues.forEach(value => {
+      const category = getCategoryForValue(value);
+      if (!grouped[category]) grouped[category] = [];
+      // Category names go first, values after
+      if (Object.keys(CORE_VALUES_BY_CATEGORY).includes(value)) {
+        grouped[category].unshift(value);
+      } else {
+        grouped[category].push(value);
+      }
+    });
+    return Object.entries(grouped).map(([cat, values]) => ({
+      id: cat,
+      color: cat,
+      values,
+    }));
+  }, [selectedValues, customValues]);
+
+  // Initialize theme groups when step 3 is reached
+  useEffect(() => {
+    if (currentStep === 3 && !themeGroups) {
+      setThemeGroups(buildThemeGroups());
+    }
+  }, [currentStep, themeGroups, buildThemeGroups]);
 
   const completeStep = (step: number) => {
     if (!completedSteps.includes(step)) {
