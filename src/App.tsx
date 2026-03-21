@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { UserProvider } from "./contexts/UserContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ThemeProvider } from "next-themes";
 
 const Index = lazy(() => import("./pages/Index"));
 const Budget = lazy(() => import("./pages/Budget"));
@@ -34,34 +35,36 @@ const PageLoader = () => (
 );
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <UserProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/tasks" element={<Tasks />} />
-              <Route path="/habits" element={<Habits />} />
-              <Route path="/budget" element={<Budget />} />
-              <Route path="/capital" element={<Capital />} />
-              <Route path="/review" element={<Review />} />
-              <Route path="/calendar" element={<Calendar />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/values" element={<CoreValues />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <DailyReviewPanel />
-            <DailyReviewOverlay />
-          </Suspense>
-        </BrowserRouter>
-      </TooltipProvider>
-    </UserProvider>
-  </QueryClientProvider>
+  <ThemeProvider attribute="class" defaultTheme="light" enableSystem storageKey="theme">
+    <QueryClientProvider client={queryClient}>
+      <UserProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/tasks" element={<Tasks />} />
+                <Route path="/habits" element={<Habits />} />
+                <Route path="/budget" element={<Budget />} />
+                <Route path="/capital" element={<Capital />} />
+                <Route path="/review" element={<Review />} />
+                <Route path="/calendar" element={<Calendar />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/values" element={<CoreValues />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <DailyReviewPanel />
+              <DailyReviewOverlay />
+            </Suspense>
+          </BrowserRouter>
+        </TooltipProvider>
+      </UserProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;
