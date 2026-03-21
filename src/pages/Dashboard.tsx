@@ -25,6 +25,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     const loadValues = async () => {
+      // Load colors from localStorage
+      const savedColors = localStorage.getItem('core-values-colors');
+      if (savedColors) setValuesColors(JSON.parse(savedColors));
+
       if (user) {
         const { data } = await supabase
           .from('core_values_shortlist')
@@ -44,6 +48,24 @@ export default function Dashboard() {
     };
     loadValues();
   }, [user]);
+
+  // Close color picker on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (colorPickerRef.current && !colorPickerRef.current.contains(e.target as Node)) {
+        setColorPickerOpen(null);
+      }
+    };
+    if (colorPickerOpen) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [colorPickerOpen]);
+
+  const updateValueColor = (value: string, color: string) => {
+    const updated = { ...valuesColors, [value]: color };
+    setValuesColors(updated);
+    localStorage.setItem('core-values-colors', JSON.stringify(updated));
+    setColorPickerOpen(null);
+  };
 
   if (!user) return null;
 
