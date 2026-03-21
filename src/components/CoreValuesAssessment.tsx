@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart, X, ChevronRight, ChevronLeft, TrendingUp, Calendar } from 'lucide-react';
+import { Heart, X, ChevronRight, ChevronLeft, TrendingUp, Calendar, ListTodo } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -31,8 +32,10 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
   const { user } = useAuth();
   const [coreValues, setCoreValues] = useState<string[]>([]);
   const [valuesColors, setValuesColors] = useState<Record<string, string>>({});
+  const [valuesStatements, setValuesStatements] = useState<Record<string, string>>({});
   const [showAssessment, setShowAssessment] = useState(false);
   const [scores, setScores] = useState<AssessmentScore>({});
+  const [actions, setActions] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState('');
   const [currentValueIdx, setCurrentValueIdx] = useState(0);
   const [history, setHistory] = useState<AssessmentRecord[]>([]);
@@ -58,19 +61,21 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
       }
 
       let values: string[] = providedValues || [];
+      let statements: Record<string, string> = {};
 
       if (!providedValues?.length && user) {
-        // Load values from DB
         const { data } = await supabase
           .from('core_values_shortlist')
-          .select('selected_values')
+          .select('selected_values, values_statements')
           .eq('user_id', user.id)
           .maybeSingle();
         if (data?.selected_values?.length) {
           values = data.selected_values;
         }
+        if ((data as any)?.values_statements) {
+          statements = (data as any).values_statements as Record<string, string>;
+        }
 
-        // Check if already completed this month
         const lastDay = format(lastDayOfMonth(today), 'yyyy-MM-dd');
         const { data: existing } = await supabase
           .from('core_values_assessments')
@@ -82,7 +87,6 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
           setAlreadyCompleted(true);
         }
 
-        // Load history
         const { data: historyData } = await supabase
           .from('core_values_assessments')
           .select('assessment_date, scores, notes')
@@ -100,6 +104,13 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
         const saved = localStorage.getItem('core-values-shortlist');
         if (saved) values = JSON.parse(saved);
       }
+
+      // Load statements from localStorage as fallback
+      if (Object.keys(statements).length === 0) {
+        const localStatements = localStorage.getItem('core-values-statements');
+        if (localStatements) statements = JSON.parse(localStatements);
+      }
+      setValuesStatements(statements);
 
       setCoreValues(values);
 
@@ -142,15 +153,36 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
         toast.error('Failed to save assessment');
         return;
       }
+
+      // Create tasks from action items
+      const actionEntries = Object.entries(actions).filter(([_, text]) => text.trim());
+      if (actionEntries.length > 0) {
+        const tasks = actionEntries.map(([value, text]) => ({
+          user_id: user.id,
+          title: text.trim(),
+          description: `Values improvement action for "${value}" — from ${format(today, 'MMMM yyyy')} assessment`,
+          life_areas: ['Personal Growth'],
+          priority: 2,
+        }));
+        const { error: taskError } = await supabase
+          .from('tasks')
+          .insert(tasks);
+        if (taskError) {
+          console.error('Failed to create tasks:', taskError);
+        } else {
+          toast.success(`${actionEntries.length} action${actionEntries.length > 1 ? 's' : ''} added to your Tasks`);
+        }
+      }
     }
 
-    // Also save to localStorage as backup
+    // localStorage backup
     const localHistory = JSON.parse(localStorage.getItem('core-values-assessment-history') || '[]');
     localHistory.unshift({ assessment_date: assessmentDate, scores, notes });
     localStorage.setItem('core-values-assessment-history', JSON.stringify(localHistory.slice(0, 12)));
 
     setAlreadyCompleted(true);
     setShowAssessment(false);
+    setActions({});
     toast.success('Assessment saved! Review your progress anytime on the Values page.');
   };
 
@@ -308,7 +340,7 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
                         transition={{ delay: idx * 0.05 }}
                         className="p-4 rounded-xl bg-card border border-border/50"
                       >
-                        <div className="flex items-center justify-between mb-3">
+                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-bold text-muted-foreground/50">#{idx + 1}</span>
                             <span className="font-medium" style={{ color: vc || 'hsl(var(--foreground))' }}>
@@ -322,6 +354,11 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
                             {scores[value] || 5}
                           </span>
                         </div>
+                        {valuesStatements[value] && (
+                          <p className="text-xs text-muted-foreground italic mb-3">
+                            "{valuesStatements[value]}"
+                          </p>
+                        )}
                         <Slider
                           value={[scores[value] || 5]}
                           min={1}
@@ -333,6 +370,17 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
                         <div className="flex justify-between mt-1">
                           <span className="text-[10px] text-muted-foreground">Not living it</span>
                           <span className="text-[10px] text-muted-foreground">Fully embodying</span>
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-border/30">
+                          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1 mb-1.5">
+                            <ListTodo className="w-3 h-3" /> Action to improve
+                          </label>
+                          <Input
+                            placeholder={`What's one action to better honor "${value}"?`}
+                            value={actions[value] || ''}
+                            onChange={e => setActions(prev => ({ ...prev, [value]: e.target.value }))}
+                            className="text-sm h-8"
+                          />
                         </div>
                       </motion.div>
                     );
@@ -365,6 +413,17 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Action items summary */}
+                {Object.values(actions).filter(a => a.trim()).length > 0 && (
+                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
+                    <div className="flex items-center gap-2 text-sm font-medium mb-1">
+                      <ListTodo className="w-4 h-4 text-primary" />
+                      {Object.values(actions).filter(a => a.trim()).length} action{Object.values(actions).filter(a => a.trim()).length > 1 ? 's' : ''} will be added to your Tasks
+                    </div>
+                    <p className="text-xs text-muted-foreground">These will appear in your Tasks inbox when you save.</p>
+                  </div>
+                )}
 
                 {/* Actions */}
                 <div className="flex gap-3 justify-center pb-8">
