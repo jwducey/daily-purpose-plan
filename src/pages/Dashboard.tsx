@@ -1,13 +1,41 @@
+import { useState, useEffect } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { MortalityCountdown } from '@/components/MortalityCountdown';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { Navigation } from '@/components/Navigation';
 import { motion } from 'framer-motion';
-import { PieChart, ArrowRight, Target } from 'lucide-react';
+import { PieChart, ArrowRight, Target, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Dashboard() {
   const { user, categories, goals } = useUser();
+  const [coreValues, setCoreValues] = useState<string[]>([]);
+  const [valuesStatements, setValuesStatements] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const loadValues = async () => {
+      // Load statements from localStorage
+      const savedStatements = localStorage.getItem('core-values-statements');
+      if (savedStatements) setValuesStatements(JSON.parse(savedStatements));
+
+      // Load core values from DB or localStorage
+      if (user) {
+        const { data } = await supabase
+          .from('core_values_shortlist')
+          .select('selected_values')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (data?.selected_values?.length) {
+          setCoreValues(data.selected_values);
+          return;
+        }
+      }
+      const local = localStorage.getItem('core-values-shortlist');
+      if (local) setCoreValues(JSON.parse(local));
+    };
+    loadValues();
+  }, [user]);
 
   if (!user) return null;
 
@@ -187,6 +215,47 @@ export default function Dashboard() {
                   })}
                 </div>
               )}
+            </motion.section>
+          )}
+
+          {/* Core Values Widget */}
+          {coreValues.length > 0 && (
+            <motion.section
+              className="p-6 rounded-2xl bg-card shadow-card"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.4 }}
+            >
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-life-energy/10">
+                    <Heart className="w-5 h-5 text-life-energy" />
+                  </div>
+                  <h3 className="font-serif text-lg">Core Values</h3>
+                </div>
+                <Link 
+                  to="/values" 
+                  className="text-sm text-muted-foreground hover:text-life-energy transition-colors flex items-center gap-1"
+                >
+                  Edit <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+
+              <div className="space-y-4">
+                {coreValues.map((value) => (
+                  <div key={value} className="flex items-start gap-3">
+                    <span className="mt-1 h-2 w-2 rounded-full bg-life-energy shrink-0" />
+                    <div>
+                      <span className="text-sm font-medium text-foreground">{value}</span>
+                      {valuesStatements[value] && (
+                        <p className="text-xs text-muted-foreground mt-0.5 italic">
+                          "{valuesStatements[value]}"
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </motion.section>
           )}
         </div>
