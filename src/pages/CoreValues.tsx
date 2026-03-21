@@ -970,7 +970,7 @@ const CoreValues = () => {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               {currentStep > 1 && (
-                <Button variant="ghost" size="sm" onClick={() => setCurrentStep(currentStep - 1)}>
+                <Button variant="ghost" size="sm" onClick={() => { if (currentStep === 3) setThemeGroups(null); setCurrentStep(currentStep - 1); }}>
                   <ArrowLeft className="w-4 h-4 mr-1" /> Back
                 </Button>
               )}
