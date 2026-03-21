@@ -236,8 +236,10 @@ const CoreValues = () => {
       } else {
         const saved = localStorage.getItem('core-values-shortlist');
         const savedCustom = localStorage.getItem('core-values-custom');
+        const savedStatements = localStorage.getItem('core-values-statements');
         if (saved) setSelectedValues(JSON.parse(saved));
         if (savedCustom) setCustomValues(JSON.parse(savedCustom));
+        if (savedStatements) setValuesStatements(JSON.parse(savedStatements));
       }
       const savedStep = localStorage.getItem('core-values-step');
       const savedCompleted = localStorage.getItem('core-values-completed-steps');
