@@ -668,7 +668,7 @@ const CoreValues = () => {
                         onDragEnd={handleDragEnd}
                         onDragOver={(e) => handleValueDragOver(e, group.id, index)}
                         className={cn(
-                          'px-3.5 py-1.5 rounded-full text-sm border cursor-grab active:cursor-grabbing transition-all',
+                          'px-3.5 py-1.5 rounded-full text-sm border cursor-grab active:cursor-grabbing transition-all inline-flex items-center gap-1',
                           isDefiner ? 'font-bold' : 'font-medium',
                           SELECTED_COLORS[group.color],
                           draggedValue === value && 'opacity-40 scale-95',
@@ -677,6 +677,26 @@ const CoreValues = () => {
                         )}
                       >
                         {value}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Remove from themeGroups
+                            setThemeGroups(prev => {
+                              if (!prev) return prev;
+                              const updated = prev.map(g => ({
+                                ...g,
+                                values: g.values.filter(v => v !== value),
+                              })).filter(g => g.values.length > 0);
+                              return updated;
+                            });
+                            // Remove from selectedValues
+                            setSelectedValues(prev => prev.filter(v => v !== value));
+                          }}
+                          className="ml-0.5 opacity-60 hover:opacity-100 transition-opacity"
+                          title="Remove value"
+                        >
+                          ×
+                        </button>
                       </motion.span>
                     );
                   })}
