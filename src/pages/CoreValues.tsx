@@ -1137,85 +1137,81 @@ const CoreValues = () => {
               </div>
               <h1 className="text-3xl font-bold text-foreground">Core Values</h1>
             </div>
-            <p className="text-muted-foreground mt-2">
-              An 8-step journey to discover what matters most to you.
-              <span className="ml-2 text-xs italic">
-                Based on <a href="https://scottjeffrey.com/personal-core-values/" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Scott Jeffrey's framework</a>
-              </span>
-            </p>
+            {!journeyComplete && (
+              <p className="text-muted-foreground mt-2">
+                An 8-step journey to discover what matters most to you.
+                <span className="ml-2 text-xs italic">
+                  Based on <a href="https://scottjeffrey.com/personal-core-values/" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Scott Jeffrey's framework</a>
+                </span>
+              </p>
+            )}
           </div>
 
-          {/* Step Progress Bar */}
-          <div className="mb-8">
-            <div className="flex items-center gap-1">
-              {STEPS.map((step, i) => {
-                const isCompleted = completedSteps.includes(step.number);
-                const isCurrent = currentStep === step.number;
-                const isAccessible = step.number <= Math.max(...completedSteps, 0) + 1;
-                const StepIcon = step.icon;
+          {/* Step Progress Bar - only show during journey */}
+          {!journeyComplete && (
+            <div className="mb-8">
+              <div className="flex items-center gap-1">
+                {STEPS.map((step, i) => {
+                  const isCompleted = completedSteps.includes(step.number);
+                  const isCurrent = currentStep === step.number;
+                  const isAccessible = step.number <= Math.max(...completedSteps, 0) + 1;
+                  const StepIcon = step.icon;
 
-                return (
-                  <div key={step.number} className="flex items-center flex-1">
-                    <button
-                      onClick={() => isAccessible && goToStep(step.number)}
-                      disabled={!isAccessible}
-                      className={cn(
-                        'flex flex-col items-center gap-1 w-full group transition-all',
-                        isAccessible ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'
-                      )}
-                    >
-                      <div className={cn(
-                        'w-9 h-9 rounded-full flex items-center justify-center transition-all border-2',
-                        isCompleted
-                          ? 'bg-life-energy border-life-energy text-primary-foreground'
-                          : isCurrent
-                            ? 'border-life-energy text-life-energy bg-life-energy/10'
-                            : 'border-muted-foreground/30 text-muted-foreground'
-                      )}>
-                        {isCompleted ? (
-                          <CheckCircle2 className="w-5 h-5" />
-                        ) : (
-                          <StepIcon className="w-4 h-4" />
+                  return (
+                    <div key={step.number} className="flex items-center flex-1">
+                      <button
+                        onClick={() => isAccessible && goToStep(step.number)}
+                        disabled={!isAccessible}
+                        className={cn(
+                          'flex flex-col items-center gap-1 w-full group transition-all',
+                          isAccessible ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'
                         )}
-                      </div>
-                      <span className={cn(
-                        'text-[10px] font-medium text-center leading-tight hidden md:block',
-                        isCurrent ? 'text-foreground' : 'text-muted-foreground'
-                      )}>
-                        {step.title}
-                      </span>
-                    </button>
-                    {i < STEPS.length - 1 && (
-                      <div className={cn(
-                        'h-0.5 flex-1 mx-1 rounded-full transition-colors',
-                        isCompleted ? 'bg-life-energy' : 'bg-muted-foreground/20'
-                      )} />
-                    )}
-                  </div>
-                );
-              })}
+                      >
+                        <div className={cn(
+                          'w-9 h-9 rounded-full flex items-center justify-center transition-all border-2',
+                          isCompleted
+                            ? 'bg-life-energy border-life-energy text-primary-foreground'
+                            : isCurrent
+                              ? 'border-life-energy text-life-energy bg-life-energy/10'
+                              : 'border-muted-foreground/30 text-muted-foreground'
+                        )}>
+                          {isCompleted ? (
+                            <CheckCircle2 className="w-5 h-5" />
+                          ) : (
+                            <StepIcon className="w-4 h-4" />
+                          )}
+                        </div>
+                        <span className={cn(
+                          'text-[10px] font-medium text-center leading-tight hidden md:block',
+                          isCurrent ? 'text-foreground' : 'text-muted-foreground'
+                        )}>
+                          {step.title}
+                        </span>
+                      </button>
+                      {i < STEPS.length - 1 && (
+                        <div className={cn(
+                          'h-0.5 flex-1 mx-1 rounded-full transition-colors',
+                          isCompleted ? 'bg-life-energy' : 'bg-muted-foreground/20'
+                        )} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {journeyComplete ? (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-              <Card className="border-life-energy/30 bg-card/50">
-                <CardContent className="pt-6 text-center space-y-4">
-                  <CheckCircle2 className="w-16 h-16 text-life-energy mx-auto" />
-                  <h2 className="text-2xl font-bold text-foreground">Your Core Values</h2>
-                  <p className="text-muted-foreground max-w-lg mx-auto">
-                    These are the values and virtues guiding your life.
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-                    <Button variant="outline" onClick={() => { setJourneyComplete(false); setCurrentStep(8); }}>
-                      <ArrowLeft className="w-4 h-4 mr-2" /> Review Virtues
-                    </Button>
-                    <Button variant="outline" onClick={() => { setJourneyComplete(false); setCurrentStep(5); }}>
-                      <PenLine className="w-4 h-4 mr-2" /> Edit Statements
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Quick action buttons */}
+              <div className="flex flex-wrap gap-3">
+                <Button variant="outline" size="sm" onClick={() => { setJourneyComplete(false); setCurrentStep(8); }}>
+                  <ArrowLeft className="w-4 h-4 mr-2" /> Review Virtues
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => { setJourneyComplete(false); setCurrentStep(5); }}>
+                  <PenLine className="w-4 h-4 mr-2" /> Edit Statements
+                </Button>
+              </div>
 
               {/* Core Values with Statements — Drag to reorder */}
               <Card className="border-border/50 bg-card/50">
