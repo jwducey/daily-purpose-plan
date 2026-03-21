@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart, X, ChevronRight, ChevronLeft, TrendingUp, Calendar } from 'lucide-react';
+import { Heart, X, ChevronRight, ChevronLeft, TrendingUp, Calendar, ListTodo } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -339,7 +340,7 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
                         transition={{ delay: idx * 0.05 }}
                         className="p-4 rounded-xl bg-card border border-border/50"
                       >
-                        <div className="flex items-center justify-between mb-3">
+                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-bold text-muted-foreground/50">#{idx + 1}</span>
                             <span className="font-medium" style={{ color: vc || 'hsl(var(--foreground))' }}>
@@ -353,6 +354,11 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
                             {scores[value] || 5}
                           </span>
                         </div>
+                        {valuesStatements[value] && (
+                          <p className="text-xs text-muted-foreground italic mb-3">
+                            "{valuesStatements[value]}"
+                          </p>
+                        )}
                         <Slider
                           value={[scores[value] || 5]}
                           min={1}
@@ -364,6 +370,17 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
                         <div className="flex justify-between mt-1">
                           <span className="text-[10px] text-muted-foreground">Not living it</span>
                           <span className="text-[10px] text-muted-foreground">Fully embodying</span>
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-border/30">
+                          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1 mb-1.5">
+                            <ListTodo className="w-3 h-3" /> Action to improve
+                          </label>
+                          <Input
+                            placeholder={`What's one action to better honor "${value}"?`}
+                            value={actions[value] || ''}
+                            onChange={e => setActions(prev => ({ ...prev, [value]: e.target.value }))}
+                            className="text-sm h-8"
+                          />
                         </div>
                       </motion.div>
                     );
