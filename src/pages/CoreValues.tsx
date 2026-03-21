@@ -549,39 +549,66 @@ const CoreValues = () => {
     </div>
   );
 
-  const renderStep3 = () => (
-    <Card className="border-border/50 bg-card/50">
-      <CardContent className="pt-8 pb-8">
-        <div className="max-w-xl mx-auto space-y-6">
-          <h2 className="text-xl font-bold text-foreground">Group Into Related Themes</h2>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            Look at your shortlisted values below. Which ones naturally cluster together? Group related values and identify the central theme of each grouping. This helps you see patterns in what matters to you.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {selectedValues.map(value => {
-              const category = getCategoryForValue(value);
-              return (
-                <span key={value} className={cn('px-3 py-1.5 rounded-full text-sm font-medium border', SELECTED_COLORS[category])}>
-                  {value}
-                </span>
-              );
-            })}
+  const renderStep3 = () => {
+    // Group selected values by their theme/category
+    const groupedByTheme: Record<string, { isThemeSelected: boolean; values: string[] }> = {};
+    selectedValues.forEach(value => {
+      const category = getCategoryForValue(value);
+      if (!groupedByTheme[category]) {
+        groupedByTheme[category] = { isThemeSelected: false, values: [] };
+      }
+      // If the value IS the category name, mark it
+      if (Object.keys(CORE_VALUES_BY_CATEGORY).includes(value)) {
+        groupedByTheme[category].isThemeSelected = true;
+      } else {
+        groupedByTheme[category].values.push(value);
+      }
+    });
+
+    return (
+      <Card className="border-border/50 bg-card/50">
+        <CardContent className="pt-8 pb-8">
+          <div className="max-w-2xl mx-auto space-y-6">
+            <h2 className="text-xl font-bold text-foreground">Group Into Related Themes</h2>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              Your selected values have been automatically grouped by theme. Review the clusters below — do they reflect your priorities? This helps you see patterns in what matters to you.
+            </p>
+            <div className="space-y-3">
+              {Object.entries(groupedByTheme).map(([theme, { isThemeSelected, values }]) => (
+                <div key={theme} className="flex items-center gap-2 flex-wrap">
+                  <span className={cn(
+                    'px-3.5 py-1.5 rounded-full text-sm font-bold border',
+                    isThemeSelected ? SELECTED_COLORS[theme] : cn(CATEGORY_COLORS[theme], 'opacity-70')
+                  )}>
+                    {theme}
+                  </span>
+                  {values.length > 0 && (
+                    <span className="text-muted-foreground text-sm">→</span>
+                  )}
+                  {values.map(value => (
+                    <span key={value} className={cn('px-3 py-1.5 rounded-full text-sm font-medium border', SELECTED_COLORS[theme])}>
+                      {value}
+                    </span>
+                  ))}
+                </div>
+              ))}
+            </div>
+            <div className="bg-muted/30 rounded-xl p-6 space-y-3">
+              <p className="text-sm font-medium text-foreground">Ask yourself:</p>
+              <ul className="text-sm text-muted-foreground space-y-1.5">
+                <li>• Does each theme represent a distinct priority?</li>
+                <li>• Are there themes that could merge together?</li>
+                <li>• Which themes feel most central to who you are?</li>
+              </ul>
+            </div>
+            <Button onClick={() => completeStep(3)} className="bg-life-energy hover:bg-life-energy/90 text-primary-foreground">
+              Step 3 Complete <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
           </div>
-          <div className="bg-muted/30 rounded-xl p-6 space-y-3">
-            <p className="text-sm font-medium text-foreground">Ask yourself:</p>
-            <ul className="text-sm text-muted-foreground space-y-1.5">
-              <li>• Which values seem to go together?</li>
-              <li>• What's the common thread in each group?</li>
-              <li>• Can you name each cluster with one overarching value?</li>
-            </ul>
-          </div>
-          <Button onClick={() => completeStep(3)} className="bg-life-energy hover:bg-life-energy/90 text-primary-foreground">
-            Step 3 Complete <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   const renderStep4 = () => (
     <Card className="border-border/50 bg-card/50">
