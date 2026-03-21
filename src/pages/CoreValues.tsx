@@ -87,6 +87,20 @@ const CORE_VALUES_BY_CATEGORY: Record<string, string[]> = {
   ],
 };
 
+const VIRTUES_LIST = [
+  'Acceptance', 'Assertiveness', 'Authenticity', 'Beauty', 'Caring', 'Cleanliness',
+  'Commitment', 'Compassion', 'Confidence', 'Consideration', 'Contentment', 'Cooperation',
+  'Courage', 'Creativity', 'Detachment', 'Determination', 'Dignity', 'Encouragement',
+  'Enthusiasm', 'Ethical', 'Excellence', 'Fairness', 'Faith', 'Flexibility', 'Forgiveness',
+  'Friendliness', 'Generosity', 'Gentleness', 'Graciousness', 'Gratitude', 'Harmonious',
+  'Helpfulness', 'Honesty', 'Honor', 'Hope', 'Humility', 'Idealism', 'Integrity',
+  'Imaginative', 'Joyfulness', 'Justice', 'Kindness', 'Love', 'Loyalty', 'Moderation',
+  'Modesty', 'Optimistic', 'Orderliness', 'Passionate', 'Patience', 'Peace', 'Perseverance',
+  'Preparedness', 'Purposefulness', 'Reliability', 'Respect', 'Responsibility', 'Reverence',
+  'Self-discipline', 'Service', 'Sincerity', 'Tact', 'Temperate', 'Tenacious', 'Thankfulness',
+  'Tolerance', 'Trust', 'Truthfulness', 'Understanding', 'Unity', 'Visionary', 'Wisdom', 'Wonder',
+];
+
 const CATEGORY_COLORS: Record<string, string> = {
   'Integrity': 'bg-blue-500/20 border-blue-500/40 text-black',
   'Feelings': 'bg-pink-500/20 border-pink-500/40 text-black',
