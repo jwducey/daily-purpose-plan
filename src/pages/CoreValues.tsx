@@ -1077,7 +1077,7 @@ const CoreValues = () => {
               <h1 className="text-3xl font-bold text-foreground">Core Values</h1>
             </div>
             <p className="text-muted-foreground mt-2">
-              A 7-step journey to discover what matters most to you.
+              An 8-step journey to discover what matters most to you.
               <span className="ml-2 text-xs italic">
                 Based on <a href="https://scottjeffrey.com/personal-core-values/" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Scott Jeffrey's framework</a>
               </span>
