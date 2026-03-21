@@ -1307,6 +1307,7 @@ const CoreValues = () => {
                           setSelectedValues([]);
                           setCustomValues({});
                           setValuesStatements({});
+                          setValuesColors({});
                           setCompletedSteps([]);
                           setCurrentStep(1);
                           setJourneyComplete(false);
@@ -1315,6 +1316,7 @@ const CoreValues = () => {
                           setResetConfirmStep(0);
                           localStorage.removeItem('core-values-step');
                           localStorage.removeItem('core-values-completed-steps');
+                          localStorage.removeItem('core-values-colors');
                           toast.success('Journey reset. Starting fresh!');
                         }}>
                           Reset Everything
