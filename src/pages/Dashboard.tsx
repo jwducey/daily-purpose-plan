@@ -1,13 +1,41 @@
+import { useState, useEffect } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { MortalityCountdown } from '@/components/MortalityCountdown';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { Navigation } from '@/components/Navigation';
 import { motion } from 'framer-motion';
-import { PieChart, ArrowRight, Target } from 'lucide-react';
+import { PieChart, ArrowRight, Target, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Dashboard() {
   const { user, categories, goals } = useUser();
+  const [coreValues, setCoreValues] = useState<string[]>([]);
+  const [valuesStatements, setValuesStatements] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const loadValues = async () => {
+      // Load statements from localStorage
+      const savedStatements = localStorage.getItem('core-values-statements');
+      if (savedStatements) setValuesStatements(JSON.parse(savedStatements));
+
+      // Load core values from DB or localStorage
+      if (user) {
+        const { data } = await supabase
+          .from('core_values_shortlist')
+          .select('selected_values')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (data?.selected_values?.length) {
+          setCoreValues(data.selected_values);
+          return;
+        }
+      }
+      const local = localStorage.getItem('core-values-shortlist');
+      if (local) setCoreValues(JSON.parse(local));
+    };
+    loadValues();
+  }, [user]);
 
   if (!user) return null;
 
