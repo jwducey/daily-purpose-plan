@@ -582,48 +582,58 @@ const CoreValues = () => {
   );
 
   const renderStep3 = () => {
-    // Group selected values by their theme/category, respecting overrides
-    const groupedByTheme: Record<string, { isThemeSelected: boolean; values: string[] }> = {};
-    selectedValues.forEach(value => {
-      const category = getGroupedCategory(value);
-      if (!groupedByTheme[category]) {
-        groupedByTheme[category] = { isThemeSelected: false, values: [] };
-      }
-      if (Object.keys(CORE_VALUES_BY_CATEGORY).includes(value)) {
-        groupedByTheme[category].isThemeSelected = true;
-      } else {
-        groupedByTheme[category].values.push(value);
-      }
-    });
+    const groups = themeGroups || buildThemeGroups();
 
     const handleDragStart = (value: string) => {
       setDraggedValue(value);
     };
 
-    const handleDragOver = (e: React.DragEvent, theme: string) => {
-      e.preventDefault();
-      setDragOverTheme(theme);
-    };
+    const handleDragEnd = () => {
+      if (draggedValue && dropPosition && themeGroups) {
+        const newGroups = themeGroups.map(g => ({
+          ...g,
+          values: g.values.filter(v => v !== draggedValue),
+        }));
 
-    const handleDragLeave = () => {
-      setDragOverTheme(null);
-    };
-
-    const handleDrop = (e: React.DragEvent, targetTheme: string) => {
-      e.preventDefault();
-      if (draggedValue && !Object.keys(CORE_VALUES_BY_CATEGORY).includes(draggedValue)) {
-        const currentTheme = getGroupedCategory(draggedValue);
-        if (currentTheme !== targetTheme) {
-          setGroupingOverrides(prev => ({ ...prev, [draggedValue]: targetTheme }));
+        const targetGroup = newGroups.find(g => g.id === dropPosition.groupId);
+        if (targetGroup) {
+          targetGroup.values.splice(dropPosition.index, 0, draggedValue);
         }
+
+        // Remove empty groups
+        setThemeGroups(newGroups.filter(g => g.values.length > 0));
       }
       setDraggedValue(null);
-      setDragOverTheme(null);
+      setDragOverGroupId(null);
+      setDropPosition(null);
     };
 
-    const handleDragEnd = () => {
-      setDraggedValue(null);
-      setDragOverTheme(null);
+    const handleRowDragOver = (e: React.DragEvent, groupId: string) => {
+      e.preventDefault();
+      setDragOverGroupId(groupId);
+    };
+
+    const handleRowDragLeave = () => {
+      setDragOverGroupId(null);
+    };
+
+    const handleValueDragOver = (e: React.DragEvent, groupId: string, index: number) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragOverGroupId(groupId);
+      setDropPosition({ groupId, index });
+    };
+
+    const handleRowDrop = (e: React.DragEvent, groupId: string) => {
+      e.preventDefault();
+      if (!dropPosition || dropPosition.groupId !== groupId) {
+        // Dropped on the row but not on a specific position — append to end
+        const group = groups.find(g => g.id === groupId);
+        if (group) {
+          setDropPosition({ groupId, index: group.values.length });
+        }
+      }
+      // handleDragEnd will process the move
     };
 
     return (
@@ -632,56 +642,59 @@ const CoreValues = () => {
           <div className="max-w-2xl mx-auto space-y-6">
             <h2 className="text-xl font-bold text-foreground">Group Into Related Themes</h2>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Your selected values have been automatically grouped by theme. <strong>Drag and drop</strong> values between themes to regroup them as you see fit.
+              <strong>Drag and drop</strong> any value to reorder within a group or move between groups. The <strong>first value</strong> (leftmost) in each row is the theme definer. Arrange left to right from most to least important.
             </p>
             <div className="space-y-2">
-              {Object.entries(groupedByTheme).map(([theme, { isThemeSelected, values }]) => (
+              {groups.map(group => (
                 <div
-                  key={theme}
-                  onDragOver={(e) => handleDragOver(e, theme)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, theme)}
+                  key={group.id}
+                  onDragOver={(e) => handleRowDragOver(e, group.id)}
+                  onDragLeave={handleRowDragLeave}
+                  onDrop={(e) => handleRowDrop(e, group.id)}
                   className={cn(
                     'flex items-center gap-2 flex-wrap rounded-xl px-3 py-2.5 border-2 border-dashed transition-all min-h-[44px]',
-                    dragOverTheme === theme
+                    dragOverGroupId === group.id
                       ? 'border-life-energy bg-life-energy/10'
-                      : 'border-transparent'
+                      : 'border-transparent hover:border-muted-foreground/20'
                   )}
                 >
-                  <span className={cn(
-                    'px-3.5 py-1.5 rounded-full text-sm font-bold border shrink-0',
-                    isThemeSelected ? SELECTED_COLORS[theme] : cn(CATEGORY_COLORS[theme], 'opacity-70')
-                  )}>
-                    {theme}
-                  </span>
-                  {values.length > 0 && (
-                    <span className="text-muted-foreground text-sm">→</span>
+                  {group.values.map((value, index) => {
+                    const isDefiner = index === 0;
+                    return (
+                      <motion.span
+                        key={value}
+                        layout
+                        draggable
+                        onDragStart={() => handleDragStart(value)}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={(e) => handleValueDragOver(e, group.id, index)}
+                        className={cn(
+                          'px-3.5 py-1.5 rounded-full text-sm border cursor-grab active:cursor-grabbing transition-all',
+                          isDefiner ? 'font-bold' : 'font-medium',
+                          SELECTED_COLORS[group.color],
+                          draggedValue === value && 'opacity-40 scale-95',
+                          dropPosition?.groupId === group.id && dropPosition?.index === index && draggedValue !== value
+                            && 'ring-2 ring-life-energy ring-offset-2 ring-offset-background'
+                        )}
+                      >
+                        {value}
+                      </motion.span>
+                    );
+                  })}
+                  {group.values.length > 1 && (
+                    <span className="text-[10px] text-muted-foreground/50 ml-1 select-none">
+                      ← definer
+                    </span>
                   )}
-                  {values.map(value => (
-                    <motion.span
-                      key={value}
-                      layout
-                      draggable
-                      onDragStart={() => handleDragStart(value)}
-                      onDragEnd={handleDragEnd}
-                      className={cn(
-                        'px-3 py-1.5 rounded-full text-sm font-medium border cursor-grab active:cursor-grabbing transition-opacity',
-                        SELECTED_COLORS[theme],
-                        draggedValue === value && 'opacity-40'
-                      )}
-                    >
-                      {value}
-                    </motion.span>
-                  ))}
                 </div>
               ))}
             </div>
             <div className="bg-muted/30 rounded-xl p-6 space-y-3">
-              <p className="text-sm font-medium text-foreground">Ask yourself:</p>
+              <p className="text-sm font-medium text-foreground">Tips:</p>
               <ul className="text-sm text-muted-foreground space-y-1.5">
-                <li>• Does each theme represent a distinct priority?</li>
-                <li>• Are there themes that could merge together?</li>
-                <li>• Which themes feel most central to who you are?</li>
+                <li>• The <strong>first value</strong> in each row defines the theme</li>
+                <li>• Order values left → right by importance</li>
+                <li>• Drag values between rows to regroup them</li>
               </ul>
             </div>
             <Button onClick={() => completeStep(3)} className="bg-life-energy hover:bg-life-energy/90 text-primary-foreground">
