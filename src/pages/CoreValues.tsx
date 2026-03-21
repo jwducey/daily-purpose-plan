@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,9 @@ import { cn } from '@/lib/utils';
 import { Heart, ChevronDown, ChevronUp, Info, CheckCircle2, ArrowRight, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 const CORE_VALUES_BY_CATEGORY: Record<string, string[]> = {
   'Integrity': [
@@ -133,7 +136,7 @@ const INSTRUCTIONS_STEPS = [
   },
   {
     title: 'Step 5: Craft Values Statements',
-    content: 'Turn each value into a memorable phrase. For example: "Health: to live with full vitality and energy every day."',
+    content: 'Turn each value into a memorable phrase. For example: \"Health: to live with full vitality and energy every day.\"',
   },
   {
     title: 'Step 6: Gut Check',
@@ -142,14 +145,9 @@ const INSTRUCTIONS_STEPS = [
 ];
 
 const CoreValues = () => {
-  const [selectedValues, setSelectedValues] = useState<string[]>(() => {
-    const saved = localStorage.getItem('core-values-shortlist');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [customValues, setCustomValues] = useState<Record<string, string[]>>(() => {
-    const saved = localStorage.getItem('core-values-custom');
-    return saved ? JSON.parse(saved) : {};
-  });
+  const { user } = useAuth();
+  const [selectedValues, setSelectedValues] = useState<string[]>([]);
+  const [customValues, setCustomValues] = useState<Record<string, string[]>>({});
   const [showInstructions, setShowInstructions] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
@@ -158,14 +156,67 @@ const CoreValues = () => {
   });
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [newValueText, setNewValueText] = useState('');
+  const [loaded, setLoaded] = useState(false);
 
+  // Load from DB
   useEffect(() => {
-    localStorage.setItem('core-values-shortlist', JSON.stringify(selectedValues));
-  }, [selectedValues]);
+    const load = async () => {
+      if (!user) {
+        // Fall back to localStorage for unauthenticated
+        const saved = localStorage.getItem('core-values-shortlist');
+        const savedCustom = localStorage.getItem('core-values-custom');
+        if (saved) setSelectedValues(JSON.parse(saved));
+        if (savedCustom) setCustomValues(JSON.parse(savedCustom));
+        setLoaded(true);
+        return;
+      }
+      const { data } = await supabase
+        .from('core_values_shortlist')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (data) {
+        setSelectedValues(data.selected_values || []);
+        setCustomValues((data.custom_values as Record<string, string[]>) || {});
+      } else {
+        // Migrate from localStorage if exists
+        const saved = localStorage.getItem('core-values-shortlist');
+        const savedCustom = localStorage.getItem('core-values-custom');
+        if (saved) setSelectedValues(JSON.parse(saved));
+        if (savedCustom) setCustomValues(JSON.parse(savedCustom));
+      }
+      setLoaded(true);
+    };
+    load();
+  }, [user]);
 
+  // Save to DB (debounced)
+  const saveToDb = useCallback(async (values: string[], custom: Record<string, string[]>) => {
+    if (!user) {
+      localStorage.setItem('core-values-shortlist', JSON.stringify(values));
+      localStorage.setItem('core-values-custom', JSON.stringify(custom));
+      return;
+    }
+    const { error } = await supabase
+      .from('core_values_shortlist')
+      .upsert({
+        user_id: user.id,
+        selected_values: values,
+        custom_values: custom as any,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+    if (error) {
+      console.error('Failed to save core values:', error);
+      toast.error('Failed to save your values');
+    }
+  }, [user]);
+
+  // Save whenever values change (after initial load)
   useEffect(() => {
-    localStorage.setItem('core-values-custom', JSON.stringify(customValues));
-  }, [customValues]);
+    if (!loaded) return;
+    const timeout = setTimeout(() => saveToDb(selectedValues, customValues), 500);
+    return () => clearTimeout(timeout);
+  }, [selectedValues, customValues, loaded, saveToDb]);
 
   const toggleValue = (value: string) => {
     setSelectedValues(prev =>
@@ -180,7 +231,11 @@ const CoreValues = () => {
   const addCustomValue = (category: string) => {
     const trimmed = newValueText.trim();
     if (!trimmed) return;
-    const allValues = [...Object.values(CORE_VALUES_BY_CATEGORY).flat(), ...Object.values(customValues).flat()];
+    const allValues = [
+      ...Object.keys(CORE_VALUES_BY_CATEGORY),
+      ...Object.values(CORE_VALUES_BY_CATEGORY).flat(),
+      ...Object.values(customValues).flat(),
+    ];
     if (allValues.some(v => v.toLowerCase() === trimmed.toLowerCase())) return;
     setCustomValues(prev => ({
       ...prev,
@@ -196,6 +251,8 @@ const CoreValues = () => {
   };
 
   const getCategoryForValue = (value: string): string => {
+    // Check if it IS a category name
+    if (CORE_VALUES_BY_CATEGORY[value]) return value;
     for (const [cat, vals] of Object.entries(CORE_VALUES_BY_CATEGORY)) {
       if (vals.includes(value)) return cat;
     }
@@ -205,7 +262,7 @@ const CoreValues = () => {
     return 'Integrity';
   };
 
-  const totalValues = Object.values(CORE_VALUES_BY_CATEGORY).flat().length + Object.values(customValues).flat().length;
+  const totalValues = Object.keys(CORE_VALUES_BY_CATEGORY).length + Object.values(CORE_VALUES_BY_CATEGORY).flat().length + Object.values(customValues).flat().length;
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -337,7 +394,8 @@ const CoreValues = () => {
           <div className="space-y-4">
             {Object.keys(CORE_VALUES_BY_CATEGORY).map(category => {
               const values = getValuesForCategory(category);
-              const selectedInCategory = values.filter(v => selectedValues.includes(v)).length;
+              const isCategorySelected = selectedValues.includes(category);
+              const selectedInCategory = values.filter(v => selectedValues.includes(v)).length + (isCategorySelected ? 1 : 0);
               const isExpanded = expandedCategories[category];
 
               return (
@@ -348,7 +406,19 @@ const CoreValues = () => {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <CardTitle className="text-base">{category}</CardTitle>
+                        {/* Category name as selectable bubble */}
+                        <motion.button
+                          whileTap={{ scale: 0.95 }}
+                          onClick={(e) => { e.stopPropagation(); toggleValue(category); }}
+                          className={cn(
+                            'px-3.5 py-1.5 rounded-full text-sm font-bold border cursor-pointer transition-all duration-150',
+                            isCategorySelected
+                              ? cn(SELECTED_COLORS[category], 'shadow-lg')
+                              : cn(CATEGORY_COLORS[category], 'hover:brightness-125')
+                          )}
+                        >
+                          {category}
+                        </motion.button>
                         <span className="text-xs text-muted-foreground">
                           {values.length} values
                         </span>
