@@ -1216,19 +1216,48 @@ const CoreValues = () => {
               <Card className="border-border/50 bg-card/50">
                 <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Heart className="w-4 h-4 text-life-energy" /> Core Values & Statements</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  {selectedValues.map(v => (
-                    <div key={v} className="flex items-start gap-3">
-                      <span className="mt-1.5 h-2 w-2 rounded-full bg-life-energy shrink-0" />
-                      <div>
-                        <span className="text-sm font-semibold text-foreground">{v}</span>
-                        {valuesStatements[v] ? (
-                          <p className="text-sm text-muted-foreground mt-0.5 italic">"{valuesStatements[v]}"</p>
-                        ) : (
-                          <p className="text-xs text-muted-foreground/50 mt-0.5">No statement written yet</p>
-                        )}
+                  {selectedValues.map(v => {
+                    const vc = valuesColors[v];
+                    return (
+                      <div key={v} className="flex items-start gap-3 group">
+                        <div className="relative mt-0.5 shrink-0">
+                          <button
+                            onClick={() => setColorPickerOpen(colorPickerOpen === v ? null : v)}
+                            className="h-4 w-4 rounded-full border border-border/50 hover:scale-125 transition-transform cursor-pointer flex items-center justify-center"
+                            style={{ backgroundColor: vc || 'hsl(var(--life-energy))' }}
+                            title="Change color"
+                          >
+                            <Palette className="w-2.5 h-2.5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </button>
+                          {colorPickerOpen === v && (
+                            <div ref={colorPickerRef} className="absolute left-6 top-0 z-50 bg-popover border border-border rounded-lg p-2 shadow-lg">
+                              <div className="grid grid-cols-6 gap-1.5 w-fit">
+                                {VALUE_COLOR_PRESETS.map((color) => (
+                                  <button
+                                    key={color}
+                                    onClick={() => updateValueColor(v, color)}
+                                    className="h-5 w-5 rounded-full border-2 transition-transform hover:scale-110"
+                                    style={{
+                                      backgroundColor: color,
+                                      borderColor: valuesColors[v] === color ? 'hsl(var(--foreground))' : 'transparent',
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <span className="text-sm font-semibold" style={{ color: vc || 'hsl(var(--foreground))' }}>{v}</span>
+                          {valuesStatements[v] ? (
+                            <p className="text-sm mt-0.5 italic" style={{ color: vc ? `${vc}99` : 'hsl(var(--muted-foreground))' }}>"{valuesStatements[v]}"</p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground/50 mt-0.5">No statement written yet</p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </CardContent>
               </Card>
 
