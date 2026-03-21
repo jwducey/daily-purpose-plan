@@ -845,7 +845,16 @@ const CoreValues = () => {
       </Card>
     );
   };
-  const [valuesStatements, setValuesStatements] = useState<Record<string, string>>({});
+  const [valuesStatements, setValuesStatements] = useState<Record<string, string>>(() => {
+    const saved = localStorage.getItem('core-values-statements');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  useEffect(() => {
+    if (Object.keys(valuesStatements).length > 0) {
+      localStorage.setItem('core-values-statements', JSON.stringify(valuesStatements));
+    }
+  }, [valuesStatements]);
 
   const renderStep5 = () => (
     <Card className="border-border/50 bg-card/50">
