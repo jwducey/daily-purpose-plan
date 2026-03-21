@@ -21,7 +21,13 @@ interface AssessmentRecord {
   notes: string | null;
 }
 
-export function CoreValuesAssessment() {
+interface CoreValuesAssessmentProps {
+  forceOpen?: boolean;
+  onForceOpenHandled?: () => void;
+  providedValues?: string[];
+}
+
+export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedValues }: CoreValuesAssessmentProps = {}) {
   const { user } = useAuth();
   const [coreValues, setCoreValues] = useState<string[]>([]);
   const [valuesColors, setValuesColors] = useState<Record<string, string>>({});
@@ -51,9 +57,9 @@ export function CoreValuesAssessment() {
         setDismissed(true);
       }
 
-      let values: string[] = [];
+      let values: string[] = providedValues || [];
 
-      if (user) {
+      if (!providedValues?.length && user) {
         // Load values from DB
         const { data } = await supabase
           .from('core_values_shortlist')
@@ -90,7 +96,7 @@ export function CoreValuesAssessment() {
             notes: h.notes,
           })));
         }
-      } else {
+      } else if (!providedValues?.length) {
         const saved = localStorage.getItem('core-values-shortlist');
         if (saved) values = JSON.parse(saved);
       }
@@ -105,14 +111,18 @@ export function CoreValuesAssessment() {
     load();
   }, [user]);
 
-  // Auto-show on last day of month
+  // Auto-show on last day of month OR when force-opened (journey just completed)
   useEffect(() => {
+    if (forceOpen && coreValues.length > 0 && !showAssessment) {
+      setShowAssessment(true);
+      onForceOpenHandled?.();
+      return;
+    }
     if (isLastDayOfMonth && coreValues.length > 0 && !alreadyCompleted && !dismissed) {
-      // Small delay to not interfere with page load
       const timer = setTimeout(() => setShowAssessment(true), 2000);
       return () => clearTimeout(timer);
     }
-  }, [isLastDayOfMonth, coreValues, alreadyCompleted, dismissed]);
+  }, [isLastDayOfMonth, coreValues, alreadyCompleted, dismissed, forceOpen]);
 
   const handleSave = async () => {
     const assessmentDate = format(lastDayOfMonth(today), 'yyyy-MM-dd');

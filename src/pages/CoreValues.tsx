@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+import { CoreValuesAssessment } from '@/components/CoreValuesAssessment';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
@@ -388,7 +389,8 @@ const CoreValues = () => {
   }, [currentStep, themeGroups, buildThemeGroups]);
 
   const [journeyComplete, setJourneyComplete] = useState(false);
-  const [resetConfirmStep, setResetConfirmStep] = useState(0); // 0=none, 1=first confirm, 2=confirmed
+  const [resetConfirmStep, setResetConfirmStep] = useState(0);
+  const [triggerAssessment, setTriggerAssessment] = useState(false);
 
   // Auto-detect completed journey on load
   useEffect(() => {
@@ -405,7 +407,8 @@ const CoreValues = () => {
       setCurrentStep(step + 1);
     } else if (step === 8) {
       setJourneyComplete(true);
-      toast.success('Congratulations! Your core values and virtues journey is complete.');
+      setTriggerAssessment(true);
+      toast.success('Congratulations! Your core values journey is complete. Time for your first self-assessment!');
     }
   };
 
@@ -1359,6 +1362,13 @@ const CoreValues = () => {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Assessment Component */}
+              <CoreValuesAssessment
+                forceOpen={triggerAssessment}
+                onForceOpenHandled={() => setTriggerAssessment(false)}
+                providedValues={selectedValues}
+              />
             </motion.div>
           ) : (
             <>
