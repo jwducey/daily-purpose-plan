@@ -47,6 +47,33 @@ export type Database = {
         }
         Relationships: []
       }
+      core_values_shortlist: {
+        Row: {
+          created_at: string
+          custom_values: Json
+          id: string
+          selected_values: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          custom_values?: Json
+          id?: string
+          selected_values?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          custom_values?: Json
+          id?: string
+          selected_values?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_reviews: {
         Row: {
           created_at: string
