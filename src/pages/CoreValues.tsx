@@ -560,14 +560,13 @@ const CoreValues = () => {
   );
 
   const renderStep3 = () => {
-    // Group selected values by their theme/category
+    // Group selected values by their theme/category, respecting overrides
     const groupedByTheme: Record<string, { isThemeSelected: boolean; values: string[] }> = {};
     selectedValues.forEach(value => {
-      const category = getCategoryForValue(value);
+      const category = getGroupedCategory(value);
       if (!groupedByTheme[category]) {
         groupedByTheme[category] = { isThemeSelected: false, values: [] };
       }
-      // If the value IS the category name, mark it
       if (Object.keys(CORE_VALUES_BY_CATEGORY).includes(value)) {
         groupedByTheme[category].isThemeSelected = true;
       } else {
@@ -575,19 +574,60 @@ const CoreValues = () => {
       }
     });
 
+    const handleDragStart = (value: string) => {
+      setDraggedValue(value);
+    };
+
+    const handleDragOver = (e: React.DragEvent, theme: string) => {
+      e.preventDefault();
+      setDragOverTheme(theme);
+    };
+
+    const handleDragLeave = () => {
+      setDragOverTheme(null);
+    };
+
+    const handleDrop = (e: React.DragEvent, targetTheme: string) => {
+      e.preventDefault();
+      if (draggedValue && !Object.keys(CORE_VALUES_BY_CATEGORY).includes(draggedValue)) {
+        const currentTheme = getGroupedCategory(draggedValue);
+        if (currentTheme !== targetTheme) {
+          setGroupingOverrides(prev => ({ ...prev, [draggedValue]: targetTheme }));
+        }
+      }
+      setDraggedValue(null);
+      setDragOverTheme(null);
+    };
+
+    const handleDragEnd = () => {
+      setDraggedValue(null);
+      setDragOverTheme(null);
+    };
+
     return (
       <Card className="border-border/50 bg-card/50">
         <CardContent className="pt-8 pb-8">
           <div className="max-w-2xl mx-auto space-y-6">
             <h2 className="text-xl font-bold text-foreground">Group Into Related Themes</h2>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Your selected values have been automatically grouped by theme. Review the clusters below — do they reflect your priorities? This helps you see patterns in what matters to you.
+              Your selected values have been automatically grouped by theme. <strong>Drag and drop</strong> values between themes to regroup them as you see fit.
             </p>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {Object.entries(groupedByTheme).map(([theme, { isThemeSelected, values }]) => (
-                <div key={theme} className="flex items-center gap-2 flex-wrap">
+                <div
+                  key={theme}
+                  onDragOver={(e) => handleDragOver(e, theme)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, theme)}
+                  className={cn(
+                    'flex items-center gap-2 flex-wrap rounded-xl px-3 py-2.5 border-2 border-dashed transition-all min-h-[44px]',
+                    dragOverTheme === theme
+                      ? 'border-life-energy bg-life-energy/10'
+                      : 'border-transparent'
+                  )}
+                >
                   <span className={cn(
-                    'px-3.5 py-1.5 rounded-full text-sm font-bold border',
+                    'px-3.5 py-1.5 rounded-full text-sm font-bold border shrink-0',
                     isThemeSelected ? SELECTED_COLORS[theme] : cn(CATEGORY_COLORS[theme], 'opacity-70')
                   )}>
                     {theme}
@@ -596,9 +636,20 @@ const CoreValues = () => {
                     <span className="text-muted-foreground text-sm">→</span>
                   )}
                   {values.map(value => (
-                    <span key={value} className={cn('px-3 py-1.5 rounded-full text-sm font-medium border', SELECTED_COLORS[theme])}>
+                    <motion.span
+                      key={value}
+                      layout
+                      draggable
+                      onDragStart={() => handleDragStart(value)}
+                      onDragEnd={handleDragEnd}
+                      className={cn(
+                        'px-3 py-1.5 rounded-full text-sm font-medium border cursor-grab active:cursor-grabbing transition-opacity',
+                        SELECTED_COLORS[theme],
+                        draggedValue === value && 'opacity-40'
+                      )}
+                    >
                       {value}
-                    </span>
+                    </motion.span>
                   ))}
                 </div>
               ))}
