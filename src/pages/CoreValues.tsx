@@ -266,8 +266,9 @@ const CoreValues = () => {
         user_id: user.id,
         selected_values: values,
         custom_values: custom as any,
+        values_statements: statements as any,
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' });
+      } as any, { onConflict: 'user_id' });
     if (error) {
       console.error('Failed to save core values:', error);
       toast.error('Failed to save your values');
