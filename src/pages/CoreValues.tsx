@@ -204,8 +204,8 @@ const CoreValues = () => {
   const [draggedValue, setDraggedValue] = useState<string | null>(null);
   const [dragOverGroupId, setDragOverGroupId] = useState<string | null>(null);
   const [dropPosition, setDropPosition] = useState<{ groupId: string; index: number } | null>(null);
+  const [valuesStatements, setValuesStatements] = useState<Record<string, string>>({});
 
-  // Load from DB
   useEffect(() => {
     const load = async () => {
       if (!user) {
