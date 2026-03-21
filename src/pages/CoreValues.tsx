@@ -346,12 +346,17 @@ const CoreValues = () => {
     }
   }, [currentStep, themeGroups, buildThemeGroups]);
 
+  const [journeyComplete, setJourneyComplete] = useState(false);
+
   const completeStep = (step: number) => {
     if (!completedSteps.includes(step)) {
       setCompletedSteps(prev => [...prev, step]);
     }
     if (step < 8) {
       setCurrentStep(step + 1);
+    } else if (step === 8) {
+      setJourneyComplete(true);
+      toast.success('Congratulations! Your core values and virtues journey is complete.');
     }
   };
 
@@ -1141,33 +1146,76 @@ const CoreValues = () => {
             </div>
           </div>
 
-          {/* Current Step Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              {currentStep > 1 && (
-                <Button variant="ghost" size="sm" onClick={() => { if (currentStep === 3) setThemeGroups(null); setCurrentStep(currentStep - 1); }}>
-                  <ArrowLeft className="w-4 h-4 mr-1" /> Back
-                </Button>
-              )}
-              <h2 className="text-lg font-semibold text-foreground">
-                Step {currentStep}: {STEPS[currentStep - 1].title}
-              </h2>
-            </div>
-            <span className="text-xs text-muted-foreground">{STEPS[currentStep - 1].subtitle}</span>
-          </div>
+          {journeyComplete ? (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+              <Card className="border-life-energy/30 bg-card/50">
+                <CardContent className="pt-6 text-center space-y-4">
+                  <CheckCircle2 className="w-16 h-16 text-life-energy mx-auto" />
+                  <h2 className="text-2xl font-bold text-foreground">Journey Complete!</h2>
+                  <p className="text-muted-foreground max-w-lg mx-auto">
+                    You've discovered your core values and selected virtues to study. These will guide your decisions and growth.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
+                    <Button variant="outline" onClick={() => { setJourneyComplete(false); setCurrentStep(8); }}>
+                      <ArrowLeft className="w-4 h-4 mr-2" /> Review Virtues
+                    </Button>
+                    <Button variant="outline" onClick={() => { setJourneyComplete(false); setCurrentStep(5); }}>
+                      <PenLine className="w-4 h-4 mr-2" /> Review Statements
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
 
-          {/* Step Content */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentStep}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-            >
-              {stepRenderers[currentStep]()}
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card className="border-border/50 bg-card/50">
+                  <CardHeader><CardTitle className="text-sm">Your Core Values</CardTitle></CardHeader>
+                  <CardContent className="flex flex-wrap gap-2">
+                    {selectedValues.map(v => (
+                      <Badge key={v} className="bg-life-energy/20 text-foreground border-life-energy/30">{v}</Badge>
+                    ))}
+                  </CardContent>
+                </Card>
+                <Card className="border-border/50 bg-card/50">
+                  <CardHeader><CardTitle className="text-sm">Virtues to Study</CardTitle></CardHeader>
+                  <CardContent className="flex flex-wrap gap-2">
+                    {selectedVirtues.map(v => (
+                      <Badge key={v} variant="outline">{v}</Badge>
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
             </motion.div>
-          </AnimatePresence>
+          ) : (
+            <>
+              {/* Current Step Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  {currentStep > 1 && (
+                    <Button variant="ghost" size="sm" onClick={() => { if (currentStep === 3) setThemeGroups(null); setCurrentStep(currentStep - 1); }}>
+                      <ArrowLeft className="w-4 h-4 mr-1" /> Back
+                    </Button>
+                  )}
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Step {currentStep}: {STEPS[currentStep - 1].title}
+                  </h2>
+                </div>
+                <span className="text-xs text-muted-foreground">{STEPS[currentStep - 1].subtitle}</span>
+              </div>
+
+              {/* Step Content */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentStep}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {stepRenderers[currentStep]()}
+                </motion.div>
+              </AnimatePresence>
+            </>
+          )}
         </div>
       </main>
     </div>
