@@ -57,9 +57,9 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
         setDismissed(true);
       }
 
-      let values: string[] = [];
+      let values: string[] = providedValues || [];
 
-      if (user) {
+      if (!providedValues?.length && user) {
         // Load values from DB
         const { data } = await supabase
           .from('core_values_shortlist')
