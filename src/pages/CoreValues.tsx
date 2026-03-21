@@ -725,51 +725,98 @@ const CoreValues = () => {
     );
   };
 
-  const renderStep4 = () => (
-    <Card className="border-border/50 bg-card/50">
-      <CardContent className="pt-8 pb-8">
-        <div className="max-w-xl mx-auto space-y-6">
-          <h2 className="text-xl font-bold text-foreground">Narrow to Your Top 5–10</h2>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            Now it's time to cut deeper. You currently have <strong>{selectedValues.length}</strong> values. Try to narrow them down to 5–10 that are truly essential.
-          </p>
-          <div className="bg-muted/30 rounded-xl p-6 space-y-3">
-            <p className="text-sm font-medium text-foreground">For each value, ask:</p>
-            <ul className="text-sm text-muted-foreground space-y-1.5">
-              <li>• Is this value essential to my life?</li>
-              <li>• Does this represent my primary way of being?</li>
-              <li>• Is this essential to supporting my inner self?</li>
-              <li>• Would I feel incomplete without this value?</li>
-            </ul>
+  const [step4Picks, setStep4Picks] = useState<string[]>([]);
+
+  const toggleStep4Pick = (value: string) => {
+    setStep4Picks(prev =>
+      prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]
+    );
+  };
+
+  const renderStep4 = () => {
+    const unpicked = selectedValues.filter(v => !step4Picks.includes(v));
+    return (
+      <Card className="border-border/50 bg-card/50">
+        <CardContent className="pt-8 pb-8">
+          <div className="max-w-xl mx-auto space-y-6">
+            <h2 className="text-xl font-bold text-foreground">Narrow to Your Top 5–10</h2>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              Select the values that are truly essential. You currently have <strong>{selectedValues.length}</strong> values — pick the 5–10 that matter most.
+            </p>
+            <div className="bg-muted/30 rounded-xl p-6 space-y-3">
+              <p className="text-sm font-medium text-foreground">For each value, ask:</p>
+              <ul className="text-sm text-muted-foreground space-y-1.5">
+                <li>• Is this value essential to my life?</li>
+                <li>• Does this represent my primary way of being?</li>
+                <li>• Is this essential to supporting my inner self?</li>
+                <li>• Would I feel incomplete without this value?</li>
+              </ul>
+            </div>
+
+            {step4Picks.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Your Top Values ({step4Picks.length})</p>
+                <div className="flex flex-wrap gap-2 bg-primary/5 border border-primary/20 rounded-xl p-4">
+                  {step4Picks.map(value => {
+                    const category = getCategoryForValue(value);
+                    return (
+                      <motion.button
+                        key={value}
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => toggleStep4Pick(value)}
+                        className={cn('px-3 py-1.5 rounded-full text-sm font-medium border cursor-pointer transition-all shadow-md ring-2 ring-primary/40', SELECTED_COLORS[category])}
+                      >
+                        {value} ✓
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Click values to add them to your top picks:</p>
+              <div className="flex flex-wrap gap-2">
+                {unpicked.map(value => {
+                  const category = getCategoryForValue(value);
+                  return (
+                    <motion.button
+                      key={value}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => toggleStep4Pick(value)}
+                      className={cn('px-3 py-1.5 rounded-full text-sm font-medium border cursor-pointer transition-all opacity-60 hover:opacity-100', SELECTED_COLORS[category])}
+                    >
+                      {value}
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              {step4Picks.length >= 5 && step4Picks.length <= 10
+                ? `✓ You have ${step4Picks.length} top values — great range!`
+                : step4Picks.length > 10
+                  ? `You have ${step4Picks.length} — try to get to 10 or fewer.`
+                  : `Select at least 5 values to continue (${step4Picks.length}/5).`}
+            </p>
+            <Button
+              onClick={() => {
+                setSelectedValues(step4Picks);
+                completeStep(4);
+              }}
+              disabled={step4Picks.length < 5}
+              className="bg-life-energy hover:bg-life-energy/90 text-primary-foreground"
+            >
+              Step 4 Complete <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
           </div>
-          <p className="text-sm text-muted-foreground">Click values to remove them from your shortlist:</p>
-          <div className="flex flex-wrap gap-2">
-            {selectedValues.map(value => {
-              const category = getCategoryForValue(value);
-              return (
-                <motion.button
-                  key={value}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => toggleValue(value)}
-                  className={cn('px-3 py-1.5 rounded-full text-sm font-medium border cursor-pointer transition-all shadow-md', SELECTED_COLORS[category])}
-                >
-                  {value} ×
-                </motion.button>
-              );
-            })}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {selectedValues.length <= 10
-              ? `✓ You have ${selectedValues.length} values — great range!`
-              : `You have ${selectedValues.length} — try to get to 10 or fewer.`}
-          </p>
-          <Button onClick={() => completeStep(4)} className="bg-life-energy hover:bg-life-energy/90 text-primary-foreground">
-            Step 4 Complete <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   const renderStep5 = () => (
     <Card className="border-border/50 bg-card/50">
