@@ -236,6 +236,8 @@ const CoreValues = () => {
 
   useEffect(() => {
     const load = async () => {
+      const savedColors = localStorage.getItem('core-values-colors');
+      if (savedColors) setValuesColors(JSON.parse(savedColors));
       if (!user) {
         const saved = localStorage.getItem('core-values-shortlist');
         const savedCustom = localStorage.getItem('core-values-custom');
