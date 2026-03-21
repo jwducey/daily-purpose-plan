@@ -15,24 +15,22 @@ export default function Dashboard() {
 
   useEffect(() => {
     const loadValues = async () => {
-      // Load statements from localStorage
-      const savedStatements = localStorage.getItem('core-values-statements');
-      if (savedStatements) setValuesStatements(JSON.parse(savedStatements));
-
-      // Load core values from DB or localStorage
       if (user) {
         const { data } = await supabase
           .from('core_values_shortlist')
-          .select('selected_values')
+          .select('*')
           .eq('user_id', user.id)
           .maybeSingle();
-        if (data?.selected_values?.length) {
-          setCoreValues(data.selected_values);
+        if (data) {
+          if (data.selected_values?.length) setCoreValues(data.selected_values);
+          if ((data as any).values_statements) setValuesStatements((data as any).values_statements as Record<string, string>);
           return;
         }
       }
       const local = localStorage.getItem('core-values-shortlist');
+      const localStatements = localStorage.getItem('core-values-statements');
       if (local) setCoreValues(JSON.parse(local));
+      if (localStatements) setValuesStatements(JSON.parse(localStatements));
     };
     loadValues();
   }, [user]);
