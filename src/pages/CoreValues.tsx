@@ -1163,39 +1163,104 @@ const CoreValues = () => {
               <Card className="border-life-energy/30 bg-card/50">
                 <CardContent className="pt-6 text-center space-y-4">
                   <CheckCircle2 className="w-16 h-16 text-life-energy mx-auto" />
-                  <h2 className="text-2xl font-bold text-foreground">Journey Complete!</h2>
+                  <h2 className="text-2xl font-bold text-foreground">Your Core Values</h2>
                   <p className="text-muted-foreground max-w-lg mx-auto">
-                    You've discovered your core values and selected virtues to study. These will guide your decisions and growth.
+                    These are the values and virtues guiding your life.
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
                     <Button variant="outline" onClick={() => { setJourneyComplete(false); setCurrentStep(8); }}>
                       <ArrowLeft className="w-4 h-4 mr-2" /> Review Virtues
                     </Button>
                     <Button variant="outline" onClick={() => { setJourneyComplete(false); setCurrentStep(5); }}>
-                      <PenLine className="w-4 h-4 mr-2" /> Review Statements
+                      <PenLine className="w-4 h-4 mr-2" /> Edit Statements
                     </Button>
                   </div>
                 </CardContent>
               </Card>
 
-              <div className="grid gap-4 md:grid-cols-2">
+              {/* Core Values with Statements */}
+              <Card className="border-border/50 bg-card/50">
+                <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Heart className="w-4 h-4 text-life-energy" /> Core Values & Statements</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  {selectedValues.map(v => (
+                    <div key={v} className="flex items-start gap-3">
+                      <span className="mt-1.5 h-2 w-2 rounded-full bg-life-energy shrink-0" />
+                      <div>
+                        <span className="text-sm font-semibold text-foreground">{v}</span>
+                        {valuesStatements[v] ? (
+                          <p className="text-sm text-muted-foreground mt-0.5 italic">"{valuesStatements[v]}"</p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground/50 mt-0.5">No statement written yet</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* Virtues to Study */}
+              {selectedVirtues.length > 0 && (
                 <Card className="border-border/50 bg-card/50">
-                  <CardHeader><CardTitle className="text-sm">Your Core Values</CardTitle></CardHeader>
-                  <CardContent className="flex flex-wrap gap-2">
-                    {selectedValues.map(v => (
-                      <Badge key={v} className="bg-life-energy/20 text-foreground border-life-energy/30">{v}</Badge>
-                    ))}
-                  </CardContent>
-                </Card>
-                <Card className="border-border/50 bg-card/50">
-                  <CardHeader><CardTitle className="text-sm">Virtues to Study</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="text-sm flex items-center gap-2"><BookOpen className="w-4 h-4 text-life-energy" /> Virtues to Study</CardTitle></CardHeader>
                   <CardContent className="flex flex-wrap gap-2">
                     {selectedVirtues.map(v => (
                       <Badge key={v} variant="outline">{v}</Badge>
                     ))}
                   </CardContent>
                 </Card>
-              </div>
+              )}
+
+              {/* Reset Option */}
+              <Card className="border-destructive/20 bg-card/50">
+                <CardContent className="pt-6">
+                  {resetConfirmStep === 0 && (
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Start Over</p>
+                        <p className="text-xs text-muted-foreground">Reset and redo the entire core values discovery process.</p>
+                      </div>
+                      <Button variant="outline" size="sm" className="border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => setResetConfirmStep(1)}>
+                        Reset Journey
+                      </Button>
+                    </div>
+                  )}
+                  {resetConfirmStep === 1 && (
+                    <div className="text-center space-y-3">
+                      <p className="text-sm font-medium text-destructive">Are you sure? This will erase all your selections and statements.</p>
+                      <div className="flex gap-3 justify-center">
+                        <Button variant="outline" size="sm" onClick={() => setResetConfirmStep(0)}>Cancel</Button>
+                        <Button variant="outline" size="sm" className="border-destructive text-destructive hover:bg-destructive/10" onClick={() => setResetConfirmStep(2)}>
+                          Yes, I'm sure
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {resetConfirmStep === 2 && (
+                    <div className="text-center space-y-3">
+                      <p className="text-sm font-bold text-destructive">Final confirmation — this cannot be undone.</p>
+                      <div className="flex gap-3 justify-center">
+                        <Button variant="outline" size="sm" onClick={() => setResetConfirmStep(0)}>Cancel</Button>
+                        <Button size="sm" className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => {
+                          setSelectedValues([]);
+                          setCustomValues({});
+                          setValuesStatements({});
+                          setCompletedSteps([]);
+                          setCurrentStep(1);
+                          setJourneyComplete(false);
+                          setThemeGroups(null);
+                          setBeginnerReady(false);
+                          setResetConfirmStep(0);
+                          localStorage.removeItem('core-values-step');
+                          localStorage.removeItem('core-values-completed-steps');
+                          toast.success('Journey reset. Starting fresh!');
+                        }}>
+                          Reset Everything
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </motion.div>
           ) : (
             <>
