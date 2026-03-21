@@ -47,6 +47,36 @@ export type Database = {
         }
         Relationships: []
       }
+      core_values_assessments: {
+        Row: {
+          assessment_date: string
+          created_at: string
+          id: string
+          notes: string | null
+          scores: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assessment_date: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          scores?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assessment_date?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          scores?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       core_values_shortlist: {
         Row: {
           created_at: string
