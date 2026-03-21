@@ -18,6 +18,7 @@ export default function Settings() {
   const { user: localUser, setUser, capitalTabEnabled, setCapitalTabEnabled, dailyReviewTime, setDailyReviewTime } = useUser();
   const { user: authUser, signOut } = useAuth();
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
 
   if (!localUser) return null;
 
