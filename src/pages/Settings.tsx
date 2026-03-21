@@ -8,10 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { User, Clock, Trash2, LogIn, LogOut, Gem, ClipboardCheck } from 'lucide-react';
+import { User, Clock, Trash2, LogIn, LogOut, Gem, ClipboardCheck, Moon, Sun } from 'lucide-react';
 import { GoogleCalendarSettings } from '@/components/GoogleCalendarSettings';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { useTheme } from 'next-themes';
 
 export default function Settings() {
   const { user: localUser, setUser, capitalTabEnabled, setCapitalTabEnabled, dailyReviewTime, setDailyReviewTime } = useUser();
