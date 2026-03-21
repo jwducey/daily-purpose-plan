@@ -141,7 +141,7 @@ const STEPS = [
   {
     number: 4,
     title: 'Narrow to Top 5–10',
-    subtitle: 'Identify what's essential',
+    subtitle: "Identify what's essential",
     icon: Target,
   },
   {
