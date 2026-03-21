@@ -31,8 +31,10 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
   const { user } = useAuth();
   const [coreValues, setCoreValues] = useState<string[]>([]);
   const [valuesColors, setValuesColors] = useState<Record<string, string>>({});
+  const [valuesStatements, setValuesStatements] = useState<Record<string, string>>({});
   const [showAssessment, setShowAssessment] = useState(false);
   const [scores, setScores] = useState<AssessmentScore>({});
+  const [actions, setActions] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState('');
   const [currentValueIdx, setCurrentValueIdx] = useState(0);
   const [history, setHistory] = useState<AssessmentRecord[]>([]);
