@@ -205,6 +205,8 @@ const CoreValues = () => {
   const [dragOverGroupId, setDragOverGroupId] = useState<string | null>(null);
   const [dropPosition, setDropPosition] = useState<{ groupId: string; index: number } | null>(null);
   const [valuesStatements, setValuesStatements] = useState<Record<string, string>>({});
+  const [valuesColors, setValuesColors] = useState<Record<string, string>>({});
+  const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {

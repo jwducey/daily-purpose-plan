@@ -1,17 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { MortalityCountdown } from '@/components/MortalityCountdown';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { Navigation } from '@/components/Navigation';
 import { motion } from 'framer-motion';
-import { PieChart, ArrowRight, Target, Heart } from 'lucide-react';
+import { PieChart, ArrowRight, Target, Heart, Palette } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+
+const VALUE_COLOR_PRESETS = [
+  '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
+  '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6', '#6366f1',
+  '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e',
+  '#64748b', '#78716c',
+];
 
 export default function Dashboard() {
   const { user, categories, goals } = useUser();
   const [coreValues, setCoreValues] = useState<string[]>([]);
   const [valuesStatements, setValuesStatements] = useState<Record<string, string>>({});
+  const [valuesColors, setValuesColors] = useState<Record<string, string>>({});
+  const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null);
+  const colorPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadValues = async () => {
