@@ -681,8 +681,8 @@ const CoreValues = () => {
                     );
                   })}
                   {group.values.length > 1 && (
-                    <span className="text-[10px] text-muted-foreground/50 ml-1 select-none">
-                      ← definer
+                    <span className="text-[10px] text-muted-foreground/50 ml-auto select-none">
+                      most → least important
                     </span>
                   )}
                 </div>
