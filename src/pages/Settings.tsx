@@ -127,6 +127,31 @@ export default function Settings() {
             </div>
           </motion.div>
 
+          {/* Appearance */}
+          <motion.div 
+            className="p-6 rounded-2xl bg-card shadow-card space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12 }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                {theme === 'dark' ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-primary" />}
+              </div>
+              <h2 className="font-serif text-lg">Appearance</h2>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Dark Mode</p>
+                <p className="text-sm text-muted-foreground">Switch between light and dark themes.</p>
+              </div>
+              <Switch
+                checked={theme === 'dark'}
+                onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+              />
+            </div>
+          </motion.div>
+
           {/* Life expectancy section */}
           <motion.div 
             className="p-6 rounded-2xl bg-card shadow-card space-y-6"
