@@ -1305,66 +1305,59 @@ const CoreValues = () => {
                 </Card>
               )}
 
-              {/* Reset Option */}
-              <Card className="border-destructive/20 bg-card/50">
-                <CardContent className="pt-6">
-                  {resetConfirmStep === 0 && (
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">Start Over</p>
-                        <p className="text-xs text-muted-foreground">Reset and redo the entire core values discovery process.</p>
-                      </div>
-                      <Button variant="outline" size="sm" className="border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => setResetConfirmStep(1)}>
-                        Reset Journey
-                      </Button>
-                    </div>
-                  )}
-                  {resetConfirmStep === 1 && (
-                    <div className="text-center space-y-3">
-                      <p className="text-sm font-medium text-destructive">Are you sure? This will erase all your selections and statements.</p>
-                      <div className="flex gap-3 justify-center">
-                        <Button variant="outline" size="sm" onClick={() => setResetConfirmStep(0)}>Cancel</Button>
-                        <Button variant="outline" size="sm" className="border-destructive text-destructive hover:bg-destructive/10" onClick={() => setResetConfirmStep(2)}>
-                          Yes, I'm sure
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  {resetConfirmStep === 2 && (
-                    <div className="text-center space-y-3">
-                      <p className="text-sm font-bold text-destructive">Final confirmation — this cannot be undone.</p>
-                      <div className="flex gap-3 justify-center">
-                        <Button variant="outline" size="sm" onClick={() => setResetConfirmStep(0)}>Cancel</Button>
-                        <Button size="sm" className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => {
-                          setSelectedValues([]);
-                          setCustomValues({});
-                          setValuesStatements({});
-                          setValuesColors({});
-                          setCompletedSteps([]);
-                          setCurrentStep(1);
-                          setJourneyComplete(false);
-                          setThemeGroups(null);
-                          setBeginnerReady(false);
-                          setResetConfirmStep(0);
-                          localStorage.removeItem('core-values-step');
-                          localStorage.removeItem('core-values-completed-steps');
-                          localStorage.removeItem('core-values-colors');
-                          toast.success('Journey reset. Starting fresh!');
-                        }}>
-                          Reset Everything
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
               {/* Assessment Component */}
               <CoreValuesAssessment
                 forceOpen={triggerAssessment}
                 onForceOpenHandled={() => setTriggerAssessment(false)}
                 providedValues={selectedValues}
               />
+
+              {/* Reset Option - subtle */}
+              <div className="pt-4 border-t border-border/30">
+                {resetConfirmStep === 0 && (
+                  <button
+                    onClick={() => setResetConfirmStep(1)}
+                    className="text-xs text-muted-foreground/50 hover:text-destructive/70 transition-colors"
+                  >
+                    Start over from scratch
+                  </button>
+                )}
+                {resetConfirmStep === 1 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-destructive">Are you sure? This will erase all your selections and statements.</p>
+                    <div className="flex gap-2">
+                      <button onClick={() => setResetConfirmStep(0)} className="text-xs text-muted-foreground hover:text-foreground">Cancel</button>
+                      <button onClick={() => setResetConfirmStep(2)} className="text-xs text-destructive hover:text-destructive/80">Yes, I'm sure</button>
+                    </div>
+                  </div>
+                )}
+                {resetConfirmStep === 2 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-destructive">Final confirmation — this cannot be undone.</p>
+                    <div className="flex gap-2">
+                      <button onClick={() => setResetConfirmStep(0)} className="text-xs text-muted-foreground hover:text-foreground">Cancel</button>
+                      <button className="text-xs text-destructive font-medium hover:text-destructive/80" onClick={() => {
+                        setSelectedValues([]);
+                        setCustomValues({});
+                        setValuesStatements({});
+                        setValuesColors({});
+                        setCompletedSteps([]);
+                        setCurrentStep(1);
+                        setJourneyComplete(false);
+                        setThemeGroups(null);
+                        setBeginnerReady(false);
+                        setResetConfirmStep(0);
+                        localStorage.removeItem('core-values-step');
+                        localStorage.removeItem('core-values-completed-steps');
+                        localStorage.removeItem('core-values-colors');
+                        toast.success('Journey reset. Starting fresh!');
+                      }}>
+                        Reset Everything
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </motion.div>
           ) : (
             <>
