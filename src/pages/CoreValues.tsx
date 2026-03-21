@@ -352,6 +352,14 @@ const CoreValues = () => {
   }, [currentStep, themeGroups, buildThemeGroups]);
 
   const [journeyComplete, setJourneyComplete] = useState(false);
+  const [resetConfirmStep, setResetConfirmStep] = useState(0); // 0=none, 1=first confirm, 2=confirmed
+
+  // Auto-detect completed journey on load
+  useEffect(() => {
+    if (loaded && completedSteps.includes(8)) {
+      setJourneyComplete(true);
+    }
+  }, [loaded, completedSteps]);
 
   const completeStep = (step: number) => {
     if (!completedSteps.includes(step)) {
