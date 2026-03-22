@@ -8,6 +8,7 @@ const allNavItems = [
   { to: '/tasks', icon: CheckSquare, label: 'Tasks' },
   { to: '/habits', icon: Flame, label: 'Habits' },
   { to: '/budget', icon: PieChart, label: 'Budget' },
+  { to: '/goals', icon: Target, label: 'Goals' },
   { to: '/capital', icon: Gem, label: 'Capital' },
   { to: '/calendar', icon: Calendar, label: 'Calendar' },
   { to: '/values', icon: Heart, label: 'Values' },
