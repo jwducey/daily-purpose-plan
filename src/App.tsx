@@ -17,6 +17,7 @@ const Calendar = lazy(() => import("./pages/Calendar"));
 const Tasks = lazy(() => import("./pages/Tasks"));
 const Habits = lazy(() => import("./pages/Habits"));
 const CoreValues = lazy(() => import("./pages/CoreValues"));
+const Goals = lazy(() => import("./pages/Goals"));
 const Auth = lazy(() => import("./pages/Auth"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const DailyReviewPanel = lazy(() => import("./components/DailyReviewPanel").then(m => ({ default: m.DailyReviewPanel })));
@@ -54,6 +55,7 @@ const App = () => (
                 <Route path="/calendar" element={<Calendar />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/values" element={<CoreValues />} />
+                <Route path="/goals" element={<Goals />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
