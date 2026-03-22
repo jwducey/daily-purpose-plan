@@ -263,6 +263,24 @@ const CoreValues = () => {
         if ((data as any).values_statements) {
           setValuesStatements((data as any).values_statements as Record<string, string>);
         }
+
+        // Determine journey completion from DB data:
+        // If user has selected values AND statements, journey is complete
+        const hasValues = (data.selected_values || []).length > 0;
+        const stmts = (data as any).values_statements as Record<string, string> | undefined;
+        const hasStatements = stmts && Object.keys(stmts).length > 0;
+
+        if (hasValues && hasStatements) {
+          // Journey is complete - set all steps as completed
+          setCompletedSteps([1, 2, 3, 4, 5, 6, 7, 8]);
+          setCurrentStep(8);
+        } else {
+          // Load step progress from localStorage as fallback
+          const savedStep = localStorage.getItem('core-values-step');
+          const savedCompleted = localStorage.getItem('core-values-completed-steps');
+          if (savedStep) setCurrentStep(parseInt(savedStep));
+          if (savedCompleted) setCompletedSteps(JSON.parse(savedCompleted));
+        }
       } else {
         const saved = localStorage.getItem('core-values-shortlist');
         const savedCustom = localStorage.getItem('core-values-custom');
@@ -270,11 +288,11 @@ const CoreValues = () => {
         if (saved) setSelectedValues(JSON.parse(saved));
         if (savedCustom) setCustomValues(JSON.parse(savedCustom));
         if (savedStatements) setValuesStatements(JSON.parse(savedStatements));
+        const savedStep = localStorage.getItem('core-values-step');
+        const savedCompleted = localStorage.getItem('core-values-completed-steps');
+        if (savedStep) setCurrentStep(parseInt(savedStep));
+        if (savedCompleted) setCompletedSteps(JSON.parse(savedCompleted));
       }
-      const savedStep = localStorage.getItem('core-values-step');
-      const savedCompleted = localStorage.getItem('core-values-completed-steps');
-      if (savedStep) setCurrentStep(parseInt(savedStep));
-      if (savedCompleted) setCompletedSteps(JSON.parse(savedCompleted));
       setLoaded(true);
     };
     load();
