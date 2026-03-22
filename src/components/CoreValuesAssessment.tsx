@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Heart, X, ChevronRight, ChevronLeft, TrendingUp, Calendar, ListTodo } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useCoreValuesColors } from '@/hooks/useCoreValuesColors';
 import { toast } from 'sonner';
 import { format, lastDayOfMonth, isToday, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
