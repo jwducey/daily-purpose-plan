@@ -288,7 +288,7 @@ export default function Dashboard() {
                               {VALUE_COLOR_PRESETS.map((color) => (
                                 <button
                                   key={color}
-                                  onClick={() => updateValueColor(value, color)}
+                                  onClick={() => handleUpdateValueColor(value, color)}
                                   className="h-5 w-5 rounded-full border-2 transition-transform hover:scale-110"
                                   style={{
                                     backgroundColor: color,
