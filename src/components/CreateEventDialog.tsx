@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -47,10 +47,20 @@ export function CreateEventDialog({
   const [lifeArea, setLifeArea] = useState<string>('');
   const [date, setDate] = useState(defaultDate ? format(defaultDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'));
   const [startTime, setStartTime] = useState(defaultTime || '09:00');
-  const [endTime, setEndTime] = useState(defaultTime ? 
-    format(new Date(`2000-01-01T${defaultTime}`).getTime() + 60 * 60 * 1000, 'HH:mm') : 
-    '10:00'
-  );
+  const [endTime, setEndTime] = useState(() => {
+    const t = defaultTime || '09:00';
+    return format(new Date(`2000-01-01T${t}`).getTime() + 60 * 60 * 1000, 'HH:mm');
+  });
+
+  // Sync defaults when dialog opens with new props
+  useEffect(() => {
+    if (open) {
+      if (defaultDate) setDate(format(defaultDate, 'yyyy-MM-dd'));
+      const t = defaultTime || '09:00';
+      setStartTime(t);
+      setEndTime(format(new Date(`2000-01-01T${t}`).getTime() + 60 * 60 * 1000, 'HH:mm'));
+    }
+  }, [open, defaultDate, defaultTime]);
 
   const selectedCategory = categories.find(c => c.id === lifeArea);
   const colorId = selectedCategory?.googleColorId;
