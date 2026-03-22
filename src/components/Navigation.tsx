@@ -22,7 +22,7 @@ export function Navigation() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border md:sticky md:top-0 md:border-t-0 md:border-r md:h-screen md:w-20 md:flex-shrink-0">
-      <div className="flex md:flex-col items-center justify-around md:justify-start md:pt-8 md:gap-2 h-16 md:h-full">
+      <div className="flex md:flex-col items-center overflow-x-auto md:overflow-x-visible md:overflow-y-auto md:justify-start md:pt-8 md:gap-2 h-16 md:h-full scrollbar-none">
         {/* Logo - desktop only */}
         <div className="hidden md:flex items-center justify-center mb-8">
           <div className="p-2.5 rounded-xl bg-life-energy">
@@ -35,7 +35,7 @@ export function Navigation() {
             key={to}
             to={to}
             className={({ isActive }) => cn(
-              'flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl transition-all',
+              'flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl transition-all shrink-0',
               'text-muted-foreground hover:text-foreground',
               isActive && 'text-life-energy bg-life-energy/10'
             )}
