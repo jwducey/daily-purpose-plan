@@ -79,6 +79,7 @@ export type Database = {
       }
       core_values_shortlist: {
         Row: {
+          colors: Json
           created_at: string
           custom_values: Json
           id: string
@@ -88,6 +89,7 @@ export type Database = {
           values_statements: Json
         }
         Insert: {
+          colors?: Json
           created_at?: string
           custom_values?: Json
           id?: string
@@ -97,6 +99,7 @@ export type Database = {
           values_statements?: Json
         }
         Update: {
+          colors?: Json
           created_at?: string
           custom_values?: Json
           id?: string

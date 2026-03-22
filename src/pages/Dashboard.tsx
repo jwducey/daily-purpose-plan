@@ -8,6 +8,7 @@ import { PieChart, ArrowRight, Target, Heart, Palette } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { CoreValuesAssessment } from '@/components/CoreValuesAssessment';
+import { useCoreValuesColors } from '@/hooks/useCoreValuesColors';
 
 const VALUE_COLOR_PRESETS = [
   '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
@@ -20,16 +21,12 @@ export default function Dashboard() {
   const { user, categories, goals } = useUser();
   const [coreValues, setCoreValues] = useState<string[]>([]);
   const [valuesStatements, setValuesStatements] = useState<Record<string, string>>({});
-  const [valuesColors, setValuesColors] = useState<Record<string, string>>({});
+  const { valuesColors, updateColor: updateValueColor } = useCoreValuesColors(user?.id);
   const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null);
   const colorPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadValues = async () => {
-      // Load colors from localStorage
-      const savedColors = localStorage.getItem('core-values-colors');
-      if (savedColors) setValuesColors(JSON.parse(savedColors));
-
       if (user) {
         const { data } = await supabase
           .from('core_values_shortlist')
@@ -61,10 +58,8 @@ export default function Dashboard() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [colorPickerOpen]);
 
-  const updateValueColor = (value: string, color: string) => {
-    const updated = { ...valuesColors, [value]: color };
-    setValuesColors(updated);
-    localStorage.setItem('core-values-colors', JSON.stringify(updated));
+  const handleUpdateValueColor = (value: string, color: string) => {
+    updateValueColor(value, color);
     setColorPickerOpen(null);
   };
 
@@ -293,7 +288,7 @@ export default function Dashboard() {
                               {VALUE_COLOR_PRESETS.map((color) => (
                                 <button
                                   key={color}
-                                  onClick={() => updateValueColor(value, color)}
+                                  onClick={() => handleUpdateValueColor(value, color)}
                                   className="h-5 w-5 rounded-full border-2 transition-transform hover:scale-110"
                                   style={{
                                     backgroundColor: color,
