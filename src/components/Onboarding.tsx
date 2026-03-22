@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Clock, Target, Sparkles } from 'lucide-react';
+import { ArrowRight, Clock, Target, Sparkles, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function Onboarding() {
   const { completeOnboarding } = useUser();
