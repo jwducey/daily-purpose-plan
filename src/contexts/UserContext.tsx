@@ -184,6 +184,22 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             lastLogin: new Date(),
             onboardingComplete: true,
           });
+
+          // Load goals from DB
+          const dbGoals = await loadGoalsFromDB(session.user.id);
+          if (dbGoals && dbGoals.length > 0) {
+            setGoals(dbGoals.map(g => ({ id: g.id, categoryId: g.category_id, text: g.text })));
+          } else {
+            // Migrate localStorage goals to DB if any
+            const savedGoals = localStorage.getItem('lifewealth_goals');
+            if (savedGoals) {
+              const localGoals: LifeGoal[] = JSON.parse(savedGoals);
+              if (localGoals.length > 0) {
+                setGoals(localGoals);
+                await syncGoalsToDB(session.user.id, localGoals);
+              }
+            }
+          }
         } else {
           const savedUser = localStorage.getItem('lifewealth_user');
           if (savedUser) {
