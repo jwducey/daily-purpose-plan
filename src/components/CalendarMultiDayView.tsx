@@ -599,9 +599,9 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
                         handleMoveStart(e, event, top, dateIndex);
                       }}
                       onClick={(e) => {
-                        // Only fire click if we didn't drag
-                        if (!movingEvent && !resizingEvent) {
-                          e.stopPropagation();
+                        e.stopPropagation();
+                        // Only open edit if we didn't drag
+                        if (!didDrag.current) {
                           handleEventClick(event);
                         }
                       }}
