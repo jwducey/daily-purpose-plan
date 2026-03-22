@@ -80,6 +80,53 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [dailyReviewCompletedToday, setDailyReviewCompletedToday] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+
+  // Load goals from database
+  const loadGoalsFromDB = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('life_goals')
+      .select('*')
+      .eq('user_id', userId)
+      .order('sort_order', { ascending: true });
+
+    if (error) {
+      console.error('Error loading goals:', error);
+      return null;
+    }
+    return data;
+  };
+
+  // Sync goals to database
+  const syncGoalsToDB = async (userId: string, goalsToSync: LifeGoal[]) => {
+    // Delete all existing goals for user, then insert current ones
+    const { error: deleteError } = await supabase
+      .from('life_goals')
+      .delete()
+      .eq('user_id', userId);
+
+    if (deleteError) {
+      console.error('Error deleting goals:', deleteError);
+      return;
+    }
+
+    if (goalsToSync.length === 0) return;
+
+    const rows = goalsToSync.map((g, i) => ({
+      user_id: userId,
+      category_id: g.categoryId,
+      text: g.text,
+      sort_order: i,
+    }));
+
+    const { error: insertError } = await supabase
+      .from('life_goals')
+      .insert(rows);
+
+    if (insertError) {
+      console.error('Error inserting goals:', insertError);
+    }
+  };
+
   // Load profile from database for authenticated user
   const loadProfileFromDB = async (userId: string) => {
     const { data, error } = await supabase
@@ -94,6 +141,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
     return data;
   };
+
 
   // Save profile to database
   const saveProfileToDB = async (userId: string, profileData: {
