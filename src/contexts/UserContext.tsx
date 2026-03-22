@@ -42,11 +42,13 @@ interface UserContextType {
   resetCategories: () => void;
   addCategory: (name: string, description?: string) => void;
   deleteCategory: (categoryId: string) => void;
+  reorderCategories: (orderedIds: string[]) => void;
   addCustomSuggestion: (categoryName: string, suggestion: string) => void;
   removeCustomSuggestion: (categoryName: string, suggestion: string) => void;
   addGoal: (categoryId: string, text: string) => void;
   updateGoal: (goalId: string, text: string) => void;
   removeGoal: (goalId: string) => void;
+  reorderGoals: (orderedIds: string[]) => void;
   setCapitalRating: (capitalId: string, rating: number) => void;
   addCapitalAsset: (capitalId: string, name: string, value: string) => void;
   updateCapitalAsset: (assetId: string, updates: Partial<Pick<CapitalAsset, 'name' | 'value'>>) => void;
@@ -374,6 +376,20 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setGoals(prev => prev.filter(g => g.id !== goalId));
   };
 
+  const reorderCategories = (orderedIds: string[]) => {
+    setCategories(prev => {
+      const map = new Map(prev.map(c => [c.id, c]));
+      return orderedIds.map(id => map.get(id)!).filter(Boolean);
+    });
+  };
+
+  const reorderGoals = (orderedIds: string[]) => {
+    setGoals(prev => {
+      const map = new Map(prev.map(g => [g.id, g]));
+      return orderedIds.map(id => map.get(id)!).filter(Boolean);
+    });
+  };
+
   const setCapitalRating = (capitalId: string, rating: number) => {
     setCapitalRatings(prev => ({ ...prev, [capitalId]: rating }));
   };
@@ -435,11 +451,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       resetCategories,
       addCategory,
       deleteCategory,
+      reorderCategories,
       addCustomSuggestion,
       removeCustomSuggestion,
       addGoal,
       updateGoal,
       removeGoal,
+      reorderGoals,
       setCapitalRating,
       addCapitalAsset,
       updateCapitalAsset,
