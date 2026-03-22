@@ -357,6 +357,7 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
 
     const handleMouseMove = (e: MouseEvent) => {
       const dy = e.clientY - moveStartY.current;
+      if (Math.abs(dy) > 4) didDrag.current = true;
       const newTop = Math.max(0, moveStartTop.current + dy);
       setMovePreview({ top: newTop, dateIndex: moveStartDateIndex.current });
     };
