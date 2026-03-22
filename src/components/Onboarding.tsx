@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 export function Onboarding() {
   const { completeOnboarding } = useUser();
   const [step, setStep] = useState(0);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     age: 30,
