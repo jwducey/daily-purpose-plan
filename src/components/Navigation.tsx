@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, PieChart, ClipboardList, Settings, Timer, Calendar, CheckSquare, Flame, Gem, Heart } from 'lucide-react';
+import { LayoutDashboard, PieChart, ClipboardList, Settings, Timer, Calendar, CheckSquare, Flame, Gem, Heart, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/contexts/UserContext';
 

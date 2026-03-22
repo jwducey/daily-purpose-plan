@@ -17,6 +17,7 @@ const Calendar = lazy(() => import("./pages/Calendar"));
 const Tasks = lazy(() => import("./pages/Tasks"));
 const Habits = lazy(() => import("./pages/Habits"));
 const CoreValues = lazy(() => import("./pages/CoreValues"));
+const Goals = lazy(() => import("./pages/Goals"));
 const Auth = lazy(() => import("./pages/Auth"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const DailyReviewPanel = lazy(() => import("./components/DailyReviewPanel").then(m => ({ default: m.DailyReviewPanel })));
