@@ -80,6 +80,53 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [dailyReviewCompletedToday, setDailyReviewCompletedToday] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+
+  // Load goals from database
+  const loadGoalsFromDB = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('life_goals')
+      .select('*')
+      .eq('user_id', userId)
+      .order('sort_order', { ascending: true });
+
+    if (error) {
+      console.error('Error loading goals:', error);
+      return null;
+    }
+    return data;
+  };
+
+  // Sync goals to database
+  const syncGoalsToDB = async (userId: string, goalsToSync: LifeGoal[]) => {
+    // Delete all existing goals for user, then insert current ones
+    const { error: deleteError } = await supabase
+      .from('life_goals')
+      .delete()
+      .eq('user_id', userId);
+
+    if (deleteError) {
+      console.error('Error deleting goals:', deleteError);
+      return;
+    }
+
+    if (goalsToSync.length === 0) return;
+
+    const rows = goalsToSync.map((g, i) => ({
+      user_id: userId,
+      category_id: g.categoryId,
+      text: g.text,
+      sort_order: i,
+    }));
+
+    const { error: insertError } = await supabase
+      .from('life_goals')
+      .insert(rows);
+
+    if (insertError) {
+      console.error('Error inserting goals:', insertError);
+    }
+  };
+
   // Load profile from database for authenticated user
   const loadProfileFromDB = async (userId: string) => {
     const { data, error } = await supabase
@@ -94,6 +141,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
     return data;
   };
+
 
   // Save profile to database
   const saveProfileToDB = async (userId: string, profileData: {
@@ -136,6 +184,22 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             lastLogin: new Date(),
             onboardingComplete: true,
           });
+
+          // Load goals from DB
+          const dbGoals = await loadGoalsFromDB(session.user.id);
+          if (dbGoals && dbGoals.length > 0) {
+            setGoals(dbGoals.map(g => ({ id: g.id, categoryId: g.category_id, text: g.text })));
+          } else {
+            // Migrate localStorage goals to DB if any
+            const savedGoals = localStorage.getItem('lifewealth_goals');
+            if (savedGoals) {
+              const localGoals: LifeGoal[] = JSON.parse(savedGoals);
+              if (localGoals.length > 0) {
+                setGoals(localGoals);
+                await syncGoalsToDB(session.user.id, localGoals);
+              }
+            }
+          }
         } else {
           const savedUser = localStorage.getItem('lifewealth_user');
           if (savedUser) {
@@ -363,17 +427,42 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
-  const addGoal = (categoryId: string, text: string) => {
+  const getAuthUserId = async () => {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.user?.id || null;
+  };
+
+  const addGoal = async (categoryId: string, text: string) => {
+    const userId = await getAuthUserId();
+    if (userId) {
+      const { data, error } = await supabase
+        .from('life_goals')
+        .insert({ user_id: userId, category_id: categoryId, text, sort_order: goals.length })
+        .select()
+        .single();
+      if (!error && data) {
+        setGoals(prev => [...prev, { id: data.id, categoryId: data.category_id, text: data.text }]);
+        return;
+      }
+    }
     const newGoal: LifeGoal = { id: `goal_${Date.now()}`, categoryId, text };
     setGoals(prev => [...prev, newGoal]);
   };
 
-  const updateGoal = (goalId: string, text: string) => {
+  const updateGoal = async (goalId: string, text: string) => {
     setGoals(prev => prev.map(g => g.id === goalId ? { ...g, text } : g));
+    const userId = await getAuthUserId();
+    if (userId) {
+      await supabase.from('life_goals').update({ text, updated_at: new Date().toISOString() }).eq('id', goalId).eq('user_id', userId);
+    }
   };
 
-  const removeGoal = (goalId: string) => {
+  const removeGoal = async (goalId: string) => {
     setGoals(prev => prev.filter(g => g.id !== goalId));
+    const userId = await getAuthUserId();
+    if (userId) {
+      await supabase.from('life_goals').delete().eq('id', goalId).eq('user_id', userId);
+    }
   };
 
   const reorderCategories = (orderedIds: string[]) => {
@@ -383,11 +472,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const reorderGoals = (orderedIds: string[]) => {
+  const reorderGoals = async (orderedIds: string[]) => {
     setGoals(prev => {
       const map = new Map(prev.map(g => [g.id, g]));
       return orderedIds.map(id => map.get(id)!).filter(Boolean);
     });
+    const userId = await getAuthUserId();
+    if (userId) {
+      // Update sort_order for each goal
+      await Promise.all(orderedIds.map((id, i) =>
+        supabase.from('life_goals').update({ sort_order: i }).eq('id', id).eq('user_id', userId)
+      ));
+    }
   };
 
   const setCapitalRating = (capitalId: string, rating: number) => {
