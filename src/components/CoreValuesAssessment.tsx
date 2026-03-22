@@ -32,7 +32,7 @@ interface CoreValuesAssessmentProps {
 export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedValues }: CoreValuesAssessmentProps = {}) {
   const { user } = useAuth();
   const [coreValues, setCoreValues] = useState<string[]>([]);
-  const [valuesColors, setValuesColors] = useState<Record<string, string>>({});
+  const { valuesColors } = useCoreValuesColors(user?.id);
   const [valuesStatements, setValuesStatements] = useState<Record<string, string>>({});
   const [showAssessment, setShowAssessment] = useState(false);
   const [scores, setScores] = useState<AssessmentScore>({});
@@ -51,9 +51,6 @@ export function CoreValuesAssessment({ forceOpen, onForceOpenHandled, providedVa
   // Load core values and check if assessment is needed
   useEffect(() => {
     const load = async () => {
-      // Load colors
-      const savedColors = localStorage.getItem('core-values-colors');
-      if (savedColors) setValuesColors(JSON.parse(savedColors));
 
       // Check dismissal for today
       const dismissedDate = localStorage.getItem('assessment-dismissed-date');
