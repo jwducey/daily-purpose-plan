@@ -244,6 +244,36 @@ export type Database = {
         }
         Relationships: []
       }
+      life_goals: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          sort_order: number
+          text: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          sort_order?: number
+          text: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          sort_order?: number
+          text?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           age: number
