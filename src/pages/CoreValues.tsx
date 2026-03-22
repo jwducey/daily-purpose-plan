@@ -232,16 +232,12 @@ const CoreValues = () => {
   }, [colorPickerOpen]);
 
   const updateValueColor = (value: string, color: string) => {
-    const updated = { ...valuesColors, [value]: color };
-    setValuesColors(updated);
-    localStorage.setItem('core-values-colors', JSON.stringify(updated));
+    updateColor(value, color);
     setColorPickerOpen(null);
   };
 
   useEffect(() => {
     const load = async () => {
-      const savedColors = localStorage.getItem('core-values-colors');
-      if (savedColors) setValuesColors(JSON.parse(savedColors));
       if (!user) {
         const saved = localStorage.getItem('core-values-shortlist');
         const savedCustom = localStorage.getItem('core-values-custom');
@@ -1341,7 +1337,7 @@ const CoreValues = () => {
                         setSelectedValues([]);
                         setCustomValues({});
                         setValuesStatements({});
-                        setValuesColors({});
+                        resetValuesColors();
                         setCompletedSteps([]);
                         setCurrentStep(1);
                         setJourneyComplete(false);
