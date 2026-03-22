@@ -344,6 +344,7 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
   const handleMoveStart = (e: React.MouseEvent, event: CalendarEvent, currentTop: number, dateIndex: number) => {
     e.preventDefault();
     e.stopPropagation();
+    didDrag.current = false;
     setMovingEvent(event);
     moveStartY.current = e.clientY;
     moveStartTop.current = currentTop;
