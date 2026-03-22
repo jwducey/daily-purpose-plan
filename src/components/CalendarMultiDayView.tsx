@@ -35,6 +35,7 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
   const [movePreview, setMovePreview] = useState<{ top: number; dateIndex: number } | null>(null);
   const moveStartY = useRef(0);
   const moveStartTop = useRef(0);
+  const didDrag = useRef(false);
   const moveStartDateIndex = useRef(0);
 
   // --- Event resize state ---
