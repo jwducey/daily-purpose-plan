@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { CoreValuesAssessment } from '@/components/CoreValuesAssessment';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { useCoreValuesColors } from '@/hooks/useCoreValuesColors';
 
 const CORE_VALUES_BY_CATEGORY: Record<string, string[]> = {
   'Integrity': [
@@ -213,7 +214,7 @@ const CoreValues = () => {
   const [dragOverGroupId, setDragOverGroupId] = useState<string | null>(null);
   const [dropPosition, setDropPosition] = useState<{ groupId: string; index: number } | null>(null);
   const [valuesStatements, setValuesStatements] = useState<Record<string, string>>({});
-  const [valuesColors, setValuesColors] = useState<Record<string, string>>({});
+  const { valuesColors, updateColor, resetColors: resetValuesColors } = useCoreValuesColors(user?.id);
   const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null);
   const [draggedRankValue, setDraggedRankValue] = useState<string | null>(null);
   const [dragOverRankIdx, setDragOverRankIdx] = useState<number | null>(null);
