@@ -207,6 +207,7 @@ const CoreValues = () => {
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [newValueText, setNewValueText] = useState('');
   const [loaded, setLoaded] = useState(false);
+  const initialLoadDone = useRef(false);
   const [beginnerReady, setBeginnerReady] = useState(false);
   // Theme groups for Step 3: each group is an ordered array of values (first = definer)
   const [themeGroups, setThemeGroups] = useState<{ id: string; color: string; values: string[] }[] | null>(null);
