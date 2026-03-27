@@ -331,6 +331,11 @@ const CoreValues = () => {
 
   useEffect(() => {
     if (!loaded) return;
+    // Skip the first render after load to prevent overwriting DB data with initial empty state
+    if (!initialLoadDone.current) {
+      initialLoadDone.current = true;
+      return;
+    }
     const timeout = setTimeout(() => saveToDb(selectedValues, customValues, valuesStatements), 500);
     return () => clearTimeout(timeout);
   }, [selectedValues, customValues, valuesStatements, loaded, saveToDb]);
