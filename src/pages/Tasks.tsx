@@ -165,7 +165,13 @@ export default function Tasks() {
                   </TabsList>
 
                   <TabsContent value={filter} className="mt-0">
-                    <div className="space-y-2 mb-4">
+                    {filter !== 'completed' && (
+                      <div className="mb-4">
+                        <AddTaskForm onAdd={createTask} />
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
                       {filteredTasks.length === 0 ? (
                         <div className="text-center py-12">
                           <div className="p-4 rounded-full bg-muted inline-block mb-4">
@@ -212,11 +218,6 @@ export default function Tasks() {
                         ))
                       )}
                     </div>
-
-                    {filter !== 'completed' && (
-                      <AddTaskForm onAdd={createTask} />
-                    )}
-
                   </TabsContent>
                 </Tabs>
               )}
