@@ -1302,7 +1302,6 @@ const CoreValues = () => {
                         </div>
                         <div className="min-w-0 flex-1">
                           <span className="text-base font-bold text-foreground">{v}</span>
-                          {vc && <span className="inline-block w-2 h-2 rounded-full ml-1.5 align-middle" style={{ backgroundColor: vc }} />}
                           {valuesStatements[v] ? (
                             <p className="text-sm mt-1 text-foreground/80 leading-relaxed">"{valuesStatements[v]}"</p>
                           ) : (
