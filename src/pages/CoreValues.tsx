@@ -1301,9 +1301,10 @@ const CoreValues = () => {
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <span className="text-sm font-semibold" style={{ color: vc || 'hsl(var(--foreground))' }}>{v}</span>
+                          <span className="text-base font-bold text-foreground">{v}</span>
+                          {vc && <span className="inline-block w-2 h-2 rounded-full ml-1.5 align-middle" style={{ backgroundColor: vc }} />}
                           {valuesStatements[v] ? (
-                            <p className="text-sm mt-0.5 italic truncate" style={{ color: vc ? `${vc}99` : 'hsl(var(--muted-foreground))' }}>"{valuesStatements[v]}"</p>
+                            <p className="text-sm mt-1 text-foreground/80 leading-relaxed">"{valuesStatements[v]}"</p>
                           ) : (
                             <p className="text-xs text-muted-foreground/50 mt-0.5">No statement written yet</p>
                           )}
