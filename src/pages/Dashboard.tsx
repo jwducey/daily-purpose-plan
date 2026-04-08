@@ -227,11 +227,11 @@ export default function Dashboard() {
                     const catGoals = goals.filter(g => g.categoryId === cat.id);
                     return (
                       <div key={cat.id}>
-                        <h4 className="text-sm font-medium mb-2">{cat.name}</h4>
-                        <ul className="space-y-1.5 pl-1">
+                        <h4 className="text-base font-semibold mb-2">{cat.name}</h4>
+                        <ul className="space-y-2 pl-1">
                           {catGoals.map((goal) => (
-                            <li key={goal.id} className="text-sm text-muted-foreground flex items-start gap-2">
-                              <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-life-energy shrink-0" />
+                            <li key={goal.id} className="text-base text-foreground/80 flex items-start gap-2">
+                              <span className="mt-2 h-2 w-2 rounded-full bg-life-energy shrink-0" />
                               {goal.text}
                             </li>
                           ))}
@@ -301,9 +301,9 @@ export default function Dashboard() {
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <span className="text-sm font-medium" style={{ color: valueColor || 'hsl(var(--foreground))' }}>{value}</span>
+                        <span className="text-base font-semibold" style={{ color: valueColor || 'hsl(var(--foreground))' }}>{value}</span>
                         {valuesStatements[value] && (
-                          <p className="text-xs mt-0.5 italic truncate" style={{ color: valueColor ? `${valueColor}99` : 'hsl(var(--muted-foreground))' }}>
+                          <p className="text-sm mt-1 italic leading-relaxed" style={{ color: valueColor ? `${valueColor}cc` : 'hsl(var(--muted-foreground))' }}>
                             "{valuesStatements[value]}"
                           </p>
                         )}
