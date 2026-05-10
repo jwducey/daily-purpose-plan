@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -6,88 +6,186 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Clock, Target, Sparkles, Loader2 } from 'lucide-react';
+import {
+  ArrowRight,
+  ArrowLeft,
+  Clock,
+  Target,
+  Sparkles,
+  Loader2,
+  Calendar as CalendarIcon,
+  ListTodo,
+  Layers,
+  Goal,
+  Check,
+} from 'lucide-react';
 import { toast } from 'sonner';
+import { GOOGLE_CALENDAR_COLORS } from '@/types/user';
 
 export function Onboarding() {
-  const { completeOnboarding } = useUser();
+  const { completeOnboarding, categories, updateCategory, deleteCategory, addGoal } = useUser();
   const [step, setStep] = useState(0);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isConnectingCal, setIsConnectingCal] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     age: 30,
     expectedLifespan: 80,
   });
 
-  const steps = [
-    {
-      title: 'Welcome to LifeWealth',
-      subtitle: 'Your most finite resource is time. Let\'s make every moment count.',
-      icon: Clock,
-    },
-    {
-      title: 'What should we call you?',
-      subtitle: 'We\'ll personalize your experience.',
-      icon: Sparkles,
-    },
-    {
-      title: 'How old are you?',
-      subtitle: 'This helps us calculate your life remaining.',
-      icon: Target,
-    },
-    {
-      title: 'Expected lifespan',
-      subtitle: 'Be realistic. Average is around 78-82 years.',
-      icon: Target,
-    },
-  ];
+  // Life areas selection: track which categories are "on"
+  const [enabledAreaIds, setEnabledAreaIds] = useState<Set<string>>(
+    () => new Set(categories.map(c => c.id))
+  );
 
-  const handleNext = () => {
-    if (step < steps.length - 1) {
-      setStep(step + 1);
-    } else {
-      // Calculate birth date from age
+  // Goals per category (only top areas used)
+  const [goalDrafts, setGoalDrafts] = useState<Record<string, string>>({});
+
+  // First task
+  const [firstTask, setFirstTask] = useState('');
+
+  const steps = [
+    { key: 'welcome', title: 'Welcome to LifeWealth', subtitle: "Your most finite resource is time. Let's make every moment count.", icon: Clock },
+    { key: 'name', title: 'What should we call you?', subtitle: "We'll personalize your experience.", icon: Sparkles },
+    { key: 'age', title: 'How old are you?', subtitle: 'This helps us calculate your life remaining.', icon: Target },
+    { key: 'lifespan', title: 'Expected lifespan', subtitle: 'Be realistic. Average is around 78–82 years.', icon: Target },
+    { key: 'reveal', title: 'Here is your life in weeks', subtitle: 'Every dot is a week. The filled ones are gone.', icon: Clock },
+    { key: 'areas', title: 'Pick your life areas', subtitle: 'These categories shape how you budget time. Tap to toggle.', icon: Layers },
+    { key: 'budget', title: 'Budget your week', subtitle: '168 hours total. Allocate them to what matters.', icon: Target },
+    { key: 'goals', title: 'One goal per top area', subtitle: 'A simple intention for each of your biggest priorities.', icon: Goal },
+    { key: 'gcal', title: 'Connect Google Calendar', subtitle: 'Color-code your time and sync events automatically.', icon: CalendarIcon },
+    { key: 'task', title: 'Add your first task', subtitle: 'Capture one thing you want to get done.', icon: ListTodo },
+  ] as const;
+
+  const totalSteps = steps.length;
+  const current = steps[step];
+  const StepIcon = current.icon;
+
+  const enabledAreas = useMemo(
+    () => categories.filter(c => enabledAreaIds.has(c.id)),
+    [categories, enabledAreaIds]
+  );
+
+  // Top 3 by weekly target (excluding sleep)
+  const topAreas = useMemo(() => {
+    return [...enabledAreas]
+      .filter(c => c.name.toLowerCase() !== 'sleep')
+      .sort((a, b) => b.weeklyHoursTarget - a.weeklyHoursTarget)
+      .slice(0, 3);
+  }, [enabledAreas]);
+
+  const totalBudget = useMemo(
+    () => enabledAreas.reduce((s, c) => s + c.weeklyHoursTarget, 0),
+    [enabledAreas]
+  );
+
+  const yearsRemaining = formData.expectedLifespan - formData.age;
+  const weeksRemaining = yearsRemaining * 52;
+  const weeksLived = formData.age * 52;
+  const totalWeeks = formData.expectedLifespan * 52;
+
+  const finishOnboarding = async () => {
+    setIsFinishing(true);
+    try {
+      // Remove deselected categories
+      const toRemove = categories.filter(c => !enabledAreaIds.has(c.id));
+      toRemove.forEach(c => deleteCategory(c.id));
+
+      // Save goals
+      for (const area of topAreas) {
+        const text = goalDrafts[area.id]?.trim();
+        if (text) await addGoal(area.id, text);
+      }
+
+      // Save first task
+      const taskTitle = firstTask.trim();
+      if (taskTitle) {
+        const { data: session } = await supabase.auth.getSession();
+        const uid = session.session?.user?.id;
+        if (uid) {
+          await supabase.from('tasks').insert({
+            user_id: uid,
+            title: taskTitle,
+            priority: 3,
+          });
+        }
+      }
+
+      // Complete profile
       const today = new Date();
-      const birthYear = today.getFullYear() - formData.age;
-      const birthDate = new Date(birthYear, today.getMonth(), today.getDate());
-      
-      completeOnboarding({
+      const birthDate = new Date(today.getFullYear() - formData.age, today.getMonth(), today.getDate());
+      await completeOnboarding({
         name: formData.name,
         age: formData.age,
         expectedLifespan: formData.expectedLifespan,
         birthDate,
       });
+    } catch (e) {
+      console.error(e);
+      toast.error('Something went wrong finishing onboarding.');
+    } finally {
+      setIsFinishing(false);
     }
   };
 
+  const handleNext = () => {
+    if (step < totalSteps - 1) {
+      setStep(step + 1);
+    } else {
+      finishOnboarding();
+    }
+  };
+
+  const handleBack = () => {
+    if (step > 0) setStep(step - 1);
+  };
+
   const canProceed = () => {
-    if (step === 1) return formData.name.trim().length > 0;
+    if (current.key === 'name') return formData.name.trim().length > 0;
+    if (current.key === 'areas') return enabledAreaIds.size > 0;
     return true;
   };
 
-  const StepIcon = steps[step].icon;
+  const connectGoogleCalendar = async () => {
+    setIsConnectingCal(true);
+    try {
+      const redirectUri = `${window.location.origin}/settings?google_callback=true`;
+      const { data, error } = await supabase.functions.invoke('google-auth-url', {
+        body: { redirectUri },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        localStorage.setItem('google_oauth_pending', 'true');
+        window.location.href = data.url;
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to start Google Calendar connection.');
+      setIsConnectingCal(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-b from-background to-muted/30">
-      <motion.div 
-        className="w-full max-w-md"
+      <motion.div
+        className="w-full max-w-lg"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         {/* Progress dots */}
-        <div className="flex justify-center gap-2 mb-12">
+        <div className="flex justify-center gap-1.5 mb-10">
           {steps.map((_, index) => (
-            <motion.div
+            <div
               key={index}
               className={`h-1.5 rounded-full transition-all duration-300 ${
-                index === step 
-                  ? 'w-8 bg-life-energy' 
-                  : index < step 
-                    ? 'w-1.5 bg-life-energy/50' 
-                    : 'w-1.5 bg-muted-foreground/20'
+                index === step
+                  ? 'w-6 bg-life-energy'
+                  : index < step
+                  ? 'w-1.5 bg-life-energy/50'
+                  : 'w-1.5 bg-muted-foreground/20'
               }`}
-              layoutId={`dot-${index}`}
             />
           ))}
         </div>
@@ -98,48 +196,30 @@ export function Onboarding() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-8"
+            transition={{ duration: 0.25 }}
+            className="space-y-6"
           >
-            {/* Icon */}
             <div className="flex justify-center">
               <div className="p-4 rounded-2xl bg-life-energy/10">
                 <StepIcon className="w-8 h-8 text-life-energy" />
               </div>
             </div>
 
-            {/* Content */}
-            <div className="text-center space-y-3">
-              <h1 className="text-3xl md:text-4xl font-serif">
-                {steps[step].title}
-              </h1>
-              <p className="text-muted-foreground">
-                {steps[step].subtitle}
-              </p>
+            <div className="text-center space-y-2">
+              <h1 className="text-3xl md:text-4xl font-serif">{current.title}</h1>
+              <p className="text-muted-foreground">{current.subtitle}</p>
             </div>
 
-            {/* Step-specific content */}
-            <div className="pt-4">
-              {step === 0 && (
+            <div className="pt-2">
+              {current.key === 'welcome' && (
                 <div className="space-y-6 text-center">
                   <p className="text-muted-foreground leading-relaxed">
-                    Money can be earned back. Time cannot. LifeWealth helps you invest 
-                    your life energy in what truly matters to you.
+                    Money can be earned back. Time cannot. LifeWealth helps you invest your life energy in what truly matters.
                   </p>
-                  <div className="flex justify-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-life-energy" />
-                      Budget your time
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-growth" />
-                      Track alignment
-                    </span>
-                  </div>
                 </div>
               )}
 
-              {step === 1 && (
+              {current.key === 'name' && (
                 <div className="space-y-4">
                   <Label htmlFor="name" className="sr-only">Your name</Label>
                   <Input
@@ -153,12 +233,10 @@ export function Onboarding() {
                 </div>
               )}
 
-              {step === 2 && (
+              {current.key === 'age' && (
                 <div className="space-y-6">
                   <div className="text-center">
-                    <span className="text-6xl font-serif text-life-energy">
-                      {formData.age}
-                    </span>
+                    <span className="text-6xl font-serif text-life-energy">{formData.age}</span>
                     <span className="text-2xl text-muted-foreground ml-2">years old</span>
                   </div>
                   <Slider
@@ -166,18 +244,15 @@ export function Onboarding() {
                     min={18}
                     max={100}
                     step={1}
-                    onValueChange={(values) => setFormData({ ...formData, age: values[0] })}
-                    className="pt-4"
+                    onValueChange={(v) => setFormData({ ...formData, age: v[0] })}
                   />
                 </div>
               )}
 
-              {step === 3 && (
+              {current.key === 'lifespan' && (
                 <div className="space-y-6">
                   <div className="text-center">
-                    <span className="text-6xl font-serif text-life-energy">
-                      {formData.expectedLifespan}
-                    </span>
+                    <span className="text-6xl font-serif text-life-energy">{formData.expectedLifespan}</span>
                     <span className="text-2xl text-muted-foreground ml-2">years</span>
                   </div>
                   <Slider
@@ -185,13 +260,176 @@ export function Onboarding() {
                     min={formData.age + 1}
                     max={120}
                     step={1}
-                    onValueChange={(values) => setFormData({ ...formData, expectedLifespan: values[0] })}
-                    className="pt-4"
+                    onValueChange={(v) => setFormData({ ...formData, expectedLifespan: v[0] })}
                   />
                   <p className="text-center text-sm text-muted-foreground">
-                    That's <span className="font-semibold text-foreground">
-                      {formData.expectedLifespan - formData.age} years
-                    </span> of life remaining
+                    That's <span className="font-semibold text-foreground">{yearsRemaining} years</span> of life remaining
+                  </p>
+                </div>
+              )}
+
+              {current.key === 'reveal' && (
+                <div className="space-y-4">
+                  <div
+                    className="grid gap-[2px] mx-auto"
+                    style={{ gridTemplateColumns: 'repeat(52, minmax(0, 1fr))', maxWidth: 480 }}
+                  >
+                    {Array.from({ length: totalWeeks }).map((_, i) => (
+                      <div
+                        key={i}
+                        className={`aspect-square rounded-[1px] ${
+                          i < weeksLived ? 'bg-life-energy/70' : 'bg-muted-foreground/15'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <div className="text-center space-y-1">
+                    <p className="text-2xl font-serif">{weeksRemaining.toLocaleString()} weeks left</p>
+                    <p className="text-sm text-muted-foreground">Let's make them count.</p>
+                  </div>
+                </div>
+              )}
+
+              {current.key === 'areas' && (
+                <div className="grid grid-cols-2 gap-2">
+                  {categories.map(cat => {
+                    const enabled = enabledAreaIds.has(cat.id);
+                    const hex = GOOGLE_CALENDAR_COLORS[cat.googleColorId]?.hex || '#888';
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => {
+                          setEnabledAreaIds(prev => {
+                            const next = new Set(prev);
+                            if (next.has(cat.id)) next.delete(cat.id);
+                            else next.add(cat.id);
+                            return next;
+                          });
+                        }}
+                        className={`relative flex items-center gap-2 p-3 rounded-xl border text-left transition ${
+                          enabled
+                            ? 'border-life-energy bg-life-energy/5'
+                            : 'border-border bg-muted/20 opacity-60 hover:opacity-100'
+                        }`}
+                      >
+                        <span
+                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: hex }}
+                        />
+                        <span className="text-sm font-medium truncate">{cat.name}</span>
+                        {enabled && (
+                          <Check className="w-4 h-4 ml-auto text-life-energy flex-shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {current.key === 'budget' && (
+                <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
+                  {enabledAreas.map(cat => {
+                    const hex = GOOGLE_CALENDAR_COLORS[cat.googleColorId]?.hex || '#888';
+                    return (
+                      <div key={cat.id} className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: hex }} />
+                            <span className="text-sm font-medium">{cat.name}</span>
+                          </div>
+                          <span className="text-sm tabular-nums text-muted-foreground">
+                            {cat.weeklyHoursTarget}h
+                          </span>
+                        </div>
+                        <Slider
+                          value={[cat.weeklyHoursTarget]}
+                          min={0}
+                          max={80}
+                          step={1}
+                          onValueChange={(v) => updateCategory(cat.id, { weeklyHoursTarget: v[0] })}
+                        />
+                      </div>
+                    );
+                  })}
+                  <div className="flex justify-between text-sm pt-2 border-t">
+                    <span className="text-muted-foreground">Allocated</span>
+                    <span
+                      className={`tabular-nums font-medium ${
+                        totalBudget > 168 ? 'text-destructive' : 'text-foreground'
+                      }`}
+                    >
+                      {totalBudget} / 168 hours
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {current.key === 'goals' && (
+                <div className="space-y-3">
+                  {topAreas.length === 0 ? (
+                    <p className="text-center text-sm text-muted-foreground">
+                      Add at least one life area to set goals.
+                    </p>
+                  ) : (
+                    topAreas.map(area => {
+                      const hex = GOOGLE_CALENDAR_COLORS[area.googleColorId]?.hex || '#888';
+                      return (
+                        <div key={area.id} className="space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: hex }} />
+                            <Label className="text-sm font-medium">{area.name}</Label>
+                          </div>
+                          <Input
+                            placeholder={`One goal for ${area.name.toLowerCase()}…`}
+                            value={goalDrafts[area.id] || ''}
+                            onChange={(e) => setGoalDrafts({ ...goalDrafts, [area.id]: e.target.value })}
+                          />
+                        </div>
+                      );
+                    })
+                  )}
+                  <p className="text-xs text-muted-foreground text-center pt-1">
+                    You can add more goals later. Skip any you're not ready for.
+                  </p>
+                </div>
+              )}
+
+              {current.key === 'gcal' && (
+                <div className="space-y-4 text-center">
+                  <p className="text-muted-foreground leading-relaxed">
+                    Sync events so your time budget reflects reality, and color-code activities by life area.
+                  </p>
+                  <Button
+                    onClick={connectGoogleCalendar}
+                    disabled={isConnectingCal}
+                    className="w-full h-12 gap-2"
+                    variant="secondary"
+                  >
+                    {isConnectingCal ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <CalendarIcon className="w-4 h-4" />
+                    )}
+                    Connect Google Calendar
+                  </Button>
+                  <p className="text-xs text-muted-foreground">You can always connect later from Settings.</p>
+                </div>
+              )}
+
+              {current.key === 'task' && (
+                <div className="space-y-3">
+                  <Label htmlFor="task" className="sr-only">First task</Label>
+                  <Input
+                    id="task"
+                    placeholder="e.g. Plan tomorrow morning"
+                    value={firstTask}
+                    onChange={(e) => setFirstTask(e.target.value)}
+                    className="h-12"
+                    autoFocus
+                  />
+                  <p className="text-xs text-muted-foreground text-center">
+                    Optional — leave blank to skip.
                   </p>
                 </div>
               )}
@@ -200,11 +438,11 @@ export function Onboarding() {
         </AnimatePresence>
 
         {/* Navigation */}
-        <motion.div 
-          className="mt-12 space-y-3"
+        <motion.div
+          className="mt-10 space-y-3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.2 }}
         >
           {step === 0 ? (
             <>
@@ -216,9 +454,7 @@ export function Onboarding() {
                       provider: 'google',
                       options: { redirectTo: `${window.location.origin}/` },
                     });
-                    if (error) {
-                      toast.error('Google Sign-In failed: ' + error.message);
-                    }
+                    if (error) toast.error('Google Sign-In failed: ' + error.message);
                   } catch {
                     toast.error('Failed to sign in with Google.');
                   } finally {
@@ -253,15 +489,31 @@ export function Onboarding() {
               </Button>
             </>
           ) : (
-            <Button
-              onClick={handleNext}
-              disabled={!canProceed()}
-              className="w-full h-14 text-lg font-medium gap-2"
-              size="lg"
-            >
-              {step === steps.length - 1 ? 'Start My Journey' : 'Continue'}
-              <ArrowRight className="w-5 h-5" />
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleBack}
+                variant="ghost"
+                size="lg"
+                className="h-14"
+                disabled={isFinishing}
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <Button
+                onClick={handleNext}
+                disabled={!canProceed() || isFinishing}
+                className="flex-1 h-14 text-lg font-medium gap-2"
+                size="lg"
+              >
+                {isFinishing ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : step === totalSteps - 1 ? (
+                  <>Start My Journey<ArrowRight className="w-5 h-5" /></>
+                ) : (
+                  <>Continue<ArrowRight className="w-5 h-5" /></>
+                )}
+              </Button>
+            </div>
           )}
         </motion.div>
       </motion.div>
