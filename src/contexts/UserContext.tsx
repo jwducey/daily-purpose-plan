@@ -184,6 +184,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             onboardingComplete: true,
           });
 
+          // Load categories from DB if present
+          const dbCategories = (profile as any).categories;
+          if (Array.isArray(dbCategories) && dbCategories.length > 0) {
+            setCategories(dbCategories as TimeBudgetCategory[]);
+          } else {
+            // Migrate localStorage categories to DB
+            const savedCategories = localStorage.getItem('lifewealth_categories');
+            if (savedCategories) {
+              const parsed = JSON.parse(savedCategories) as TimeBudgetCategory[];
+              if (parsed.length > 0) {
+                setCategories(parsed);
+                await supabase.from('profiles').update({ categories: parsed as any }).eq('user_id', session.user.id);
+              }
+            }
+          }
+          categoriesLoadedFromDB.current = true;
+
           // Load goals from DB
           const dbGoals = await loadGoalsFromDB(session.user.id);
           if (dbGoals && dbGoals.length > 0) {
