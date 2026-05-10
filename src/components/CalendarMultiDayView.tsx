@@ -243,22 +243,24 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
     }));
   };
 
-  const extractLifeAreaFromDescription = (description?: string) => {
-    if (!description) return null;
+  const extractLifeAreasFromDescription = (description?: string): string[] => {
+    if (!description) return [];
     const lifeAreaMatch = description.match(/Life Area:\s*([^\n\r]+)/i);
-    if (lifeAreaMatch?.[1]) return lifeAreaMatch[1].trim();
+    if (lifeAreaMatch?.[1]) {
+      return lifeAreaMatch[1].split(',').map(s => s.trim()).filter(Boolean);
+    }
     const dailyReviewMatch = description.match(/Daily Review Activity\s*-\s*([^\n\r(]+)/i);
-    if (dailyReviewMatch?.[1]) return dailyReviewMatch[1].trim();
-    return null;
+    if (dailyReviewMatch?.[1]) return [dailyReviewMatch[1].trim()];
+    return [];
   };
 
   const getEventColor = (event: CalendarEvent) => {
     if (event.colorId && GOOGLE_CALENDAR_COLORS[event.colorId]) {
       return { backgroundColor: GOOGLE_CALENDAR_COLORS[event.colorId].hex };
     }
-    const inferred = extractLifeAreaFromDescription(event.description) || event.summary;
-    if (inferred) {
-      const byName = categories.find(cat => cat.name.toLowerCase() === inferred.toLowerCase());
+    const candidates = [...extractLifeAreasFromDescription(event.description), event.summary].filter(Boolean) as string[];
+    for (const candidate of candidates) {
+      const byName = categories.find(cat => cat.name.toLowerCase() === candidate.toLowerCase());
       if (byName && GOOGLE_CALENDAR_COLORS[byName.googleColorId]) {
         return { backgroundColor: GOOGLE_CALENDAR_COLORS[byName.googleColorId].hex };
       }
