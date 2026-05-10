@@ -315,6 +315,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (categories.length > 0) {
       localStorage.setItem('lifewealth_categories', JSON.stringify(categories));
+      // Persist to DB if authenticated and initial load is done
+      if (categoriesLoadedFromDB.current) {
+        (async () => {
+          const { data } = await supabase.auth.getSession();
+          const uid = data.session?.user?.id;
+          if (uid) {
+            await supabase.from('profiles').update({ categories: categories as any }).eq('user_id', uid);
+          }
+        })();
+      }
     }
   }, [categories]);
 
