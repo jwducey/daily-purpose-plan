@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { UserProfile, TimeBudgetCategory, DEFAULT_CATEGORIES } from '@/types/user';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -79,8 +79,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [dailyReviewTime, setDailyReviewTimeState] = useState<string | null>(null);
   const [dailyReviewCompletedToday, setDailyReviewCompletedToday] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
-
+  const categoriesLoadedFromDB = useRef(false);
   // Load goals from database
   const loadGoalsFromDB = async (userId: string) => {
     const { data, error } = await supabase
@@ -184,6 +183,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             lastLogin: new Date(),
             onboardingComplete: true,
           });
+
+          // Load categories from DB if present
+          const dbCategories = (profile as any).categories;
+          if (Array.isArray(dbCategories) && dbCategories.length > 0) {
+            setCategories(dbCategories as TimeBudgetCategory[]);
+          } else {
+            // Migrate localStorage categories to DB
+            const savedCategories = localStorage.getItem('lifewealth_categories');
+            if (savedCategories) {
+              const parsed = JSON.parse(savedCategories) as TimeBudgetCategory[];
+              if (parsed.length > 0) {
+                setCategories(parsed);
+                await supabase.from('profiles').update({ categories: parsed as any }).eq('user_id', session.user.id);
+              }
+            }
+          }
+          categoriesLoadedFromDB.current = true;
 
           // Load goals from DB
           const dbGoals = await loadGoalsFromDB(session.user.id);
@@ -299,6 +315,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (categories.length > 0) {
       localStorage.setItem('lifewealth_categories', JSON.stringify(categories));
+      // Persist to DB if authenticated and initial load is done
+      if (categoriesLoadedFromDB.current) {
+        (async () => {
+          const { data } = await supabase.auth.getSession();
+          const uid = data.session?.user?.id;
+          if (uid) {
+            await supabase.from('profiles').update({ categories: categories as any }).eq('user_id', uid);
+          }
+        })();
+      }
     }
   }, [categories]);
 
