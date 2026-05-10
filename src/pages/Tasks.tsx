@@ -59,7 +59,8 @@ export default function Tasks() {
         filtered = unscheduledTasks.filter(t => t.completed);
         break;
       case 'recurring':
-        filtered = unscheduledTasks.filter(t => !t.completed && t.is_recurring);
+        // Recurring tasks persist in this list regardless of scheduled_at
+        filtered = tasks.filter(t => !t.completed && t.is_recurring);
         break;
       default:
         filtered = unscheduledTasks.filter(t => !t.completed);
