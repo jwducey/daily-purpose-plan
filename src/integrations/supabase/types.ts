@@ -281,6 +281,7 @@ export type Database = {
         Row: {
           age: number
           birth_date: string | null
+          categories: Json
           created_at: string
           expected_lifespan: number
           id: string
@@ -292,6 +293,7 @@ export type Database = {
         Insert: {
           age?: number
           birth_date?: string | null
+          categories?: Json
           created_at?: string
           expected_lifespan?: number
           id?: string
@@ -303,6 +305,7 @@ export type Database = {
         Update: {
           age?: number
           birth_date?: string | null
+          categories?: Json
           created_at?: string
           expected_lifespan?: number
           id?: string
