@@ -58,6 +58,7 @@ const VIEW_OPTIONS = [
 
 export default function Calendar() {
   const { user } = useAuth();
+  const { categories } = useUser();
   const { events, isConnected, isLoading, fetchEvents } = useGoogleCalendar();
   const { tasks, createTask, updateTask, deleteTask } = useTasks();
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -218,12 +219,20 @@ export default function Calendar() {
         `Priority: ${{ 1: 'Urgent', 2: 'High', 3: 'Medium', 4: 'Low' }[task.priority] || 'Normal'}`,
       ].filter(Boolean).join('\n');
 
+      // Determine colorId from first matching life area's category
+      const primaryArea = areas[0];
+      const matchedCategory = primaryArea
+        ? categories.find(c => c.name.toLowerCase() === primaryArea.toLowerCase())
+        : null;
+      const colorId = matchedCategory?.googleColorId;
+
       const { data, error } = await supabase.functions.invoke('google-calendar-create-event', {
         body: {
           summary: task.title,
           description,
           start: startTime.toISOString(),
           end: endTime.toISOString(),
+          colorId,
         },
       });
 
