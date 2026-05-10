@@ -58,6 +58,7 @@ const VIEW_OPTIONS = [
 
 export default function Calendar() {
   const { user } = useAuth();
+  const { categories } = useUser();
   const { events, isConnected, isLoading, fetchEvents } = useGoogleCalendar();
   const { tasks, createTask, updateTask, deleteTask } = useTasks();
   const [selectedDate, setSelectedDate] = useState(new Date());
