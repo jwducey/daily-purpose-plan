@@ -79,8 +79,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [dailyReviewTime, setDailyReviewTimeState] = useState<string | null>(null);
   const [dailyReviewCompletedToday, setDailyReviewCompletedToday] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
-
+  const categoriesLoadedFromDB = useRef(false);
   // Load goals from database
   const loadGoalsFromDB = async (userId: string) => {
     const { data, error } = await supabase
