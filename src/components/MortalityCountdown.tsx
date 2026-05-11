@@ -76,11 +76,8 @@ export function MortalityCountdown({ birthDate, expectedLifespan }: MortalityCou
       </div>
 
       {/* Life remaining grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-        <CountdownUnit value={lifeRemaining.years} label="Years" isLarge delay={0.1} />
-        <CountdownUnit value={lifeRemaining.months} label="Months" delay={0.15} />
-        <CountdownUnit value={lifeRemaining.weeks} label="Weeks" delay={0.2} />
-        <CountdownUnit value={lifeRemaining.days} label="Days" delay={0.25} />
+      <div className="flex justify-center">
+        <CountdownUnit value={lifeRemaining.days} label="Days" isLarge delay={0.1} />
       </div>
 
       {/* Seconds ticker - more subtle */}
