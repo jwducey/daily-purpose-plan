@@ -207,6 +207,11 @@ export function HabitTracker() {
         <AnimatePresence>
           {habits.map((habit, index) => {
             const streak = getStreak(habit.id);
+            const daysSince = getDaysSinceLast(habit.id);
+            const todayStr = format(today, 'yyyy-MM-dd');
+            const completedToday = isCompletedOn(habit.id, todayStr);
+            const negativeStreak = streak === 0 && daysSince !== null && daysSince > 0 ? -daysSince : 0;
+            const showEncouragement = !!habit.importance_reason && !completedToday && (daysSince === null || daysSince >= 1);
             const isEditing = editingId === habit.id;
 
             return (
