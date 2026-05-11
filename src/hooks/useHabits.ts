@@ -89,7 +89,7 @@ export function useHabits() {
     await fetchHabits();
   };
 
-  const updateHabit = async (habitId: string, updates: { name?: string; icon?: string; color?: string }) => {
+  const updateHabit = async (habitId: string, updates: { name?: string; icon?: string; color?: string; importance_reason?: string | null; importance_set_at?: string | null }) => {
     const { error } = await supabase.from('habits').update(updates).eq('id', habitId);
     if (error) {
       toast({ title: 'Error updating habit', variant: 'destructive' });
