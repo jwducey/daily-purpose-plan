@@ -12,6 +12,8 @@ export interface Habit {
   sort_order: number;
   archived: boolean;
   created_at: string;
+  importance_reason?: string | null;
+  importance_set_at?: string | null;
 }
 
 export interface HabitCompletion {
