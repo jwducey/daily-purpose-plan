@@ -35,9 +35,47 @@ export function HabitTracker() {
   const [editName, setEditName] = useState('');
   const [editIcon, setEditIcon] = useState('');
   const [editColor, setEditColor] = useState('');
+  const [importancePromptHabitId, setImportancePromptHabitId] = useState<string | null>(null);
+  const [importanceText, setImportanceText] = useState('');
+  const [dismissedPrompts, setDismissedPrompts] = useState<Set<string>>(new Set());
 
   const today = new Date();
   const days = Array.from({ length: DAYS_TO_SHOW }, (_, i) => subDays(today, DAYS_TO_SHOW - 1 - i));
+
+  // Auto-trigger importance prompt when a habit hits 7+ missed days and has no reason yet
+  useEffect(() => {
+    if (loading || importancePromptHabitId) return;
+    for (const habit of habits) {
+      if (habit.importance_reason) continue;
+      if (dismissedPrompts.has(habit.id)) continue;
+      const days = getDaysSinceLast(habit.id);
+      if (days !== null && days >= 7) {
+        setImportancePromptHabitId(habit.id);
+        setImportanceText('');
+        break;
+      }
+    }
+  }, [habits, loading, importancePromptHabitId, dismissedPrompts, getDaysSinceLast]);
+
+  const promptedHabit = habits.find(h => h.id === importancePromptHabitId);
+
+  const saveImportance = async () => {
+    if (!importancePromptHabitId || !importanceText.trim()) return;
+    await updateHabit(importancePromptHabitId, {
+      importance_reason: importanceText.trim(),
+      importance_set_at: new Date().toISOString(),
+    });
+    setImportancePromptHabitId(null);
+    setImportanceText('');
+  };
+
+  const dismissImportance = () => {
+    if (importancePromptHabitId) {
+      setDismissedPrompts(prev => new Set(prev).add(importancePromptHabitId));
+    }
+    setImportancePromptHabitId(null);
+    setImportanceText('');
+  };
 
   const handleAdd = async () => {
     if (!newName.trim()) return;
