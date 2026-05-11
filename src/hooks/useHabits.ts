@@ -161,6 +161,17 @@ export function useHabits() {
     return completions.some(c => c.habit_id === habitId && c.completion_date === date && c.completed);
   };
 
+  // Returns days since last completion. 0 = today, 1 = yesterday, etc. null = never completed.
+  const getDaysSinceLast = (habitId: string): number | null => {
+    const dates = completions
+      .filter(c => c.habit_id === habitId && c.completed)
+      .map(c => c.completion_date)
+      .sort()
+      .reverse();
+    if (dates.length === 0) return null;
+    return differenceInCalendarDays(new Date(), new Date(dates[0]));
+  };
+
   return {
     habits,
     loading,
@@ -169,6 +180,7 @@ export function useHabits() {
     deleteHabit,
     toggleCompletion,
     getStreak,
+    getDaysSinceLast,
     isCompletedOn,
   };
 }
