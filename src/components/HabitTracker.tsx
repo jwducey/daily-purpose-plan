@@ -1,12 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useHabits } from '@/hooks/useHabits';
 import { format, subDays } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Flame, Trash2, X, Pencil, Check } from 'lucide-react';
+import { Plus, Flame, Trash2, X, Pencil, Check, Heart, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { EmojiPicker } from '@/components/EmojiPicker';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 
 const COLOR_OPTIONS = [
@@ -17,7 +26,7 @@ const COLOR_OPTIONS = [
 const DAYS_TO_SHOW = 7;
 
 export function HabitTracker() {
-  const { habits, loading, addHabit, updateHabit, deleteHabit, toggleCompletion, getStreak, isCompletedOn } = useHabits();
+  const { habits, loading, addHabit, updateHabit, deleteHabit, toggleCompletion, getStreak, getDaysSinceLast, isCompletedOn } = useHabits();
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState('');
   const [newIcon, setNewIcon] = useState('✅');
