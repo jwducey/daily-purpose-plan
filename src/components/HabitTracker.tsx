@@ -374,6 +374,32 @@ export function HabitTracker() {
           </Button>
         </motion.div>
       )}
+
+      {/* 7-day miss prompt */}
+      <Dialog open={!!promptedHabit} onOpenChange={open => !open && dismissImportance()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="text-2xl">{promptedHabit?.icon}</span>
+              Why is "{promptedHabit?.name}" important to you?
+            </DialogTitle>
+            <DialogDescription>
+              You haven't checked this off in 7+ days. Take a moment to reconnect with your "why" — we'll surface it the next time you're at risk of breaking your streak.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={importanceText}
+            onChange={e => setImportanceText(e.target.value)}
+            placeholder="e.g. It keeps me grounded and energized for my family..."
+            rows={4}
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={dismissImportance}>Not now</Button>
+            <Button onClick={saveImportance} disabled={!importanceText.trim()}>Save my why</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
