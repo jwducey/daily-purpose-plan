@@ -324,11 +324,30 @@ export function HabitTracker() {
                             <Flame className="w-3.5 h-3.5" />
                             <span className="text-xs font-bold">{streak}</span>
                           </motion.div>
+                        ) : negativeStreak < 0 ? (
+                          <motion.div
+                            key={negativeStreak}
+                            initial={{ scale: 0.5 }}
+                            animate={{ scale: 1 }}
+                            className="flex items-center gap-1 px-2 py-1 rounded-full bg-destructive/10 text-destructive"
+                            title={`${Math.abs(negativeStreak)} day${Math.abs(negativeStreak) === 1 ? '' : 's'} since last completion`}
+                          >
+                            <AlertCircle className="w-3.5 h-3.5" />
+                            <span className="text-xs font-bold">{negativeStreak}</span>
+                          </motion.div>
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </div>
                     </div>
+                    {showEncouragement && (
+                      <div className="mt-2 flex items-start gap-2 rounded-md bg-primary/5 border border-primary/20 px-3 py-2">
+                        <Heart className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
+                        <p className="text-xs text-foreground/80 italic leading-relaxed">
+                          Remember why this matters: <span className="text-foreground not-italic">"{habit.importance_reason}"</span>
+                        </p>
+                      </div>
+                    )}
                   </Card>
                 )}
               </motion.div>
