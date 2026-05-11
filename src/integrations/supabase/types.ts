@@ -218,6 +218,8 @@ export type Database = {
           created_at: string
           icon: string | null
           id: string
+          importance_reason: string | null
+          importance_set_at: string | null
           name: string
           sort_order: number | null
           updated_at: string
@@ -229,6 +231,8 @@ export type Database = {
           created_at?: string
           icon?: string | null
           id?: string
+          importance_reason?: string | null
+          importance_set_at?: string | null
           name: string
           sort_order?: number | null
           updated_at?: string
@@ -240,6 +244,8 @@ export type Database = {
           created_at?: string
           icon?: string | null
           id?: string
+          importance_reason?: string | null
+          importance_set_at?: string | null
           name?: string
           sort_order?: number | null
           updated_at?: string

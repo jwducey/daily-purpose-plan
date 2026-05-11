@@ -1,0 +1,1 @@
+ALTER TABLE public.habits ADD COLUMN IF NOT EXISTS importance_reason text, ADD COLUMN IF NOT EXISTS importance_set_at timestamptz;

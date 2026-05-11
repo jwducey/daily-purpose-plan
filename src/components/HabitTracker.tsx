@@ -1,12 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useHabits } from '@/hooks/useHabits';
 import { format, subDays } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Flame, Trash2, X, Pencil, Check } from 'lucide-react';
+import { Plus, Flame, Trash2, X, Pencil, Check, Heart, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { EmojiPicker } from '@/components/EmojiPicker';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 
 const COLOR_OPTIONS = [
@@ -17,7 +26,7 @@ const COLOR_OPTIONS = [
 const DAYS_TO_SHOW = 7;
 
 export function HabitTracker() {
-  const { habits, loading, addHabit, updateHabit, deleteHabit, toggleCompletion, getStreak, isCompletedOn } = useHabits();
+  const { habits, loading, addHabit, updateHabit, deleteHabit, toggleCompletion, getStreak, getDaysSinceLast, isCompletedOn } = useHabits();
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState('');
   const [newIcon, setNewIcon] = useState('✅');
@@ -26,9 +35,47 @@ export function HabitTracker() {
   const [editName, setEditName] = useState('');
   const [editIcon, setEditIcon] = useState('');
   const [editColor, setEditColor] = useState('');
+  const [importancePromptHabitId, setImportancePromptHabitId] = useState<string | null>(null);
+  const [importanceText, setImportanceText] = useState('');
+  const [dismissedPrompts, setDismissedPrompts] = useState<Set<string>>(new Set());
 
   const today = new Date();
   const days = Array.from({ length: DAYS_TO_SHOW }, (_, i) => subDays(today, DAYS_TO_SHOW - 1 - i));
+
+  // Auto-trigger importance prompt when a habit hits 7+ missed days and has no reason yet
+  useEffect(() => {
+    if (loading || importancePromptHabitId) return;
+    for (const habit of habits) {
+      if (habit.importance_reason) continue;
+      if (dismissedPrompts.has(habit.id)) continue;
+      const days = getDaysSinceLast(habit.id);
+      if (days !== null && days >= 7) {
+        setImportancePromptHabitId(habit.id);
+        setImportanceText('');
+        break;
+      }
+    }
+  }, [habits, loading, importancePromptHabitId, dismissedPrompts, getDaysSinceLast]);
+
+  const promptedHabit = habits.find(h => h.id === importancePromptHabitId);
+
+  const saveImportance = async () => {
+    if (!importancePromptHabitId || !importanceText.trim()) return;
+    await updateHabit(importancePromptHabitId, {
+      importance_reason: importanceText.trim(),
+      importance_set_at: new Date().toISOString(),
+    });
+    setImportancePromptHabitId(null);
+    setImportanceText('');
+  };
+
+  const dismissImportance = () => {
+    if (importancePromptHabitId) {
+      setDismissedPrompts(prev => new Set(prev).add(importancePromptHabitId));
+    }
+    setImportancePromptHabitId(null);
+    setImportanceText('');
+  };
 
   const handleAdd = async () => {
     if (!newName.trim()) return;
@@ -160,6 +207,11 @@ export function HabitTracker() {
         <AnimatePresence>
           {habits.map((habit, index) => {
             const streak = getStreak(habit.id);
+            const daysSince = getDaysSinceLast(habit.id);
+            const todayStr = format(today, 'yyyy-MM-dd');
+            const completedToday = isCompletedOn(habit.id, todayStr);
+            const negativeStreak = streak === 0 && daysSince !== null && daysSince > 0 ? -daysSince : 0;
+            const showEncouragement = !!habit.importance_reason && !completedToday && (daysSince === null || daysSince >= 1);
             const isEditing = editingId === habit.id;
 
             return (
@@ -272,11 +324,30 @@ export function HabitTracker() {
                             <Flame className="w-3.5 h-3.5" />
                             <span className="text-xs font-bold">{streak}</span>
                           </motion.div>
+                        ) : negativeStreak < 0 ? (
+                          <motion.div
+                            key={negativeStreak}
+                            initial={{ scale: 0.5 }}
+                            animate={{ scale: 1 }}
+                            className="flex items-center gap-1 px-2 py-1 rounded-full bg-destructive/10 text-destructive"
+                            title={`${Math.abs(negativeStreak)} day${Math.abs(negativeStreak) === 1 ? '' : 's'} since last completion`}
+                          >
+                            <AlertCircle className="w-3.5 h-3.5" />
+                            <span className="text-xs font-bold">{negativeStreak}</span>
+                          </motion.div>
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </div>
                     </div>
+                    {showEncouragement && (
+                      <div className="mt-2 flex items-start gap-2 rounded-md bg-primary/5 border border-primary/20 px-3 py-2">
+                        <Heart className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
+                        <p className="text-xs text-foreground/80 italic leading-relaxed">
+                          Remember why this matters: <span className="text-foreground not-italic">"{habit.importance_reason}"</span>
+                        </p>
+                      </div>
+                    )}
                   </Card>
                 )}
               </motion.div>
@@ -303,6 +374,32 @@ export function HabitTracker() {
           </Button>
         </motion.div>
       )}
+
+      {/* 7-day miss prompt */}
+      <Dialog open={!!promptedHabit} onOpenChange={open => !open && dismissImportance()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="text-2xl">{promptedHabit?.icon}</span>
+              Why is "{promptedHabit?.name}" important to you?
+            </DialogTitle>
+            <DialogDescription>
+              You haven't checked this off in 7+ days. Take a moment to reconnect with your "why" — we'll surface it the next time you're at risk of breaking your streak.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={importanceText}
+            onChange={e => setImportanceText(e.target.value)}
+            placeholder="e.g. It keeps me grounded and energized for my family..."
+            rows={4}
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={dismissImportance}>Not now</Button>
+            <Button onClick={saveImportance} disabled={!importanceText.trim()}>Save my why</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
