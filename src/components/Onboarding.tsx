@@ -67,27 +67,16 @@ export function Onboarding() {
   // First task
   const [firstTask, setFirstTask] = useState('');
 
-  // Inline rename + add for life areas step
-  const [editingAreaId, setEditingAreaId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState('');
-  const [newAreaName, setNewAreaName] = useState('');
+  // Empty slots for adding new life areas
+  const EMPTY_SLOTS = 3;
+  const [activeSlot, setActiveSlot] = useState<number | null>(null);
+  const [slotName, setSlotName] = useState('');
 
-  const commitRename = (id: string) => {
-    const trimmed = editingName.trim();
-    if (trimmed) updateCategory(id, { name: trimmed });
-    setEditingAreaId(null);
-    setEditingName('');
-  };
-
-  const handleAddArea = () => {
-    const trimmed = newAreaName.trim();
-    if (!trimmed) return;
-    addCategory(trimmed);
-    setNewAreaName('');
-    // Newly added category will appear in `categories` and is enabled by default in addCategory
-    // Make sure it's marked enabled in our local set on the next render via effect-free pattern:
-    // we add a placeholder id by deferring to the next categories update through useEffect not needed —
-    // addCategory in context inserts with a fresh id and our enabledAreaIds only blocks render if absent.
+  const commitNewArea = () => {
+    const trimmed = slotName.trim();
+    if (trimmed) addCategory(trimmed);
+    setActiveSlot(null);
+    setSlotName('');
   };
 
   const steps = [
