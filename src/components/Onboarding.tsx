@@ -39,9 +39,6 @@ export function Onboarding() {
     () => new Set(categories.map(c => c.id))
   );
 
-  // Goals per category (only top areas used)
-  const [goalDrafts, setGoalDrafts] = useState<Record<string, string>>({});
-
   // First task
   const [firstTask, setFirstTask] = useState('');
 
