@@ -315,10 +315,18 @@ export function Onboarding() {
                     {categories.map(cat => {
                       const enabled = enabledAreaIds.has(cat.id);
                       const hex = GOOGLE_CALENDAR_COLORS[cat.googleColorId]?.hex || '#888';
-                      const isEditing = editingAreaId === cat.id;
                       return (
-                        <div
+                        <button
                           key={cat.id}
+                          type="button"
+                          onClick={() => {
+                            setEnabledAreaIds(prev => {
+                              const next = new Set(prev);
+                              if (next.has(cat.id)) next.delete(cat.id);
+                              else next.add(cat.id);
+                              return next;
+                            });
+                          }}
                           className={`relative flex items-center gap-2 p-3 rounded-xl border text-left transition ${
                             enabled
                               ? 'border-life-energy bg-life-energy/5'
@@ -329,66 +337,45 @@ export function Onboarding() {
                             className="w-3 h-3 rounded-full flex-shrink-0"
                             style={{ backgroundColor: hex }}
                           />
-                          {isEditing ? (
+                          <span className="text-sm font-medium truncate flex-1 min-w-0">{cat.name}</span>
+                          {enabled && <Check className="w-4 h-4 text-life-energy flex-shrink-0" />}
+                        </button>
+                      );
+                    })}
+
+                    {Array.from({ length: EMPTY_SLOTS }).map((_, i) => {
+                      const isActive = activeSlot === i;
+                      return (
+                        <div
+                          key={`slot-${i}`}
+                          className="relative flex items-center gap-2 p-3 rounded-xl border border-dashed border-border bg-transparent text-left transition hover:border-life-energy/60 hover:bg-life-energy/5"
+                        >
+                          <Pencil className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                          {isActive ? (
                             <Input
-                              value={editingName}
-                              onChange={(e) => setEditingName(e.target.value)}
-                              onBlur={() => commitRename(cat.id)}
+                              value={slotName}
+                              onChange={(e) => setSlotName(e.target.value)}
+                              onBlur={commitNewArea}
                               onKeyDown={(e) => {
-                                if (e.key === 'Enter') commitRename(cat.id);
-                                if (e.key === 'Escape') { setEditingAreaId(null); setEditingName(''); }
+                                if (e.key === 'Enter') commitNewArea();
+                                if (e.key === 'Escape') { setActiveSlot(null); setSlotName(''); }
                               }}
                               autoFocus
+                              placeholder="Name this area"
                               className="h-7 text-sm px-2"
                             />
                           ) : (
                             <button
                               type="button"
-                              onClick={() => {
-                                setEnabledAreaIds(prev => {
-                                  const next = new Set(prev);
-                                  if (next.has(cat.id)) next.delete(cat.id);
-                                  else next.add(cat.id);
-                                  return next;
-                                });
-                              }}
-                              className="flex-1 min-w-0 text-left"
+                              onClick={() => { setActiveSlot(i); setSlotName(''); }}
+                              className="flex-1 min-w-0 text-left text-sm text-muted-foreground"
                             >
-                              <span className="text-sm font-medium truncate block">{cat.name}</span>
+                              Add a life area
                             </button>
-                          )}
-                          {!isEditing && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingAreaId(cat.id);
-                                setEditingName(cat.name);
-                              }}
-                              className="text-muted-foreground hover:text-foreground flex-shrink-0"
-                              title="Rename"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                          {!isEditing && enabled && (
-                            <Check className="w-4 h-4 text-life-energy flex-shrink-0" />
                           )}
                         </div>
                       );
                     })}
-                  </div>
-                  <div className="flex gap-2 pt-1">
-                    <Input
-                      placeholder="Add a custom life area…"
-                      value={newAreaName}
-                      onChange={(e) => setNewAreaName(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') handleAddArea(); }}
-                      className="h-9 text-sm"
-                    />
-                    <Button type="button" size="sm" onClick={handleAddArea} disabled={!newAreaName.trim()}>
-                      <Plus className="w-4 h-4" />
-                    </Button>
                   </div>
                 </div>
               )}
