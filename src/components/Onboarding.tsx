@@ -16,14 +16,14 @@ import {
   Calendar as CalendarIcon,
   ListTodo,
   Layers,
-  Goal,
+  
   Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { GOOGLE_CALENDAR_COLORS } from '@/types/user';
 
 export function Onboarding() {
-  const { completeOnboarding, categories, updateCategory, deleteCategory, addGoal } = useUser();
+  const { completeOnboarding, categories, updateCategory, deleteCategory } = useUser();
   const [step, setStep] = useState(0);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isConnectingCal, setIsConnectingCal] = useState(false);
@@ -39,9 +39,6 @@ export function Onboarding() {
     () => new Set(categories.map(c => c.id))
   );
 
-  // Goals per category (only top areas used)
-  const [goalDrafts, setGoalDrafts] = useState<Record<string, string>>({});
-
   // First task
   const [firstTask, setFirstTask] = useState('');
 
@@ -52,8 +49,7 @@ export function Onboarding() {
     { key: 'lifespan', title: 'Expected lifespan', subtitle: 'Be realistic. Average is around 78–82 years.', icon: Target },
     { key: 'reveal', title: 'Here is your life in weeks', subtitle: 'Every dot is a week. The filled ones are gone.', icon: Clock },
     { key: 'areas', title: 'Pick your life areas', subtitle: 'These categories shape how you budget time. Tap to toggle.', icon: Layers },
-    { key: 'budget', title: 'Budget your week', subtitle: '168 hours total. Allocate them to what matters.', icon: Target },
-    { key: 'goals', title: 'One goal per top area', subtitle: 'A simple intention for each of your biggest priorities.', icon: Goal },
+    { key: 'budget', title: 'Budget your week', subtitle: 'Each week you have 168 hours to allocate. Use the sliders to invest your time in the areas that matter most — your biggest commitments will rise to the top.', icon: Target },
     { key: 'gcal', title: 'Connect Google Calendar', subtitle: 'Color-code your time and sync events automatically.', icon: CalendarIcon },
     { key: 'task', title: 'Add your first task', subtitle: 'Capture one thing you want to get done.', icon: ListTodo },
   ] as const;
@@ -66,14 +62,6 @@ export function Onboarding() {
     () => categories.filter(c => enabledAreaIds.has(c.id)),
     [categories, enabledAreaIds]
   );
-
-  // Top 3 by weekly target (excluding sleep)
-  const topAreas = useMemo(() => {
-    return [...enabledAreas]
-      .filter(c => c.name.toLowerCase() !== 'sleep')
-      .sort((a, b) => b.weeklyHoursTarget - a.weeklyHoursTarget)
-      .slice(0, 3);
-  }, [enabledAreas]);
 
   const totalBudget = useMemo(
     () => enabledAreas.reduce((s, c) => s + c.weeklyHoursTarget, 0),
@@ -91,12 +79,6 @@ export function Onboarding() {
       // Remove deselected categories
       const toRemove = categories.filter(c => !enabledAreaIds.has(c.id));
       toRemove.forEach(c => deleteCategory(c.id));
-
-      // Save goals
-      for (const area of topAreas) {
-        const text = goalDrafts[area.id]?.trim();
-        if (text) await addGoal(area.id, text);
-      }
 
       // Save first task
       const taskTitle = firstTask.trim();
@@ -329,7 +311,9 @@ export function Onboarding() {
 
               {current.key === 'budget' && (
                 <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
-                  {enabledAreas.map(cat => {
+                  {[...enabledAreas]
+                    .sort((a, b) => b.weeklyHoursTarget - a.weeklyHoursTarget)
+                    .map(cat => {
                     const hex = GOOGLE_CALENDAR_COLORS[cat.googleColorId]?.hex || '#888';
                     return (
                       <div key={cat.id} className="space-y-1.5">
@@ -362,36 +346,6 @@ export function Onboarding() {
                       {totalBudget} / 168 hours
                     </span>
                   </div>
-                </div>
-              )}
-
-              {current.key === 'goals' && (
-                <div className="space-y-3">
-                  {topAreas.length === 0 ? (
-                    <p className="text-center text-sm text-muted-foreground">
-                      Add at least one life area to set goals.
-                    </p>
-                  ) : (
-                    topAreas.map(area => {
-                      const hex = GOOGLE_CALENDAR_COLORS[area.googleColorId]?.hex || '#888';
-                      return (
-                        <div key={area.id} className="space-y-1.5">
-                          <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: hex }} />
-                            <Label className="text-sm font-medium">{area.name}</Label>
-                          </div>
-                          <Input
-                            placeholder={`One goal for ${area.name.toLowerCase()}…`}
-                            value={goalDrafts[area.id] || ''}
-                            onChange={(e) => setGoalDrafts({ ...goalDrafts, [area.id]: e.target.value })}
-                          />
-                        </div>
-                      );
-                    })
-                  )}
-                  <p className="text-xs text-muted-foreground text-center pt-1">
-                    You can add more goals later. Skip any you're not ready for.
-                  </p>
                 </div>
               )}
 
