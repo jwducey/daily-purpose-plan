@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
