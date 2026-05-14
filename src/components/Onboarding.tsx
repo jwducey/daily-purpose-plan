@@ -52,8 +52,7 @@ export function Onboarding() {
     { key: 'lifespan', title: 'Expected lifespan', subtitle: 'Be realistic. Average is around 78–82 years.', icon: Target },
     { key: 'reveal', title: 'Here is your life in weeks', subtitle: 'Every dot is a week. The filled ones are gone.', icon: Clock },
     { key: 'areas', title: 'Pick your life areas', subtitle: 'These categories shape how you budget time. Tap to toggle.', icon: Layers },
-    { key: 'budget', title: 'Budget your week', subtitle: '168 hours total. Allocate them to what matters.', icon: Target },
-    { key: 'goals', title: 'One goal per top area', subtitle: 'A simple intention for each of your biggest priorities.', icon: Goal },
+    { key: 'budget', title: 'Budget your week', subtitle: 'Each week you have 168 hours to allocate. Use the sliders to invest your time in the areas that matter most — your biggest commitments will rise to the top.', icon: Target },
     { key: 'gcal', title: 'Connect Google Calendar', subtitle: 'Color-code your time and sync events automatically.', icon: CalendarIcon },
     { key: 'task', title: 'Add your first task', subtitle: 'Capture one thing you want to get done.', icon: ListTodo },
   ] as const;
