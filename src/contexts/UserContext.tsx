@@ -432,12 +432,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       toast.error('A category with that name already exists');
       return;
     }
+    const palette = ['9','5','7','4','2','10','3','6','1','8','11'];
+    const usedColors = new Set(categories.map(c => c.googleColorId));
+    const nextColor = palette.find(c => !usedColors.has(c)) || palette[categories.length % palette.length];
     const newCategory: TimeBudgetCategory = {
       id: `cat_${Date.now()}`,
       name: trimmedName,
       icon: 'target',
       color: trimmedName.toLowerCase().replace(/\s+/g, '-'),
-      googleColorId: '1',
+      googleColorId: nextColor,
       weeklyHoursTarget: 2,
       weeklyHoursActual: 0,
       description: description || '',
