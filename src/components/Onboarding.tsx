@@ -63,14 +63,6 @@ export function Onboarding() {
     [categories, enabledAreaIds]
   );
 
-  // Top 3 by weekly target (excluding sleep)
-  const topAreas = useMemo(() => {
-    return [...enabledAreas]
-      .filter(c => c.name.toLowerCase() !== 'sleep')
-      .sort((a, b) => b.weeklyHoursTarget - a.weeklyHoursTarget)
-      .slice(0, 3);
-  }, [enabledAreas]);
-
   const totalBudget = useMemo(
     () => enabledAreas.reduce((s, c) => s + c.weeklyHoursTarget, 0),
     [enabledAreas]
@@ -87,12 +79,6 @@ export function Onboarding() {
       // Remove deselected categories
       const toRemove = categories.filter(c => !enabledAreaIds.has(c.id));
       toRemove.forEach(c => deleteCategory(c.id));
-
-      // Save goals
-      for (const area of topAreas) {
-        const text = goalDrafts[area.id]?.trim();
-        if (text) await addGoal(area.id, text);
-      }
 
       // Save first task
       const taskTitle = firstTask.trim();
