@@ -41,6 +41,21 @@ export function Onboarding() {
     () => new Set(categories.map(c => c.id))
   );
 
+  // Auto-enable any newly added category so it shows up in budget step
+  useEffect(() => {
+    setEnabledAreaIds(prev => {
+      const next = new Set(prev);
+      let changed = false;
+      categories.forEach(c => {
+        if (!prev.has(c.id)) {
+          next.add(c.id);
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [categories]);
+
   // First task
   const [firstTask, setFirstTask] = useState('');
 
