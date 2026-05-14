@@ -328,7 +328,9 @@ export function Onboarding() {
 
               {current.key === 'budget' && (
                 <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
-                  {enabledAreas.map(cat => {
+                  {[...enabledAreas]
+                    .sort((a, b) => b.weeklyHoursTarget - a.weeklyHoursTarget)
+                    .map(cat => {
                     const hex = GOOGLE_CALENDAR_COLORS[cat.googleColorId]?.hex || '#888';
                     return (
                       <div key={cat.id} className="space-y-1.5">
@@ -361,36 +363,6 @@ export function Onboarding() {
                       {totalBudget} / 168 hours
                     </span>
                   </div>
-                </div>
-              )}
-
-              {current.key === 'goals' && (
-                <div className="space-y-3">
-                  {topAreas.length === 0 ? (
-                    <p className="text-center text-sm text-muted-foreground">
-                      Add at least one life area to set goals.
-                    </p>
-                  ) : (
-                    topAreas.map(area => {
-                      const hex = GOOGLE_CALENDAR_COLORS[area.googleColorId]?.hex || '#888';
-                      return (
-                        <div key={area.id} className="space-y-1.5">
-                          <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: hex }} />
-                            <Label className="text-sm font-medium">{area.name}</Label>
-                          </div>
-                          <Input
-                            placeholder={`One goal for ${area.name.toLowerCase()}…`}
-                            value={goalDrafts[area.id] || ''}
-                            onChange={(e) => setGoalDrafts({ ...goalDrafts, [area.id]: e.target.value })}
-                          />
-                        </div>
-                      );
-                    })
-                  )}
-                  <p className="text-xs text-muted-foreground text-center pt-1">
-                    You can add more goals later. Skip any you're not ready for.
-                  </p>
                 </div>
               )}
 
