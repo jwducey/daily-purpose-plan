@@ -313,39 +313,86 @@ export function Onboarding() {
               )}
 
               {current.key === 'areas' && (
-                <div className="grid grid-cols-2 gap-2">
-                  {categories.map(cat => {
-                    const enabled = enabledAreaIds.has(cat.id);
-                    const hex = GOOGLE_CALENDAR_COLORS[cat.googleColorId]?.hex || '#888';
-                    return (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => {
-                          setEnabledAreaIds(prev => {
-                            const next = new Set(prev);
-                            if (next.has(cat.id)) next.delete(cat.id);
-                            else next.add(cat.id);
-                            return next;
-                          });
-                        }}
-                        className={`relative flex items-center gap-2 p-3 rounded-xl border text-left transition ${
-                          enabled
-                            ? 'border-life-energy bg-life-energy/5'
-                            : 'border-border bg-muted/20 opacity-60 hover:opacity-100'
-                        }`}
-                      >
-                        <span
-                          className="w-3 h-3 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: hex }}
-                        />
-                        <span className="text-sm font-medium truncate">{cat.name}</span>
-                        {enabled && (
-                          <Check className="w-4 h-4 ml-auto text-life-energy flex-shrink-0" />
-                        )}
-                      </button>
-                    );
-                  })}
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    {categories.map(cat => {
+                      const enabled = enabledAreaIds.has(cat.id);
+                      const hex = GOOGLE_CALENDAR_COLORS[cat.googleColorId]?.hex || '#888';
+                      const isEditing = editingAreaId === cat.id;
+                      return (
+                        <div
+                          key={cat.id}
+                          className={`relative flex items-center gap-2 p-3 rounded-xl border text-left transition ${
+                            enabled
+                              ? 'border-life-energy bg-life-energy/5'
+                              : 'border-border bg-muted/20 opacity-60 hover:opacity-100'
+                          }`}
+                        >
+                          <span
+                            className="w-3 h-3 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: hex }}
+                          />
+                          {isEditing ? (
+                            <Input
+                              value={editingName}
+                              onChange={(e) => setEditingName(e.target.value)}
+                              onBlur={() => commitRename(cat.id)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') commitRename(cat.id);
+                                if (e.key === 'Escape') { setEditingAreaId(null); setEditingName(''); }
+                              }}
+                              autoFocus
+                              className="h-7 text-sm px-2"
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEnabledAreaIds(prev => {
+                                  const next = new Set(prev);
+                                  if (next.has(cat.id)) next.delete(cat.id);
+                                  else next.add(cat.id);
+                                  return next;
+                                });
+                              }}
+                              className="flex-1 min-w-0 text-left"
+                            >
+                              <span className="text-sm font-medium truncate block">{cat.name}</span>
+                            </button>
+                          )}
+                          {!isEditing && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingAreaId(cat.id);
+                                setEditingName(cat.name);
+                              }}
+                              className="text-muted-foreground hover:text-foreground flex-shrink-0"
+                              title="Rename"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          {!isEditing && enabled && (
+                            <Check className="w-4 h-4 text-life-energy flex-shrink-0" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <Input
+                      placeholder="Add a custom life area…"
+                      value={newAreaName}
+                      onChange={(e) => setNewAreaName(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleAddArea(); }}
+                      className="h-9 text-sm"
+                    />
+                    <Button type="button" size="sm" onClick={handleAddArea} disabled={!newAreaName.trim()}>
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               )}
 
