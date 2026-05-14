@@ -55,6 +55,15 @@ export function Onboarding() {
     });
   }, [categories]);
 
+  // Remove deprecated default categories if they exist from prior sessions
+  useEffect(() => {
+    const deprecated = ['emotional', 'impact', 'legacy'];
+    categories
+      .filter(c => deprecated.includes(c.name.trim().toLowerCase()))
+      .forEach(c => deleteCategory(c.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // First task
   const [firstTask, setFirstTask] = useState('');
 
