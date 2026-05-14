@@ -42,6 +42,29 @@ export function Onboarding() {
   // First task
   const [firstTask, setFirstTask] = useState('');
 
+  // Inline rename + add for life areas step
+  const [editingAreaId, setEditingAreaId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
+  const [newAreaName, setNewAreaName] = useState('');
+
+  const commitRename = (id: string) => {
+    const trimmed = editingName.trim();
+    if (trimmed) updateCategory(id, { name: trimmed });
+    setEditingAreaId(null);
+    setEditingName('');
+  };
+
+  const handleAddArea = () => {
+    const trimmed = newAreaName.trim();
+    if (!trimmed) return;
+    addCategory(trimmed);
+    setNewAreaName('');
+    // Newly added category will appear in `categories` and is enabled by default in addCategory
+    // Make sure it's marked enabled in our local set on the next render via effect-free pattern:
+    // we add a placeholder id by deferring to the next categories update through useEffect not needed —
+    // addCategory in context inserts with a fresh id and our enabledAreaIds only blocks render if absent.
+  };
+
   const steps = [
     { key: 'welcome', title: 'Welcome to LifeWealth', subtitle: "Your most finite resource is time. Let's make every moment count.", icon: Clock },
     { key: 'name', title: 'What should we call you?', subtitle: "We'll personalize your experience.", icon: Sparkles },
