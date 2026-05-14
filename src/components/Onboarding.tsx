@@ -16,7 +16,7 @@ import {
   Calendar as CalendarIcon,
   ListTodo,
   Layers,
-  Goal,
+  
   Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
