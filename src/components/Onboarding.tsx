@@ -23,7 +23,7 @@ import { toast } from 'sonner';
 import { GOOGLE_CALENDAR_COLORS } from '@/types/user';
 
 export function Onboarding() {
-  const { completeOnboarding, categories, updateCategory, deleteCategory, addGoal } = useUser();
+  const { completeOnboarding, categories, updateCategory, deleteCategory } = useUser();
   const [step, setStep] = useState(0);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isConnectingCal, setIsConnectingCal] = useState(false);
