@@ -47,7 +47,7 @@ export const DEFAULT_CATEGORIES: Omit<TimeBudgetCategory, 'id' | 'weeklyHoursAct
   { name: 'Health and Fitness', icon: 'heart', color: 'health', googleColorId: '2', weeklyHoursTarget: 10, description: 'Exercise, nutrition, and wellness' },
   { name: 'Fun and Recreation', icon: 'gamepad-2', color: 'fun', googleColorId: '10', weeklyHoursTarget: 20, description: 'Hobbies, play, and leisure activities' },
   { name: 'Personal Growth', icon: 'book-open', color: 'growth', googleColorId: '3', weeklyHoursTarget: 7, description: 'Learning, spirituality, and self-improvement' },
-  { name: 'Community Contribution', icon: 'globe', color: 'community', googleColorId: '6', weeklyHoursTarget: 4, description: 'Giving back and making a difference' },
+  { name: 'Contribution', icon: 'globe', color: 'community', googleColorId: '6', weeklyHoursTarget: 4, description: 'Impact, giving back, and the legacy you leave behind' },
 ];
 
 export interface TimeRemaining {
