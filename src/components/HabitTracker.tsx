@@ -215,6 +215,7 @@ export function HabitTracker() {
             const todayStr = format(today, 'yyyy-MM-dd');
             const completedToday = isCompletedOn(habit.id, todayStr);
             const bestStreak = getBestStreak(habit.id);
+            const negativeStreak = streak === 0 && daysSince !== null && daysSince > 0 ? -daysSince : 0;
             const showEncouragement = !!habit.importance_reason && !completedToday && (daysSince === null || daysSince >= 1);
             const isEditing = editingId === habit.id;
 
