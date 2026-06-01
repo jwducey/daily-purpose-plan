@@ -271,7 +271,7 @@ export function HabitTracker() {
                   <Card className="p-2 sm:p-3 hover:shadow-md transition-shadow group">
                     <div
                       className="grid gap-1.5 sm:gap-3 items-center"
-                      style={{ gridTemplateColumns: `minmax(0, 1fr) repeat(${DAYS_TO_SHOW}, minmax(32px, 44px)) minmax(40px, 60px)` }}
+                      style={{ gridTemplateColumns: `minmax(0, 1fr) repeat(${DAYS_TO_SHOW}, minmax(32px, 44px)) minmax(40px, 60px) minmax(40px, 60px)` }}
                     >
                       {/* Habit info */}
                       <div className="flex items-center gap-2 min-w-0">
