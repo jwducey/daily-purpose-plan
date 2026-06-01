@@ -157,6 +157,26 @@ export function useHabits() {
     return streak;
   };
 
+  const getBestStreak = (habitId: string): number => {
+    const dates = completions
+      .filter(c => c.habit_id === habitId && c.completed)
+      .map(c => c.completion_date)
+      .sort();
+    if (dates.length === 0) return 0;
+    let best = 1;
+    let cur = 1;
+    for (let i = 1; i < dates.length; i++) {
+      const diff = differenceInCalendarDays(new Date(dates[i]), new Date(dates[i - 1]));
+      if (diff === 1) {
+        cur++;
+        if (cur > best) best = cur;
+      } else if (diff > 1) {
+        cur = 1;
+      }
+    }
+    return best;
+  };
+
   const isCompletedOn = (habitId: string, date: string): boolean => {
     return completions.some(c => c.habit_id === habitId && c.completion_date === date && c.completed);
   };
