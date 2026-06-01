@@ -26,7 +26,7 @@ const COLOR_OPTIONS = [
 const DAYS_TO_SHOW = 7;
 
 export function HabitTracker() {
-  const { habits, loading, addHabit, updateHabit, deleteHabit, toggleCompletion, getStreak, getDaysSinceLast, isCompletedOn } = useHabits();
+  const { habits, loading, addHabit, updateHabit, deleteHabit, toggleCompletion, getStreak, getBestStreak, getDaysSinceLast, isCompletedOn } = useHabits();
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState('');
   const [newIcon, setNewIcon] = useState('✅');
@@ -180,7 +180,7 @@ export function HabitTracker() {
 
       {/* Day headers */}
       {habits.length > 0 && (
-        <div className="grid gap-1.5 sm:gap-3" style={{ gridTemplateColumns: `minmax(0, 1fr) repeat(${DAYS_TO_SHOW}, minmax(32px, 44px)) minmax(40px, 60px)` }}>
+        <div className="grid gap-1.5 sm:gap-3" style={{ gridTemplateColumns: `minmax(0, 1fr) repeat(${DAYS_TO_SHOW}, minmax(32px, 44px)) minmax(40px, 60px) minmax(40px, 60px)` }}>
           <div />
           {days.map(day => (
             <div key={day.toISOString()} className="text-center">
@@ -199,6 +199,10 @@ export function HabitTracker() {
             <span className="hidden sm:inline">STREAK</span>
             <span className="sm:hidden">🔥</span>
           </div>
+          <div className="text-center text-[10px] font-medium text-muted-foreground">
+            <span className="hidden sm:inline">BEST</span>
+            <span className="sm:hidden">🏆</span>
+          </div>
         </div>
       )}
 
@@ -210,6 +214,7 @@ export function HabitTracker() {
             const daysSince = getDaysSinceLast(habit.id);
             const todayStr = format(today, 'yyyy-MM-dd');
             const completedToday = isCompletedOn(habit.id, todayStr);
+            const bestStreak = getBestStreak(habit.id);
             const negativeStreak = streak === 0 && daysSince !== null && daysSince > 0 ? -daysSince : 0;
             const showEncouragement = !!habit.importance_reason && !completedToday && (daysSince === null || daysSince >= 1);
             const isEditing = editingId === habit.id;
@@ -266,7 +271,7 @@ export function HabitTracker() {
                   <Card className="p-2 sm:p-3 hover:shadow-md transition-shadow group">
                     <div
                       className="grid gap-1.5 sm:gap-3 items-center"
-                      style={{ gridTemplateColumns: `minmax(0, 1fr) repeat(${DAYS_TO_SHOW}, minmax(32px, 44px)) minmax(40px, 60px)` }}
+                      style={{ gridTemplateColumns: `minmax(0, 1fr) repeat(${DAYS_TO_SHOW}, minmax(32px, 44px)) minmax(40px, 60px) minmax(40px, 60px)` }}
                     >
                       {/* Habit info */}
                       <div className="flex items-center gap-2 min-w-0">
@@ -335,6 +340,18 @@ export function HabitTracker() {
                             <AlertCircle className="w-3.5 h-3.5" />
                             <span className="text-xs font-bold">{negativeStreak}</span>
                           </motion.div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </div>
+
+                      {/* Best streak */}
+                      <div className="flex items-center justify-center" title="Previous best unbroken streak">
+                        {bestStreak > 0 ? (
+                          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-muted text-muted-foreground">
+                            <span className="text-xs">🏆</span>
+                            <span className="text-xs font-bold">{bestStreak}</span>
+                          </div>
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
