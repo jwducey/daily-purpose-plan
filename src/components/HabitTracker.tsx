@@ -344,6 +344,18 @@ export function HabitTracker() {
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </div>
+
+                      {/* Best streak */}
+                      <div className="flex items-center justify-center" title="Previous best unbroken streak">
+                        {bestStreak > 0 ? (
+                          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-muted text-muted-foreground">
+                            <span className="text-xs">🏆</span>
+                            <span className="text-xs font-bold">{bestStreak}</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </div>
                     </div>
                     {showEncouragement && (
                       <div className="mt-2 flex items-start gap-2 rounded-md bg-primary/5 border border-primary/20 px-3 py-2">
