@@ -200,6 +200,7 @@ export function useHabits() {
     deleteHabit,
     toggleCompletion,
     getStreak,
+    getBestStreak,
     getDaysSinceLast,
     isCompletedOn,
   };
