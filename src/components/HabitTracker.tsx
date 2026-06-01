@@ -26,7 +26,7 @@ const COLOR_OPTIONS = [
 const DAYS_TO_SHOW = 7;
 
 export function HabitTracker() {
-  const { habits, loading, addHabit, updateHabit, deleteHabit, toggleCompletion, getStreak, getDaysSinceLast, isCompletedOn } = useHabits();
+  const { habits, loading, addHabit, updateHabit, deleteHabit, toggleCompletion, getStreak, getBestStreak, getDaysSinceLast, isCompletedOn } = useHabits();
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState('');
   const [newIcon, setNewIcon] = useState('✅');
