@@ -33,8 +33,8 @@ export default function Dashboard() {
           .select('*')
           .eq('user_id', user.id)
           .maybeSingle();
-        if (data) {
-          if (data.selected_values?.length) setCoreValues(data.selected_values);
+        if (data?.selected_values?.length) {
+          setCoreValues(data.selected_values);
           if ((data as any).values_statements) setValuesStatements((data as any).values_statements as Record<string, string>);
           return;
         }
