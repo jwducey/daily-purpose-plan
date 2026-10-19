@@ -67,7 +67,7 @@ serve(async (req) => {
     const userId = claimsData.claims.sub;
     console.log("User ID:", userId);
 
-    const { eventId } = await req.json();
+    const { eventId, calendarId } = await req.json();
 
     if (!eventId) {
       return new Response(JSON.stringify({ error: "Missing required field: eventId" }), {
@@ -150,7 +150,7 @@ serve(async (req) => {
     console.log("Deleting event:", eventId);
 
     const calendarResponse = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
+      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(typeof calendarId === "string" && calendarId ? calendarId : "primary")}/events/${encodeURIComponent(eventId)}`,
       {
         method: "DELETE",
         headers: {

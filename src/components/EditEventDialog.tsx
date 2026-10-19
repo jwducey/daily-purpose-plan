@@ -124,6 +124,7 @@ export function EditEventDialog({
       const { error } = await supabase.functions.invoke('google-calendar-update-event', {
         body: {
           eventId: event.id,
+          calendarId: event.calendarId,
           summary: summary.trim(),
           description: description.trim() || undefined,
           start: startDateTime,
@@ -146,7 +147,8 @@ export function EditEventDialog({
   };
 
   const updateMatchingEvents = async (matchingEvents: CalendarEvent[]) => {
-    const eventIds = matchingEvents.map(e => e.id);
+    const eventIds = matchingEvents.filter(e => !e.calendarId || e.calendarId === 'primary').map(e => e.id);
+    if (eventIds.length === 0) return 0;
     try {
       const { data, error } = await supabase.functions.invoke('google-calendar-batch-update', {
         body: {
@@ -193,6 +195,7 @@ export function EditEventDialog({
       const { error } = await supabase.functions.invoke('google-calendar-update-event', {
         body: {
           eventId: event!.id,
+          calendarId: event!.calendarId,
           summary: summary.trim(),
           description: description.trim() || undefined,
           start: startDateTime,
@@ -234,7 +237,7 @@ export function EditEventDialog({
     setIsDeleting(true);
     try {
       const { error } = await supabase.functions.invoke('google-calendar-delete-event', {
-        body: { eventId: event.id },
+        body: { eventId: event.id, calendarId: event.calendarId },
       });
 
       if (error) throw error;

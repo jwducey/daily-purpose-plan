@@ -328,10 +328,15 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
 
   // --- Update event via Google Calendar API ---
   const updateEventTime = async (event: CalendarEvent, newStart: Date, newEnd: Date) => {
+    if (event.readOnly) {
+      toast.error(`"${event.summary}" is from a shared calendar and can't be changed here`);
+      return;
+    }
     try {
       const { error } = await supabase.functions.invoke('google-calendar-update-event', {
         body: {
           eventId: event.id,
+          calendarId: event.calendarId,
           start: newStart.toISOString(),
           end: newEnd.toISOString(),
         },
