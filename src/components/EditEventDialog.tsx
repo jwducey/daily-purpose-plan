@@ -116,7 +116,15 @@ export function EditEventDialog({
   const updateSingleEvent = async () => {
     if (!event || !summary.trim()) return;
     if (event.readOnly) {
-      toast.error("This event is from a shared calendar and can't be changed here");
+      try {
+        await saveEventTag(event, colorId || null);
+        toast.success('Life area tagged in the app');
+        onEventUpdated();
+        onOpenChange(false);
+      } catch (e) {
+        console.error(e);
+        toast.error('Failed to save life area');
+      }
       return;
     }
 
@@ -174,7 +182,15 @@ export function EditEventDialog({
   const handleSave = async () => {
     if (!event || !summary.trim()) return;
     if (event.readOnly) {
-      toast.error("This event is from a shared calendar and can't be changed here");
+      try {
+        await saveEventTag(event, colorId || null);
+        toast.success('Life area tagged in the app');
+        onEventUpdated();
+        onOpenChange(false);
+      } catch (e) {
+        console.error(e);
+        toast.error('Failed to save life area');
+      }
       return;
     }
 

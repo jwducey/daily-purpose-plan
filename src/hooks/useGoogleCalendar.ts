@@ -17,6 +17,35 @@ export interface CalendarEvent {
   readOnly?: boolean;
 }
 
+// Apply app-only life-area tags to events from view-only shared calendars
+export async function applyEventTags(events: CalendarEvent[]): Promise<CalendarEvent[]> {
+  const shared = events.filter(e => e.readOnly && e.calendarId);
+  if (!shared.length) return events;
+  const { data } = await supabase.from('event_tags').select('calendar_id, event_id, color_id');
+  if (!data?.length) return events;
+  const map = new Map(data.map(t => [`${t.calendar_id}|${t.event_id}`, t.color_id]));
+  return events.map(e => {
+    const c = e.readOnly ? map.get(`${e.calendarId}|${e.id}`) : undefined;
+    return c ? { ...e, colorId: c } : e;
+  });
+}
+
+export async function saveEventTag(event: CalendarEvent, colorId: string | null) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || !event.calendarId) throw new Error('Not signed in');
+  if (!colorId) {
+    const { error } = await supabase.from('event_tags').delete()
+      .eq('user_id', user.id).eq('calendar_id', event.calendarId).eq('event_id', event.id);
+    if (error) throw error;
+    return;
+  }
+  const { error } = await supabase.from('event_tags').upsert(
+    { user_id: user.id, calendar_id: event.calendarId, event_id: event.id, color_id: colorId },
+    { onConflict: 'user_id,calendar_id,event_id' },
+  );
+  if (error) throw error;
+}
+
 export function useGoogleCalendar() {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,7 +71,7 @@ export function useGoogleCalendar() {
         setIsConnected(false);
       } else {
         setIsConnected(true);
-        setEvents(data?.events || []);
+        setEvents(await applyEventTags(data?.events || []));
       }
     } catch {
       setIsConnected(false);
@@ -160,8 +189,9 @@ export function useGoogleCalendar() {
         return [];
       }
 
-      setEvents(data?.events || []);
-      return data?.events || [];
+      const tagged = await applyEventTags(data?.events || []);
+      setEvents(tagged);
+      return tagged;
     } catch (error) {
       console.error('Error fetching events:', error);
       return [];
