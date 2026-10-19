@@ -140,6 +140,36 @@ export type Database = {
         }
         Relationships: []
       }
+      event_tags: {
+        Row: {
+          calendar_id: string
+          color_id: string | null
+          created_at: string
+          event_id: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calendar_id: string
+          color_id?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calendar_id?: string
+          color_id?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       google_oauth_tokens: {
         Row: {
           access_token: string

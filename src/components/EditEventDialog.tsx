@@ -34,6 +34,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useUser } from '@/contexts/UserContext';
 import { GOOGLE_CALENDAR_COLORS } from '@/types/user';
+import { saveEventTag } from '@/hooks/useGoogleCalendar';
 
 interface EditEventDialogProps {
   event: CalendarEvent | null;
@@ -116,7 +117,15 @@ export function EditEventDialog({
   const updateSingleEvent = async () => {
     if (!event || !summary.trim()) return;
     if (event.readOnly) {
-      toast.error("This event is from a shared calendar and can't be changed here");
+      try {
+        await saveEventTag(event, colorId || null);
+        toast.success('Life area tagged in the app');
+        onEventUpdated();
+        onOpenChange(false);
+      } catch (e) {
+        console.error(e);
+        toast.error('Failed to save life area');
+      }
       return;
     }
 
@@ -174,7 +183,15 @@ export function EditEventDialog({
   const handleSave = async () => {
     if (!event || !summary.trim()) return;
     if (event.readOnly) {
-      toast.error("This event is from a shared calendar and can't be changed here");
+      try {
+        await saveEventTag(event, colorId || null);
+        toast.success('Life area tagged in the app');
+        onEventUpdated();
+        onOpenChange(false);
+      } catch (e) {
+        console.error(e);
+        toast.error('Failed to save life area');
+      }
       return;
     }
 
@@ -274,6 +291,11 @@ export function EditEventDialog({
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Edit Event</DialogTitle>
+            {event?.readOnly && (
+              <p className="text-sm text-muted-foreground">
+                This event is from a shared calendar. Only the life area can be set, and it shows in this app only.
+              </p>
+            )}
           </DialogHeader>
           
           <div className="space-y-4 py-4">
