@@ -115,6 +115,10 @@ export function EditEventDialog({
 
   const updateSingleEvent = async () => {
     if (!event || !summary.trim()) return;
+    if (event.readOnly) {
+      toast.error("This event is from a shared calendar and can't be changed here");
+      return;
+    }
 
     setIsUpdating(true);
     try {
@@ -169,6 +173,10 @@ export function EditEventDialog({
 
   const handleSave = async () => {
     if (!event || !summary.trim()) return;
+    if (event.readOnly) {
+      toast.error("This event is from a shared calendar and can't be changed here");
+      return;
+    }
 
     // Check if life area changed and there are matching events
     if (lifeAreaChanged) {
@@ -233,6 +241,10 @@ export function EditEventDialog({
 
   const handleDelete = async () => {
     if (!event) return;
+    if (event.readOnly) {
+      toast.error("This event is from a shared calendar and can't be changed here");
+      return;
+    }
 
     setIsDeleting(true);
     try {
