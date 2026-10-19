@@ -46,6 +46,24 @@ export async function saveEventTag(event: CalendarEvent, colorId: string | null)
   if (error) throw error;
 }
 
+export async function saveEventTags(events: CalendarEvent[], colorId: string | null) {
+  const { data: { user } } = await supabase.auth.getUser();
+  const list = events.filter(e => e.calendarId);
+  if (!user || !list.length) return;
+  if (!colorId) {
+    for (const e of list) {
+      await supabase.from('event_tags').delete()
+        .eq('user_id', user.id).eq('calendar_id', e.calendarId!).eq('event_id', e.id);
+    }
+    return;
+  }
+  const { error } = await supabase.from('event_tags').upsert(
+    list.map(e => ({ user_id: user.id, calendar_id: e.calendarId!, event_id: e.id, color_id: colorId })),
+    { onConflict: 'user_id,calendar_id,event_id' },
+  );
+  if (error) throw error;
+}
+
 export function useGoogleCalendar() {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
