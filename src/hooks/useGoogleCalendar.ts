@@ -11,6 +11,10 @@ export interface CalendarEvent {
   allDay: boolean;
   colorId?: string;
   location?: string;
+  calendarId?: string;
+  calendarName?: string;
+  calendarColor?: string;
+  readOnly?: boolean;
 }
 
 export function useGoogleCalendar() {
