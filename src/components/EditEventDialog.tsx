@@ -34,7 +34,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useUser } from '@/contexts/UserContext';
 import { GOOGLE_CALENDAR_COLORS } from '@/types/user';
-import { saveEventTag } from '@/hooks/useGoogleCalendar';
+import { saveEventTag, saveEventTags } from '@/hooks/useGoogleCalendar';
 
 interface EditEventDialogProps {
   event: CalendarEvent | null;
@@ -160,8 +160,20 @@ export function EditEventDialog({
   };
 
   const updateMatchingEvents = async (matchingEvents: CalendarEvent[]) => {
-    const eventIds = matchingEvents.filter(e => !e.calendarId || e.calendarId === 'primary').map(e => e.id);
-    if (eventIds.length === 0) return 0;
+    let done = 0;
+    const tagOnly = matchingEvents.filter(e => e.readOnly);
+    if (tagOnly.length) {
+      try { await saveEventTags(tagOnly, colorId || null); done += tagOnly.length; } catch (e) { console.error(e); }
+    }
+    const otherWritable = matchingEvents.filter(e => !e.readOnly && e.calendarId && e.calendarId !== 'primary');
+    for (const e of otherWritable) {
+      const { error } = await supabase.functions.invoke('google-calendar-update-event', {
+        body: { eventId: e.id, calendarId: e.calendarId, colorId: colorId || undefined },
+      });
+      if (!error) done++;
+    }
+    const eventIds = matchingEvents.filter(e => !e.readOnly && (!e.calendarId || e.calendarId === 'primary')).map(e => e.id);
+    if (eventIds.length === 0) return done;
     try {
       const { data, error } = await supabase.functions.invoke('google-calendar-batch-update', {
         body: {
@@ -171,23 +183,31 @@ export function EditEventDialog({
       });
       if (error) {
         console.error('Batch update error:', error);
-        return 0;
+        return done;
       }
-      return data?.updated || 0;
+      return done + (data?.updated || 0);
     } catch (err) {
       console.error('Batch update failed:', err);
-      return 0;
+      return done;
     }
   };
 
   const handleSave = async () => {
     if (!event || !summary.trim()) return;
+    const matching = lifeAreaChanged ? getMatchingEvents() : [];
+
     if (event.readOnly) {
       try {
         await saveEventTag(event, colorId || null);
-        toast.success('Life area tagged in the app');
         onEventUpdated();
         onOpenChange(false);
+        if (matching.length) {
+          const count = await updateMatchingEvents(matching);
+          toast.success(`Life area set on this and ${count} other "${event.summary}" event${count !== 1 ? 's' : ''}`);
+          onEventUpdated();
+        } else {
+          toast.success('Life area tagged in the app');
+        }
       } catch (e) {
         console.error(e);
         toast.error('Failed to save life area');
@@ -195,14 +215,9 @@ export function EditEventDialog({
       return;
     }
 
-    // Check if life area changed and there are matching events
-    if (lifeAreaChanged) {
-      const matching = getMatchingEvents();
-      if (matching.length > 0) {
-        setMatchingEventCount(matching.length);
-        setShowBatchConfirm(true);
-        return;
-      }
+    if (matching.length > 0) {
+      await handleBatchConfirm(true);
+      return;
     }
 
     await updateSingleEvent();
