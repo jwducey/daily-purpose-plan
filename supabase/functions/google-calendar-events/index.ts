@@ -124,27 +124,31 @@ serve(async (req) => {
       }
     }
 
-    // Fetch calendar events
-    console.log("Fetching calendar events...");
-    const calendarResponse = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/primary/events?` +
-      `timeMin=${encodeURIComponent(timeMin)}&` +
-      `timeMax=${encodeURIComponent(timeMax)}&` +
-      `singleEvents=true&` +
-      `orderBy=startTime`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
+    // Fetch list of calendars the user has turned on (includes subscribed/URL calendars)
+    const authHeaders = { Authorization: `Bearer ${accessToken}` };
+    let calendars: { id: string; primary?: boolean; summary?: string; backgroundColor?: string; accessRole?: string }[] = [{ id: "primary", primary: true }];
+    const listRes = await fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList?minAccessRole=reader", { headers: authHeaders });
+    if (listRes.ok) {
+      const listData = await listRes.json();
+      const selected = (listData.items || []).filter((c: any) => c.selected !== false && !c.hidden);
+      if (selected.length) calendars = selected;
+    } else {
+      console.error("calendarList failed:", listRes.status, await listRes.text());
+    }
 
-    if (!calendarResponse.ok) {
+    const qs = `timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime&maxResults=2500`;
+    const results = await Promise.all(calendars.map(async (cal) => {
+      const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}/events?${qs}`, { headers: authHeaders });
+      return { cal, res };
+    }));
+
+    const primaryResult = results.find(r => r.cal.primary) || results[0];
+    if (!primaryResult.res.ok) {
+      const calendarResponse = primaryResult.res;
       const errorData = await calendarResponse.json();
       console.error("Calendar API error:", errorData);
       
       if (calendarResponse.status === 401) {
-        // Token was revoked, delete it
         await serviceClient
           .from("google_oauth_tokens")
           .delete()
@@ -162,20 +166,33 @@ serve(async (req) => {
       });
     }
 
-    const calendarData = await calendarResponse.json();
-    console.log(`Fetched ${calendarData.items?.length || 0} events`);
-
-    // Transform events into a simpler format with time tracking categories
-    const events = (calendarData.items || []).map((event: any) => ({
-      id: event.id,
-      summary: event.summary || "No title",
-      description: event.description,
-      start: event.start?.dateTime || event.start?.date,
-      end: event.end?.dateTime || event.end?.date,
-      allDay: !event.start?.dateTime,
-      colorId: event.colorId,
-      location: event.location,
-    }));
+    const events: any[] = [];
+    for (const { cal, res } of results) {
+      if (!res.ok) {
+        console.error(`Calendar ${cal.id} failed:`, res.status, await res.text());
+        continue;
+      }
+      const data = await res.json();
+      const isPrimary = !!cal.primary;
+      for (const event of data.items || []) {
+        events.push({
+          id: event.id,
+          summary: event.summary || "No title",
+          description: event.description,
+          start: event.start?.dateTime || event.start?.date,
+          end: event.end?.dateTime || event.end?.date,
+          allDay: !event.start?.dateTime,
+          colorId: event.colorId,
+          location: event.location,
+          calendarId: isPrimary ? "primary" : cal.id,
+          calendarName: cal.summary,
+          calendarColor: isPrimary ? undefined : cal.backgroundColor,
+          readOnly: !isPrimary && cal.accessRole !== "owner" && cal.accessRole !== "writer",
+        });
+      }
+    }
+    events.sort((a, b) => String(a.start).localeCompare(String(b.start)));
+    console.log(`Fetched ${events.length} events from ${calendars.length} calendars`);
 
     return new Response(JSON.stringify({ events }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
