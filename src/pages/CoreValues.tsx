@@ -237,17 +237,27 @@ const CoreValues = () => {
     setColorPickerOpen(null);
   };
 
+  const userId = user?.id;
+
   useEffect(() => {
+    let cancelled = false;
+    setLoaded(false);
+    initialLoadDone.current = false;
+    const parse = <T,>(k: string, d: T): T => {
+      try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; }
+    };
     const load = async () => {
-      if (!user) {
-        const saved = localStorage.getItem('core-values-shortlist');
-        const savedCustom = localStorage.getItem('core-values-custom');
-        const savedStatements = localStorage.getItem('core-values-statements');
-        const savedStep = localStorage.getItem('core-values-step');
-        const savedCompleted = localStorage.getItem('core-values-completed-steps');
-        if (saved) setSelectedValues(JSON.parse(saved));
-        if (savedCustom) setCustomValues(JSON.parse(savedCustom));
-        if (savedStatements) setValuesStatements(JSON.parse(savedStatements));
+      const local = {
+        values: parse<string[]>('core-values-shortlist', []),
+        custom: parse<Record<string, string[]>>('core-values-custom', {}),
+        statements: parse<Record<string, string>>('core-values-statements', {}),
+      };
+      const savedStep = localStorage.getItem('core-values-step');
+      const savedCompleted = localStorage.getItem('core-values-completed-steps');
+      if (!userId) {
+        setSelectedValues(local.values);
+        setCustomValues(local.custom);
+        setValuesStatements(local.statements);
         if (savedStep) setCurrentStep(parseInt(savedStep));
         if (savedCompleted) setCompletedSteps(JSON.parse(savedCompleted));
         setLoaded(true);
@@ -256,48 +266,38 @@ const CoreValues = () => {
       const { data } = await supabase
         .from('core_values_shortlist')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .maybeSingle();
-      if (data) {
-        setSelectedValues(data.selected_values || []);
-        setCustomValues((data.custom_values as Record<string, string[]>) || {});
-        if ((data as any).values_statements) {
-          setValuesStatements((data as any).values_statements as Record<string, string>);
-        }
+      if (cancelled) return;
+      const dbValues: string[] = data?.selected_values || [];
+      const dbStatements = ((data as any)?.values_statements || {}) as Record<string, string>;
+      const dbCustom = (data?.custom_values as Record<string, string[]>) || {};
+      const values = dbValues.length ? dbValues : local.values;
+      const statements = Object.keys(dbStatements).length ? dbStatements : local.statements;
+      const custom = Object.keys(dbCustom).length ? dbCustom : local.custom;
+      setSelectedValues(values);
+      setCustomValues(custom);
+      setValuesStatements(statements);
 
-        // Determine journey completion from DB data:
-        // If user has selected values AND statements, journey is complete
-        const hasValues = (data.selected_values || []).length > 0;
-        const stmts = (data as any).values_statements as Record<string, string> | undefined;
-        const hasStatements = stmts && Object.keys(stmts).length > 0;
-
-        if (hasValues && hasStatements) {
-          // Journey is complete - set all steps as completed
-          setCompletedSteps([1, 2, 3, 4, 5, 6, 7, 8]);
-          setCurrentStep(8);
-        } else {
-          // Load step progress from localStorage as fallback
-          const savedStep = localStorage.getItem('core-values-step');
-          const savedCompleted = localStorage.getItem('core-values-completed-steps');
-          if (savedStep) setCurrentStep(parseInt(savedStep));
-          if (savedCompleted) setCompletedSteps(JSON.parse(savedCompleted));
-        }
+      if (values.length > 0 && Object.keys(statements).length > 0) {
+        setCompletedSteps([1, 2, 3, 4, 5, 6, 7, 8]);
+        setCurrentStep(8);
       } else {
-        const saved = localStorage.getItem('core-values-shortlist');
-        const savedCustom = localStorage.getItem('core-values-custom');
-        const savedStatements = localStorage.getItem('core-values-statements');
-        if (saved) setSelectedValues(JSON.parse(saved));
-        if (savedCustom) setCustomValues(JSON.parse(savedCustom));
-        if (savedStatements) setValuesStatements(JSON.parse(savedStatements));
-        const savedStep = localStorage.getItem('core-values-step');
-        const savedCompleted = localStorage.getItem('core-values-completed-steps');
         if (savedStep) setCurrentStep(parseInt(savedStep));
         if (savedCompleted) setCompletedSteps(JSON.parse(savedCompleted));
       }
-      setLoaded(true);
+      // Restore account copy from this device's backup if it was empty
+      if ((!dbValues.length && local.values.length) || (!Object.keys(dbStatements).length && Object.keys(local.statements).length)) {
+        await supabase.from('core_values_shortlist').upsert({
+          user_id: userId, selected_values: values, custom_values: custom as any,
+          values_statements: statements as any, updated_at: new Date().toISOString(),
+        } as any, { onConflict: 'user_id' });
+      }
+      if (!cancelled) setLoaded(true);
     };
     load();
-  }, [user]);
+    return () => { cancelled = true; };
+  }, [userId]);
 
   // Save step progress
   useEffect(() => {
@@ -308,16 +308,15 @@ const CoreValues = () => {
 
   // Save to DB (debounced)
   const saveToDb = useCallback(async (values: string[], custom: Record<string, string[]>, statements: Record<string, string>) => {
-    if (!user) {
-      localStorage.setItem('core-values-shortlist', JSON.stringify(values));
-      localStorage.setItem('core-values-custom', JSON.stringify(custom));
-      localStorage.setItem('core-values-statements', JSON.stringify(statements));
-      return;
-    }
+    // Always keep a backup on this device
+    localStorage.setItem('core-values-shortlist', JSON.stringify(values));
+    localStorage.setItem('core-values-custom', JSON.stringify(custom));
+    localStorage.setItem('core-values-statements', JSON.stringify(statements));
+    if (!userId) return;
     const { error } = await supabase
       .from('core_values_shortlist')
       .upsert({
-        user_id: user.id,
+        user_id: userId,
         selected_values: values,
         custom_values: custom as any,
         values_statements: statements as any,
@@ -327,18 +326,19 @@ const CoreValues = () => {
       console.error('Failed to save core values:', error);
       toast.error('Failed to save your values');
     }
-  }, [user]);
+  }, [userId]);
 
   useEffect(() => {
     if (!loaded) return;
-    // Skip the first render after load to prevent overwriting DB data with initial empty state
+    // Skip the first run after load so loaded data isn't immediately re-saved
     if (!initialLoadDone.current) {
       initialLoadDone.current = true;
       return;
     }
     const timeout = setTimeout(() => saveToDb(selectedValues, customValues, valuesStatements), 500);
     return () => clearTimeout(timeout);
-  }, [selectedValues, customValues, valuesStatements, loaded, saveToDb]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedValues, customValues, valuesStatements, loaded]);
 
   const toggleValue = (value: string) => {
     setSelectedValues(prev =>
