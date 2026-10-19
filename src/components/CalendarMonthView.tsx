@@ -115,8 +115,9 @@ export function CalendarMonthView({ events, currentDate, onDateClick }: Calendar
                         key={event.id}
                         className={cn(
                           "text-[10px] md:text-xs px-1 py-0.5 rounded truncate text-white",
-                          getEventColor(event)
+                          !event.colorId && event.calendarColor ? '' : getEventColor(event)
                         )}
+                        style={!event.colorId && event.calendarColor ? { backgroundColor: event.calendarColor } : undefined}
                         title={event.summary}
                       >
                         {!event.allDay && (

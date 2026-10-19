@@ -258,6 +258,9 @@ export function CalendarMultiDayView({ events, startDate, numberOfDays, onEventU
     if (event.colorId && GOOGLE_CALENDAR_COLORS[event.colorId]) {
       return { backgroundColor: GOOGLE_CALENDAR_COLORS[event.colorId].hex };
     }
+    if (event.calendarColor) {
+      return { backgroundColor: event.calendarColor };
+    }
     const candidates = [...extractLifeAreasFromDescription(event.description), event.summary].filter(Boolean) as string[];
     for (const candidate of candidates) {
       const byName = categories.find(cat => cat.name.toLowerCase() === candidate.toLowerCase());
