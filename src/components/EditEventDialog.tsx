@@ -305,6 +305,7 @@ export function EditEventDialog({
                 id="summary"
                 value={summary}
                 onChange={(e) => setSummary(e.target.value)}
+                  disabled={!!event?.readOnly}
                 placeholder="Event title"
               />
             </div>
@@ -347,6 +348,7 @@ export function EditEventDialog({
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                  disabled={!!event?.readOnly}
                 placeholder="Event description"
                 className="min-h-[80px]"
               />
@@ -360,6 +362,7 @@ export function EditEventDialog({
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
+                  disabled={!!event?.readOnly}
                 />
               </div>
               <div className="space-y-2">
@@ -369,6 +372,7 @@ export function EditEventDialog({
                   type="time"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
+                  disabled={!!event?.readOnly}
                 />
               </div>
             </div>
@@ -381,6 +385,7 @@ export function EditEventDialog({
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
+                  disabled={!!event?.readOnly}
                 />
               </div>
               <div className="space-y-2">
@@ -390,12 +395,14 @@ export function EditEventDialog({
                   type="time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
+                  disabled={!!event?.readOnly}
                 />
               </div>
             </div>
           </div>
 
           <DialogFooter className="flex justify-between sm:justify-between">
+            {event?.readOnly ? <span /> : (
             <Button
               variant="destructive"
               size="sm"
@@ -405,6 +412,7 @@ export function EditEventDialog({
               <Trash2 className="h-4 w-4 mr-1" />
               Delete
             </Button>
+            )}
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isUpdating}>
                 Cancel
